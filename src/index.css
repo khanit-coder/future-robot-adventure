@@ -124,9 +124,14 @@ body,
 
 /* Blockly toolbox & workspace styling */
 .blocklyToolboxDiv {
+  z-index: 40 !important;
   background-color: #f1f5f9 !important;
   border-right: 1px solid #e2e8f0;
   padding: 6px 4px !important;
+}
+
+.blocklyFlyout {
+  z-index: 39 !important;
 }
 
 .blocklyTreeRow {

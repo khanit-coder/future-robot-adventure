@@ -358,6 +358,9 @@ export class MissionScene extends Phaser.Scene {
     this.dirArrow = this.add.triangle(0, 0, -6, -6, 9, 0, -6, 6, 0xfbbf24, 0.95);
     this.dirArrow.setStrokeStyle(1.5, 0x0f172a, 1);
     this.updateDirArrow(robot_start.dir);
+    if (this.robotSprite) {
+      this.robotSprite.setFlipX(robot_start.dir === 'W');
+    }
 
     this.robotContainer.add([this.robotSprite, this.dirArrow]);
     this.playRobotState('idle');
@@ -392,8 +395,10 @@ export class MissionScene extends Phaser.Scene {
       if (token !== this.playbackToken) return;
 
       const ev = result.trace[i];
+      const prevEv = result.trace[i - 1];
+      const nextEv = result.trace[i + 1];
       callbacks.onStep?.(ev, i);
-      await this.playTraceEvent(ev, stepMs, token);
+      await this.playTraceEvent(ev, stepMs, token, prevEv, nextEv);
     }
 
     if (token !== this.playbackToken) return;
@@ -409,35 +414,72 @@ export class MissionScene extends Phaser.Scene {
     }
   }
 
-  private async playTraceEvent(ev: TraceEvent, stepMs: number, token: number): Promise<void> {
+  private async playTraceEvent(
+    ev: TraceEvent,
+    stepMs: number,
+    token: number,
+    prevEv?: TraceEvent,
+    nextEv?: TraceEvent,
+  ): Promise<void> {
     if (!this.robotContainer || token !== this.playbackToken) return;
 
     switch (ev.kind) {
       case 'move': {
         this.playRobotState('walk');
         this.updateDirArrow(ev.dir);
+        if (this.robotSprite) {
+          if (ev.dir === 'W') this.robotSprite.setFlipX(true);
+          else if (ev.dir === 'E') this.robotSprite.setFlipX(false);
+        }
         const dest = this.cellCenter(ev.to);
+
+        const isFirstInRun = !prevEv || prevEv.kind !== 'move' || prevEv.dir !== ev.dir;
+        const isLastInRun = !nextEv || nextEv.kind !== 'move' || nextEv.dir !== ev.dir;
+
+        let ease = 'Linear';
+        if (isFirstInRun && isLastInRun) {
+          ease = 'Sine.easeInOut';
+        } else if (isFirstInRun) {
+          ease = 'Sine.easeIn';
+        } else if (isLastInRun) {
+          ease = 'Sine.easeOut';
+        }
+
         await this.tweenPromise({
           targets: this.robotContainer,
           x: dest.x,
           y: dest.y,
           duration: stepMs,
-          ease: 'Sine.easeInOut',
+          ease,
         });
-        this.playRobotState('idle');
+
+        // Only switch back to idle if this is the final step in a continuous walk sequence
+        if (isLastInRun) {
+          this.playRobotState('idle');
+        }
         break;
       }
       case 'turn': {
         this.playRobotState('turn');
         await this.waitMs(Math.round(stepMs * 0.45));
         this.updateDirArrow(ev.to_dir);
+        if (this.robotSprite) {
+          if (ev.to_dir === 'W') this.robotSprite.setFlipX(true);
+          else if (ev.to_dir === 'E') this.robotSprite.setFlipX(false);
+        }
         await this.waitMs(Math.round(stepMs * 0.25));
-        this.playRobotState('idle');
+        if (!nextEv || nextEv.kind !== 'turn') {
+          this.playRobotState('idle');
+        }
         break;
       }
       case 'jump': {
         this.playRobotState('jump');
         this.updateDirArrow(ev.dir);
+        if (this.robotSprite) {
+          if (ev.dir === 'W') this.robotSprite.setFlipX(true);
+          else if (ev.dir === 'E') this.robotSprite.setFlipX(false);
+        }
         const dest = this.cellCenter(ev.to);
         await Promise.all([
           this.tweenPromise({
@@ -450,14 +492,14 @@ export class MissionScene extends Phaser.Scene {
           this.tweenPromise({
             targets: this.robotSprite,
             y: -this.cellSize * 0.45,
-            scaleX: (this.robotSprite?.scaleX ?? 1) * 1.15,
-            scaleY: (this.robotSprite?.scaleY ?? 1) * 1.15,
             duration: (stepMs * 1.15) / 2,
             yoyo: true,
             ease: 'Quad.easeOut',
           }),
         ]);
-        this.playRobotState('idle');
+        if (!nextEv || nextEv.kind !== 'move') {
+          this.playRobotState('idle');
+        }
         break;
       }
       case 'wave': {

@@ -8,7 +8,7 @@ export function Toaster() {
   if (items.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-[100] flex w-80 max-w-[92vw] flex-col gap-2">
+    <div className="fixed bottom-4 right-4 z-[1100] flex w-80 max-w-[92vw] flex-col gap-2">
       {items.map((t) => (
         <div
           key={t.id}

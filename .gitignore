@@ -20,7 +20,9 @@ playwright-report
 test-results
 blob-report
 
-# Editor directories and files
+# Supabase
+supabase/.temp/
+.temp/
 .vscode/*
 !.vscode/extensions.json
 .idea
