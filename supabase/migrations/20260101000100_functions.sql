@@ -120,6 +120,8 @@ declare
   awarded integer := 0;
   new_status public.player_status;
   all_done boolean := false;
+  total_failed integer := 0;
+  out_of_hearts boolean := false;
 begin
   select * into ps from public.player_sessions where id = p_player_session_id for update;
   if not found then
@@ -130,8 +132,11 @@ begin
   select * into dup from public.submissions
     where player_session_id = p_player_session_id and client_submission_id = p_client_submission_id;
   if found then
+    select coalesce(sum(failed_attempts), 0) into total_failed
+    from public.player_level_progress where player_session_id = p_player_session_id;
     return jsonb_build_object('accepted', true, 'duplicate', true, 'status', dup.status, 'score_awarded', 0,
-                              'total_score', ps.total_score, 'levels_completed', ps.levels_completed, 'result', dup.result);
+                              'total_score', ps.total_score, 'levels_completed', ps.levels_completed, 'result', dup.result,
+                              'hearts_remaining', greatest(0, 5 - total_failed), 'out_of_hearts', (total_failed >= 5));
   end if;
 
   if ps.status <> 'PLAYING' then
@@ -191,12 +196,22 @@ begin
     end if;
   end if;
 
+  select coalesce(sum(failed_attempts), 0) into total_failed
+  from public.player_level_progress
+  where player_session_id = p_player_session_id;
+
+  if p_status <> 'SUCCESS' and total_failed >= 5 then
+    out_of_hearts := true;
+    all_done := true;
+    update public.player_sessions set status = 'FINISHED', finished_at = now() where id = ps.id;
+  end if;
+
   select * into ps from public.player_sessions where id = p_player_session_id;
   return jsonb_build_object(
     'accepted', true, 'duplicate', false, 'status', p_status,
     'score_awarded', awarded, 'total_score', ps.total_score, 'levels_completed', ps.levels_completed,
     'player_status', ps.status, 'expires_at', ps.expires_at, 'already_completed', (p_status = 'SUCCESS' and awarded = 0 and prog.status = 'COMPLETED'),
-    'finished', all_done
+    'finished', all_done, 'out_of_hearts', out_of_hearts, 'hearts_remaining', greatest(0, 5 - total_failed)
   );
 end $$;
 
@@ -318,8 +333,9 @@ begin
       select jsonb_agg(jsonb_build_object(
         'id', p.id, 'name', p.display_name, 'school', p.school, 'status', ps.status,
         'score', ps.total_score, 'levels_completed', ps.levels_completed,
+        'best_level_ms', ps.best_level_ms,
         'started_at', ps.started_at, 'finished_at', ps.finished_at, 'registered_at', p.created_at
-      ) order by ps.total_score desc, ps.finished_at nulls last, p.created_at)
+      ) order by ps.total_score desc, ps.levels_completed desc, ps.best_level_ms asc nulls last, ps.finished_at asc nulls last, p.created_at)
       from public.players p join public.player_sessions ps on ps.player_id = p.id
       where p.game_session_id = sid
     ), '[]'::jsonb),

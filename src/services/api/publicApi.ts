@@ -16,6 +16,7 @@ export interface DashboardPlayer {
   status: PlayerStatus;
   score: number;
   levels_completed: number;
+  best_level_ms?: number | null;
   started_at: string | null;
   finished_at: string | null;
   registered_at: string;

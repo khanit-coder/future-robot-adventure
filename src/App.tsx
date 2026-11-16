@@ -13,6 +13,9 @@ const DashboardPage = lazy(() =>
   import('@/features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })),
 );
 const AdminPage = lazy(() => import('@/features/admin/AdminPage').then((m) => ({ default: m.AdminPage })));
+const CardDownloadPage = lazy(() =>
+  import('@/features/rewards/CardDownloadPage').then((m) => ({ default: m.CardDownloadPage })),
+);
 
 function RouteFallback() {
   return (
@@ -58,6 +61,7 @@ export default function App() {
                 </ConfigGuard>
               }
             />
+            <Route path="/card" element={<CardDownloadPage />} />
             <Route path="*" element={<Navigate to="/play" replace />} />
           </Routes>
         </Suspense>

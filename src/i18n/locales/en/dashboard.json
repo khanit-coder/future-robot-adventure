@@ -10,9 +10,12 @@
   "modes": {
     "GRID": "Robot Grid",
     "PLANET": "Planet Map",
-    "SPOTLIGHT": "Spotlight"
+    "SPOTLIGHT": "Spotlight",
+    "HALL_OF_FAME": "Hall of Fame"
   },
   "leaderboard": "Top Coders",
+  "hallOfFame": "Hall of Fame — Top Robot Coders",
+  "hallOfFameSub": "Real-time rankings of top scorers and mission finishers",
   "recentAchievements": "Recent Achievements",
   "noPlayers": "Waiting for students to join the adventure...",
   "noEvents": "Recent achievements will appear here in real time.",

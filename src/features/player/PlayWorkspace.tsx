@@ -2,16 +2,22 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   BookOpen,
+  Check,
   CheckCircle2,
   Clock,
+  Code2,
+  Copy,
+  Flag,
+  Heart,
+  HeartCrack,
   HelpCircle,
+  Home,
   Lightbulb,
   Map as MapIcon,
   Play,
   RotateCcw,
   Sparkles,
   Trophy,
-  Flag,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { countBlocks, parseProgram, limitsFromBlocks } from '@engine';
@@ -24,6 +30,10 @@ import type {
   ValidationIssue,
 } from '@engine';
 import { BlocklyEditor } from '@/blockly/BlocklyEditor';
+import {
+  generateRealCodeSamples,
+  type CodeLanguageId,
+} from '@/blockly/generators/codeTranspiler';
 import { localizedBlockLabel } from '@/blockly/toolbox/buildToolbox';
 import { PhaserViewport } from '@/game-engine/PhaserViewport';
 import type { RobotGameEngine } from '@/game-engine/RobotGameEngine';
@@ -41,6 +51,8 @@ import { useAppStore } from '@/stores/appStore';
 import { loadSavedWorkspace, saveWorkspaceState, usePlayerStore } from '@/stores/playerStore';
 import { formatDuration, pickLocalized } from '@/utils/localize';
 import { LevelMap } from './LevelMap';
+
+const MAX_HEARTS = 5;
 
 export function PlayWorkspace() {
   const config = usePlayerStore((s) => s.config)!;
@@ -67,10 +79,29 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
   const selectLevel = usePlayerStore((s) => s.selectLevel);
   const refreshState = usePlayerStore((s) => s.refreshState);
   const finishGame = usePlayerStore((s) => s.finishGame);
+  const resetToHome = usePlayerStore((s) => s.resetToHome);
   const setShowLessonReview = usePlayerStore((s) => s.setShowLessonReview);
 
   const fallbackLang = settings?.default_language ?? 'en';
-  const levelProgress = useMemo(() => progress.find((p) => p.level_id === level.id), [progress, level.id]);
+  const levelProgress = useMemo(
+    () => progress.find((p) => p.level_id === level.id),
+    [progress, level.id],
+  );
+
+  // Show ALL enabled coding blocks in every level to increase block-selection challenge
+  const allEnabledCommands = useMemo(
+    () => config.blocks.filter((b) => b.enabled).map((b) => b.command_type),
+    [config.blocks],
+  );
+
+  // Total 5 hearts shared across all levels in the game
+  const totalFailedAttempts = useMemo(
+    () => progress.reduce((sum, p) => sum + (p.failed_attempts ?? 0), 0),
+    [progress],
+  );
+  const [optimisticHearts, setOptimisticHearts] = useState<number | null>(null);
+  const heartsRemaining =
+    optimisticHearts !== null ? optimisticHearts : Math.max(0, MAX_HEARTS - totalFailedAttempts);
 
   const robotCfg = useMemo(
     () =>
@@ -98,11 +129,17 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
   const [showMap, setShowMap] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
+  const [showHomeConfirm, setShowHomeConfirm] = useState(false);
+  const [showGameOverModal, setShowGameOverModal] = useState(false);
+  const [showCodeModal, setShowCodeModal] = useState(false);
+  const [activeCodeLang, setActiveCodeLang] = useState<CodeLanguageId>('python');
+  const [copiedLang, setCopiedLang] = useState<string | null>(null);
   const [victoryModal, setVictoryModal] = useState<{
     scoreAwarded: number;
     breakdown: ScoreBreakdown | null;
     alreadyCompleted: boolean;
     finished: boolean;
+    commandsSnapshot: Command[];
   } | null>(null);
 
   const handleTimerExpire = useCallback(() => {
@@ -160,8 +197,12 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
     setFeedbackError(null);
     setVictoryModal(null);
 
-    // Quick local validation before hitting the server so empty/oversized clicks give instant friendly feedback.
-    const localCheck = parseProgram(commands, level.mission.rules, limitsFromBlocks(config.blocks));
+    // Validate against all enabled blocks so distractor blocks can be compiled & tested
+    const gameplayRules = {
+      ...level.mission.rules,
+      allowed_commands: allEnabledCommands,
+    };
+    const localCheck = parseProgram(commands, gameplayRules, limitsFromBlocks(config.blocks));
     if (!localCheck.ok) {
       setFeedbackError(formatValidationIssue(localCheck.issues[0]));
       return;
@@ -209,7 +250,28 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
       }
       setHighlightedBlockId(null);
 
+      if (typeof res.hearts_remaining === 'number') {
+        setOptimisticHearts(res.hearts_remaining);
+      }
+
+      // If the player lost their last heart on this failed compile, show Game Over modal first!
+      const lostAllHearts =
+        !execResult.success &&
+        (Boolean(res.out_of_hearts) ||
+          res.hearts_remaining === 0 ||
+          totalFailedAttempts + 1 >= MAX_HEARTS);
+
+      if (lostAllHearts) {
+        setOptimisticHearts(0);
+        if (execResult.failure) {
+          setFeedbackError(t(`game:feedback.failures.${execResult.failure.code}`));
+        }
+        setShowGameOverModal(true);
+        return;
+      }
+
       await refreshState();
+      setOptimisticHearts(null);
 
       if (execResult.success) {
         setVictoryModal({
@@ -217,9 +279,15 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
           breakdown: res.score?.breakdown ?? null,
           alreadyCompleted: Boolean(res.already_completed),
           finished: Boolean(res.finished),
+          commandsSnapshot: commands,
         });
       } else if (execResult.failure) {
-        setFeedbackError(t(`game:feedback.failures.${execResult.failure.code}`));
+        const failMsg = t(`game:feedback.failures.${execResult.failure.code}`);
+        const left =
+          typeof res.hearts_remaining === 'number'
+            ? res.hearts_remaining
+            : Math.max(0, MAX_HEARTS - (totalFailedAttempts + 1));
+        setFeedbackError(`${failMsg} (${t('player:workspace.heartLostNote', { count: left })})`);
       }
     } catch (err) {
       if (err instanceof ApiError) {
@@ -252,6 +320,31 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
     return idx >= 0 && idx < config.levels.length - 1 ? config.levels[idx + 1] : null;
   }, [config.levels, level]);
 
+  const codeSamples = useMemo(
+    () =>
+      generateRealCodeSamples(
+        victoryModal?.commandsSnapshot ?? commands,
+        level.code,
+        lang,
+      ),
+    [victoryModal?.commandsSnapshot, commands, level.code, lang],
+  );
+
+  const activeSample = useMemo(
+    () => codeSamples.find((s) => s.id === activeCodeLang) ?? codeSamples[0],
+    [codeSamples, activeCodeLang],
+  );
+
+  const handleCopyCode = async (code: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedLang(id);
+      setTimeout(() => setCopiedLang(null), 1800);
+    } catch {
+      // Ignore clipboard errors
+    }
+  };
+
   if (!level) return null;
 
   const blocksUsed = countBlocks(commands);
@@ -273,6 +366,17 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
       <header className="border-b border-slate-200 bg-white px-4 py-2.5 shadow-xs">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowHomeConfirm(true)}
+              data-testid="workspace-home-btn"
+              title={t('common:app.backToHome')}
+            >
+              <Home className="h-4 w-4 text-indigo-600" />
+              <span className="hidden sm:inline">{t('common:app.home')}</span>
+            </Button>
+
             {settings?.game_logo_url ? (
               <img src={settings.game_logo_url} alt="" className="h-9 w-9 rounded-lg object-contain" />
             ) : (
@@ -292,6 +396,31 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
+            {/* 5 Hearts Indicator */}
+            <div
+              className={`inline-flex items-center gap-1 rounded-xl border px-3 py-1.5 text-sm font-extrabold ${
+                heartsRemaining <= 1
+                  ? 'border-rose-400 bg-rose-50 text-rose-700 animate-pulse'
+                  : 'border-rose-200 bg-rose-50/70 text-rose-800'
+              }`}
+              data-testid="player-hearts"
+              title={t('player:workspace.heartsLabel', { count: heartsRemaining, max: MAX_HEARTS })}
+            >
+              {Array.from({ length: MAX_HEARTS }).map((_, idx) => (
+                <Heart
+                  key={idx}
+                  className={`h-4 w-4 transition-transform ${
+                    idx < heartsRemaining
+                      ? 'fill-rose-500 text-rose-500 scale-100'
+                      : 'fill-slate-300 text-slate-300 scale-90'
+                  }`}
+                />
+              ))}
+              <span className="ml-1 text-xs font-black">
+                {heartsRemaining}/{MAX_HEARTS}
+              </span>
+            </div>
+
             {/* Timer */}
             <div
               className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-sm font-extrabold ${
@@ -324,7 +453,12 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
               </Button>
             )}
 
-            <Button variant="ghost" size="sm" onClick={() => setShowFinishConfirm(true)}>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setShowFinishConfirm(true)}
+              data-testid="finish-game-btn"
+            >
               <Flag className="h-4 w-4" />
               {t('player:workspace.finishGame')}
             </Button>
@@ -373,6 +507,13 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                     {pickLocalized(level.title, lang, fallbackLang, level.code)}
                   </h2>
                 </div>
+
+                {levelProgress?.status === 'COMPLETED' && commands.length > 0 && (
+                  <Button variant="outline" size="sm" onClick={() => setShowCodeModal(true)}>
+                    <Code2 className="h-4 w-4 text-indigo-600" />
+                    {t('game:realCode.viewBtn')}
+                  </Button>
+                )}
               </div>
 
               <p className="text-sm text-slate-600">{pickLocalized(level.description, lang, fallbackLang)}</p>
@@ -517,7 +658,7 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
             <BlocklyEditor
               workspaceKey={`${playerSession.id}:${level.id}`}
               blocks={config.blocks}
-              allowedCommands={level.mission.rules.allowed_commands}
+              allowedCommands={allEnabledCommands}
               lang={lang}
               fallbackLang={fallbackLang}
               initialState={savedInitialState}
@@ -542,7 +683,7 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
         onSelectLevel={(id) => void selectLevel(id)}
       />
 
-      {/* Command Reference Modal */}
+      {/* Command Reference Modal (shows all enabled blocks) */}
       <Dialog open={showGuide} onOpenChange={setShowGuide}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -550,7 +691,7 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
           </DialogHeader>
           <div className="grid gap-3 sm:grid-cols-2">
             {config.blocks
-              .filter((b) => b.enabled && level.mission.rules.allowed_commands.includes(b.command_type))
+              .filter((b) => b.enabled)
               .map((b) => (
                 <div key={b.command_type} className="rounded-xl border border-slate-200 p-3">
                   <div className="flex items-center gap-2">
@@ -568,9 +709,9 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
         </DialogContent>
       </Dialog>
 
-      {/* Mission Complete Modal */}
+      {/* Mission Complete Modal (with Real Code Viewer) */}
       <Dialog open={Boolean(victoryModal)} onOpenChange={(o) => !o && setVictoryModal(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-emerald-700">
               <Sparkles className="h-6 w-6 text-amber-500" />
@@ -620,56 +761,287 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                 )
               )}
 
-              <div className="flex flex-wrap justify-end gap-2">
-                <Button variant="outline" onClick={() => setVictoryModal(null)}>
-                  {t('common:app.close')}
-                </Button>
-                {nextLevel && !victoryModal.finished ? (
-                  <Button
-                    variant="success"
-                    onClick={() => {
-                      setVictoryModal(null);
-                      void selectLevel(nextLevel.id);
-                    }}
-                  >
-                    {t('game:feedback.nextLevel')}
-                  </Button>
-                ) : (
-                  <Button
-                    variant="success"
-                    onClick={() => {
-                      setVictoryModal(null);
-                      void finishGame();
-                    }}
-                  >
-                    {t('game:feedback.finishAdventure')}
-                  </Button>
+              {/* Real Code Showcase in Victory Modal */}
+              <div
+                className="rounded-2xl border border-indigo-200 bg-slate-900 p-4 text-white space-y-3"
+                data-testid="real-code-viewer"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Code2 className="h-5 w-5 text-sky-400" />
+                    <span className="text-sm font-extrabold text-sky-300">
+                      {t('game:realCode.title')}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {codeSamples.map((sample) => (
+                      <button
+                        key={sample.id}
+                        type="button"
+                        onClick={() => setActiveCodeLang(sample.id)}
+                        data-testid={`code-tab-${sample.id}`}
+                        className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-colors cursor-pointer ${
+                          activeCodeLang === sample.id
+                            ? 'bg-sky-500 text-slate-950 shadow-xs'
+                            : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                        }`}
+                      >
+                        {sample.badge}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {activeSample && (
+                  <>
+                    <p className="text-xs text-slate-300">
+                      {activeSample.description[lang] ?? activeSample.description.en}
+                    </p>
+                    <div className="relative">
+                      <pre className="max-h-48 overflow-auto rounded-xl bg-slate-950 p-3.5 font-mono text-xs leading-relaxed text-emerald-300 border border-slate-800">
+                        <code>{activeSample.code}</code>
+                      </pre>
+                      <button
+                        type="button"
+                        onClick={() => void handleCopyCode(activeSample.code, activeSample.id)}
+                        className="absolute right-2.5 top-2.5 inline-flex items-center gap-1 rounded-lg bg-slate-800/90 px-2.5 py-1 text-[11px] font-bold text-slate-200 hover:bg-slate-700 cursor-pointer"
+                      >
+                        {copiedLang === activeSample.id ? (
+                          <>
+                            <Check className="h-3.5 w-3.5 text-emerald-400" />
+                            {t('game:realCode.copied')}
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3.5 w-3.5" />
+                            {t('game:realCode.copy')}
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </>
                 )}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowCodeModal(true);
+                  }}
+                >
+                  <Code2 className="h-4 w-4 text-indigo-600" />
+                  {t('game:realCode.viewAllBtn')}
+                </Button>
+
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={() => setVictoryModal(null)}>
+                    {t('common:app.close')}
+                  </Button>
+                  {nextLevel && !victoryModal.finished ? (
+                    <Button
+                      variant="success"
+                      onClick={() => {
+                        setVictoryModal(null);
+                        void selectLevel(nextLevel.id);
+                      }}
+                    >
+                      {t('game:feedback.nextLevel')}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="success"
+                      onClick={() => {
+                        setVictoryModal(null);
+                        void finishGame();
+                      }}
+                    >
+                      {t('game:feedback.finishAdventure')}
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Early Finish Confirmation */}
+      {/* Standalone Full Real Code Comparison Modal */}
+      <Dialog open={showCodeModal} onOpenChange={setShowCodeModal}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-indigo-700">
+              <Code2 className="h-6 w-6 text-indigo-600" />
+              {t('game:realCode.title')}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-slate-600">{t('game:realCode.subtitle')}</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {codeSamples.map((s) => (
+              <div
+                key={s.id}
+                className="flex flex-col justify-between rounded-2xl border border-slate-800 bg-slate-900 p-4 text-white"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-sky-300">{s.badge}</span>
+                    <button
+                      type="button"
+                      onClick={() => void handleCopyCode(s.code, s.id)}
+                      className="inline-flex items-center gap-1 rounded-lg bg-slate-800 px-2 py-1 text-xs font-bold text-slate-200 hover:bg-slate-700 cursor-pointer"
+                    >
+                      {copiedLang === s.id ? (
+                        <>
+                          <Check className="h-3.5 w-3.5 text-emerald-400" />
+                          {t('game:realCode.copied')}
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3.5 w-3.5" />
+                          {t('game:realCode.copy')}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-300">{s.description[lang] ?? s.description.en}</p>
+                  <pre className="overflow-x-auto rounded-xl bg-slate-950 p-3 font-mono text-xs leading-relaxed text-emerald-300 border border-slate-800">
+                    <code>{s.code}</code>
+                  </pre>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-end pt-2">
+            <Button variant="outline" onClick={() => setShowCodeModal(false)}>
+              {t('common:app.close')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Out of Hearts (Game Over) Modal */}
+      <Dialog
+        open={showGameOverModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowGameOverModal(false);
+            void refreshState();
+          }
+        }}
+      >
+        <DialogContent className="border-4 border-rose-600 bg-white max-w-md text-center">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-rose-100 text-rose-600 animate-bounce">
+            <HeartCrack className="h-12 w-12" />
+          </div>
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl font-black text-rose-600">
+              {t('player:workspace.gameOverTitle')}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-base font-semibold text-slate-700">
+            {t('player:workspace.gameOverDesc')}
+          </p>
+          <div className="flex justify-center gap-1.5 py-2">
+            {Array.from({ length: MAX_HEARTS }).map((_, idx) => (
+              <Heart key={idx} className="h-7 w-7 fill-slate-300 text-slate-300" />
+            ))}
+          </div>
+          <Button
+            variant="destructive"
+            size="lg"
+            className="w-full font-extrabold text-base py-6"
+            onClick={() => {
+              setShowGameOverModal(false);
+              void refreshState();
+            }}
+            data-testid="game-over-results-btn"
+          >
+            {t('player:workspace.gameOverBtn')}
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* BIG RED WARNING: Early Finish Confirmation */}
       <Dialog open={showFinishConfirm} onOpenChange={setShowFinishConfirm}>
+        <DialogContent
+          className="border-4 border-rose-600 bg-white p-0 overflow-hidden max-w-lg shadow-2xl"
+          data-testid="finish-warning-dialog"
+        >
+          <div className="bg-rose-600 px-6 py-5 text-white flex items-center gap-3.5">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 animate-pulse">
+              <AlertTriangle className="h-9 w-9 text-white" />
+            </div>
+            <div>
+              <span className="inline-block rounded-full bg-rose-900/60 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-rose-100">
+                ⚠️ {t('player:workspace.finishWarningBadge')}
+              </span>
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-black text-white mt-0.5">
+                  {t('player:workspace.finishConfirmTitle')}
+                </DialogTitle>
+              </DialogHeader>
+            </div>
+          </div>
+
+          <div className="p-6 space-y-4">
+            <div className="rounded-2xl border-2 border-rose-500 bg-rose-50 p-4 text-center space-y-2">
+              <p className="text-xl font-black text-rose-700">
+                {t('player:workspace.finishWarningHeadline')}
+              </p>
+              <p className="text-sm font-bold text-rose-900 leading-relaxed">
+                {t('player:workspace.finishConfirmDesc')}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+              <Button
+                variant="outline"
+                size="lg"
+                className="font-bold"
+                onClick={() => setShowFinishConfirm(false)}
+              >
+                {t('common:app.cancel')}
+              </Button>
+              <Button
+                variant="destructive"
+                size="lg"
+                className="bg-rose-600 hover:bg-rose-700 font-black text-base px-6 shadow-lg"
+                onClick={() => {
+                  setShowFinishConfirm(false);
+                  void finishGame();
+                }}
+              >
+                <AlertTriangle className="h-5 w-5" />
+                {t('player:workspace.finishConfirmBtn')}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Back to Home Confirmation */}
+      <Dialog open={showHomeConfirm} onOpenChange={setShowHomeConfirm}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('player:workspace.finishConfirmTitle')}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Home className="h-5 w-5 text-indigo-600" />
+              {t('player:workspace.homeConfirmTitle')}
+            </DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-slate-600">{t('player:workspace.finishConfirmDesc')}</p>
+          <p className="text-sm text-slate-600">{t('player:workspace.homeConfirmDesc')}</p>
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setShowFinishConfirm(false)}>
+            <Button variant="outline" onClick={() => setShowHomeConfirm(false)}>
               {t('common:app.cancel')}
             </Button>
             <Button
-              variant="destructive"
+              variant="default"
               onClick={() => {
-                setShowFinishConfirm(false);
-                void finishGame();
+                setShowHomeConfirm(false);
+                void resetToHome();
               }}
             >
-              {t('player:workspace.finishConfirmBtn')}
+              {t('common:app.backToHome')}
             </Button>
           </div>
         </DialogContent>

@@ -9,7 +9,7 @@ import type {
 } from '@engine';
 import { playerApi, type PlayerStateResponse } from '@/services/api/playerApi';
 import { ApiError } from '@/services/api/edge';
-import { isSupabaseConfigured } from '@/services/supabase/client';
+import { getSupabase, isSupabaseConfigured } from '@/services/supabase/client';
 import i18n from '@/i18n/config';
 
 const WORKSPACE_STORAGE_PREFIX = 'fra_ws_v1';
@@ -61,6 +61,7 @@ interface PlayerStore {
   startGame: (skip?: boolean) => Promise<void>;
   selectLevel: (levelId: string) => Promise<void>;
   finishGame: () => Promise<void>;
+  resetToHome: () => Promise<void>;
   setShowLessonReview: (open: boolean) => void;
   setClaim: (claim: PlayerStateResponse['claim']) => void;
   applyServerTime: (serverNowIso?: string) => void;
@@ -227,6 +228,31 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       playerSession: state.player_session,
       progress: state.progress,
       claim: state.claim,
+    });
+  },
+
+  resetToHome: async () => {
+    if (isSupabaseConfigured) {
+      try {
+        await getSupabase().auth.signOut();
+      } catch {
+        // Ignore signOut errors
+      }
+    }
+    set({
+      bootstrapped: true,
+      loading: false,
+      error: null,
+      player: null,
+      playerSession: null,
+      session: null,
+      config: null,
+      latestVersion: null,
+      progress: [],
+      lessonsDone: [],
+      claim: null,
+      selectedLevelId: null,
+      showLessonReview: false,
     });
   },
 

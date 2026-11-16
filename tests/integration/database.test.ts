@@ -190,6 +190,24 @@ describe('PostgreSQL migrations, seed, transactions & RLS (PGlite)', () => {
     expect(st.rows[0].status).toBe('TIME_EXPIRED');
   });
 
+  it('apply_submission deducts from 5 total hearts and ends the game when all 5 hearts are lost', async () => {
+    for (let i = 1; i <= 5; i++) {
+      const failSubId = `66666666-6666-4666-8666-${String(i).padStart(12, '0')}`;
+      const res = await db.query<{ res: Record<string, unknown> }>(
+        `select public.apply_submission($1, $2, $3, '[{"type":"MOVE_FORWARD","steps":1}]'::jsonb, '{"success":false}'::jsonb, 'FAILED', 0, '{}'::jsonb, 1000, $4, 0, 0, 10) as res`,
+        [player1SessionId, level2Id, failSubId, i - 1],
+      );
+      expect(res.rows[0].res).toMatchObject({
+        accepted: true,
+        status: 'FAILED',
+        hearts_remaining: 5 - i,
+        out_of_hearts: i === 5,
+        finished: i === 5,
+        player_status: i === 5 ? 'FINISHED' : 'PLAYING',
+      });
+    }
+  });
+
   it('reserve_reward enforces stock limits atomically and prevents negative inventory', async () => {
     // Give both players enough score and mark player 1 FINISHED (player 2 is already TIME_EXPIRED)
     await db.query(`update public.player_sessions set status = 'FINISHED', total_score = 500 where id = $1`, [

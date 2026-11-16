@@ -77,5 +77,11 @@ describe('DashboardView with 100 simultaneous players', () => {
     // Switch to Spotlight
     fireEvent.click(screen.getByText('Spotlight'));
     expect(screen.getAllByTestId('dashboard-robot-card').length).toBeGreaterThan(0);
+
+    // Switch to Hall of Fame
+    fireEvent.click(screen.getByTestId('dashboard-mode-HALL_OF_FAME'));
+    expect(screen.getByText('RANK #1')).toBeInTheDocument();
+    expect(screen.getByText('RANK #2')).toBeInTheDocument();
+    expect(screen.getByText('RANK #3')).toBeInTheDocument();
   });
 });

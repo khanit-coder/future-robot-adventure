@@ -1,5 +1,18 @@
-import { useEffect, useState } from 'react';
-import { Award, CheckCircle2, Clock, Gift, Sparkles, Trophy } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Award,
+  CheckCircle2,
+  Clock,
+  Download,
+  Gift,
+  Heart,
+  Home,
+  QrCode,
+  Smartphone,
+  Sparkles,
+  Trophy,
+} from 'lucide-react';
+import QRCode from 'qrcode';
 import { useTranslation } from 'react-i18next';
 import type { RewardRow } from '@engine';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +27,15 @@ import { publicApi } from '@/services/api/publicApi';
 import { useAppStore } from '@/stores/appStore';
 import { usePlayerStore } from '@/stores/playerStore';
 import { formatDuration, pickLocalized } from '@/utils/localize';
+import {
+  COLLEGE_NAME_TH,
+  FACULTY_NAME_TH,
+  buildCardDownloadUrl,
+  renderShareCardToDataUrl,
+  type ShareCardData,
+} from './cardCanvas';
+
+const MAX_HEARTS = 5;
 
 export function ResultView() {
   const { t } = useTranslation(['player', 'common']);
@@ -22,14 +44,76 @@ export function ResultView() {
   const player = usePlayerStore((s) => s.player)!;
   const playerSession = usePlayerStore((s) => s.playerSession)!;
   const config = usePlayerStore((s) => s.config)!;
+  const progress = usePlayerStore((s) => s.progress);
   const claim = usePlayerStore((s) => s.claim);
   const setClaim = usePlayerStore((s) => s.setClaim);
+  const resetToHome = usePlayerStore((s) => s.resetToHome);
 
   const [rewards, setRewards] = useState<RewardRow[]>([]);
   const [reservingId, setReservingId] = useState<string | null>(null);
+  const [cardImageUrl, setCardImageUrl] = useState<string>('');
+  const [qrDataUrl, setQrDataUrl] = useState<string>('');
 
   const fallbackLang = settings?.default_language ?? 'en';
   const rewardsEnabled = settings?.rewards_enabled ?? config.settings.rewards_enabled;
+
+  const totalFailed = useMemo(
+    () => progress.reduce((sum, p) => sum + (p.failed_attempts ?? 0), 0),
+    [progress],
+  );
+  const heartsRemaining = Math.max(0, MAX_HEARTS - totalFailed);
+  const isOutOfHearts =
+    heartsRemaining === 0 && playerSession.levels_completed < config.levels.length;
+
+  const shareCardData: ShareCardData = useMemo(
+    () => ({
+      name: player.display_name,
+      school: player.school,
+      score: playerSession.total_score,
+      levelsCompleted: playerSession.levels_completed,
+      totalLevels: config.levels.length,
+      heartsRemaining,
+      lang,
+      dateStr: new Date().toLocaleDateString(lang === 'th' ? 'th-TH' : 'en-US'),
+    }),
+    [
+      player.display_name,
+      player.school,
+      playerSession.total_score,
+      playerSession.levels_completed,
+      config.levels.length,
+      heartsRemaining,
+      lang,
+    ],
+  );
+
+  const cardDownloadUrl = useMemo(() => buildCardDownloadUrl(shareCardData), [shareCardData]);
+
+  useEffect(() => {
+    let active = true;
+    const renderAll = () => {
+      if (!active) return;
+      setCardImageUrl(renderShareCardToDataUrl(shareCardData));
+    };
+    renderAll();
+    if (typeof document !== 'undefined' && 'fonts' in document) {
+      void document.fonts.ready.then(() => {
+        if (active) renderAll();
+      });
+    }
+    void QRCode.toDataURL(cardDownloadUrl, {
+      width: 280,
+      margin: 2,
+      color: { dark: '#0f172a', light: '#ffffff' },
+    })
+      .then((url) => {
+        if (active) setQrDataUrl(url);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [shareCardData, cardDownloadUrl]);
 
   useEffect(() => {
     if (!rewardsEnabled) return;
@@ -64,8 +148,19 @@ export function ResultView() {
     }
   };
 
-  const title =
-    playerSession.status === 'TIME_EXPIRED'
+  const handleDownloadCard = () => {
+    if (!cardImageUrl) return;
+    const a = document.createElement('a');
+    a.href = cardImageUrl;
+    a.download = `future-robot-${player.display_name.replace(/\s+/g, '-') || 'card'}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const title = isOutOfHearts
+    ? t('player:results.titleOutOfHearts')
+    : playerSession.status === 'TIME_EXPIRED'
       ? t('player:results.titleExpired')
       : playerSession.levels_completed >= config.levels.length
         ? t('player:results.titleCompleted')
@@ -75,19 +170,37 @@ export function ResultView() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-900 text-white">
-      <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-        <span className="font-extrabold text-sky-300">
-          {settings ? pickLocalized(settings.game_title, lang, fallbackLang) : t('common:app.title')}
-        </span>
+      <header className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-4">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void resetToHome()}
+            data-testid="back-home-btn"
+            className="border-slate-700 bg-slate-900/90 text-white hover:bg-slate-800"
+          >
+            <Home className="h-4 w-4 text-sky-400" />
+            {t('common:app.home')}
+          </Button>
+          <span className="font-extrabold text-sky-300">
+            {settings ? pickLocalized(settings.game_title, lang, fallbackLang) : t('common:app.title')}
+          </span>
+        </div>
         <LanguageSwitcher dark />
       </header>
 
-      <main className="mx-auto max-w-4xl space-y-6 px-4 pb-16 pt-2">
+      <main className="mx-auto max-w-5xl space-y-6 px-4 pb-16 pt-2">
         <Card className="border-slate-800 bg-slate-900/90 text-white shadow-2xl">
           <CardContent className="flex flex-col items-center p-8 text-center">
             <RobotIllustration
               robot={defaultRobot}
-              state={playerSession.status === 'TIME_EXPIRED' ? 'wave' : 'celebrate'}
+              state={
+                isOutOfHearts
+                  ? 'fail'
+                  : playerSession.status === 'TIME_EXPIRED'
+                    ? 'wave'
+                    : 'celebrate'
+              }
               size={112}
             />
             <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 px-3 py-1 text-xs font-bold text-amber-300">
@@ -98,6 +211,23 @@ export function ResultView() {
             <p className="mt-1 text-base text-sky-200">
               {t('player:results.subtitle', { name: player.display_name })}
             </p>
+
+            {/* Hearts summary row */}
+            <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-950/70 px-4 py-1.5">
+              {Array.from({ length: MAX_HEARTS }).map((_, idx) => (
+                <Heart
+                  key={idx}
+                  className={`h-5 w-5 ${
+                    idx < heartsRemaining
+                      ? 'fill-rose-500 text-rose-500'
+                      : 'fill-slate-700 text-slate-700'
+                  }`}
+                />
+              ))}
+              <span className="ml-1.5 text-xs font-extrabold text-rose-300">
+                {heartsRemaining} / {MAX_HEARTS}
+              </span>
+            </div>
 
             <div className="mt-6 grid w-full grid-cols-2 gap-3 sm:grid-cols-4">
               <StatBox
@@ -127,6 +257,84 @@ export function ResultView() {
             </div>
 
             <p className="mt-5 text-sm text-slate-300">{t('player:results.playAgainNote')}</p>
+
+            <div className="mt-4">
+              <Button
+                variant="outline"
+                onClick={() => void resetToHome()}
+                className="border-sky-400/50 bg-sky-500/10 text-sky-200 hover:bg-sky-500/20"
+              >
+                <Home className="h-4 w-4" />
+                {t('common:app.backToHome')}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* QR Code & Social Media Share Card Section */}
+        <Card
+          className="border-sky-500/40 bg-slate-900/95 text-white shadow-2xl"
+          data-testid="qr-share-card-section"
+        >
+          <CardContent className="p-6 sm:p-8">
+            <div className="grid items-center gap-8 lg:grid-cols-12">
+              {/* Left: Card Preview */}
+              <div className="flex flex-col items-center lg:col-span-6">
+                <div className="w-full max-w-sm overflow-hidden rounded-2xl border-2 border-sky-400/60 shadow-2xl">
+                  {cardImageUrl && (
+                    <img
+                      src={cardImageUrl}
+                      alt={player.display_name}
+                      className="block h-auto w-full"
+                      data-testid="result-card-preview"
+                    />
+                  )}
+                </div>
+                <Button
+                  variant="success"
+                  className="mt-4 w-full max-w-sm font-extrabold"
+                  onClick={handleDownloadCard}
+                >
+                  <Download className="h-4 w-4" />
+                  {t('player:results.shareCard.downloadBtn')}
+                </Button>
+              </div>
+
+              {/* Right: QR Code for Mobile Scan */}
+              <div className="flex flex-col items-center text-center lg:col-span-6 space-y-4">
+                <div className="inline-flex items-center gap-2 rounded-full bg-sky-500/20 px-4 py-1.5 text-xs font-extrabold text-sky-300">
+                  <Smartphone className="h-4 w-4" />
+                  {t('player:results.shareCard.badge')}
+                </div>
+                <h2 className="text-2xl font-extrabold text-white">
+                  {t('player:results.shareCard.title')}
+                </h2>
+                <p className="max-w-md text-sm leading-relaxed text-slate-300">
+                  {t('player:results.shareCard.desc')}
+                </p>
+
+                <div className="rounded-3xl border-4 border-sky-400 bg-white p-4 shadow-xl">
+                  {qrDataUrl ? (
+                    <img
+                      src={qrDataUrl}
+                      alt="QR Code Download Card"
+                      className="h-56 w-56 object-contain"
+                      data-testid="result-qr-code"
+                    />
+                  ) : (
+                    <div className="flex h-56 w-56 items-center justify-center text-slate-400">
+                      <QrCode className="h-16 w-16 animate-pulse" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-xs text-slate-300 space-y-1">
+                  <p className="font-extrabold text-amber-300">{COLLEGE_NAME_TH}</p>
+                  <p className="font-bold text-sky-300">{FACULTY_NAME_TH}</p>
+                  <p className="text-slate-400">{t('player:results.shareCard.socialHint')}</p>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 

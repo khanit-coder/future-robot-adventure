@@ -1,5 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Award, CheckCircle2, Globe2, LayoutGrid, Radio, Sparkles, Trophy, Users } from 'lucide-react';
+import {
+  Award,
+  CheckCircle2,
+  Crown,
+  Globe2,
+  Home,
+  LayoutGrid,
+  Medal,
+  Radio,
+  Sparkles,
+  Trophy,
+  Users,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { DashboardMode, DashboardSettingsRow, GameEvent, GameSettingsRow } from '@engine';
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
@@ -8,9 +20,11 @@ import { currentLang } from '@/i18n/config';
 import type { DashboardPlayer, DashboardSnapshot } from '@/services/api/publicApi';
 import type { ConnectionState } from '@/services/realtime/liveChannel';
 import { cn } from '@/utils/cn';
-import { pickLocalized } from '@/utils/localize';
+import { formatDuration, pickLocalized } from '@/utils/localize';
 import { RobotCard } from './RobotCard';
 import { avatarForPlayer } from './avatar';
+
+type ExtendedDashboardMode = DashboardMode | 'HALL_OF_FAME';
 
 interface DashboardViewProps {
   snapshot: DashboardSnapshot;
@@ -29,6 +43,15 @@ const THEME_CLASSES: Record<string, string> = {
   light: 'bg-slate-100 text-slate-900',
 };
 
+function sortHallOfFame(list: DashboardPlayer[]): DashboardPlayer[] {
+  return [...list].sort(
+    (a, b) =>
+      b.score - a.score ||
+      b.levels_completed - a.levels_completed ||
+      (a.best_level_ms ?? Number.MAX_SAFE_INTEGER) - (b.best_level_ms ?? Number.MAX_SAFE_INTEGER),
+  );
+}
+
 export function DashboardView({
   snapshot,
   settings,
@@ -45,9 +68,9 @@ export function DashboardView({
   const configuredMode: DashboardMode = dashSettings?.mode ?? 'GRID';
   const [manualOverride, setManualOverride] = useState<{
     forConfigured: DashboardMode;
-    mode: DashboardMode;
+    mode: ExtendedDashboardMode;
   } | null>(null);
-  const mode =
+  const mode: ExtendedDashboardMode =
     manualOverride && manualOverride.forConfigured === configuredMode ? manualOverride.mode : configuredMode;
 
   const dark = dashSettings?.theme !== 'light';
@@ -97,11 +120,8 @@ export function DashboardView({
     () => players.filter((p) => p.status === 'FINISHED' || p.status === 'TIME_EXPIRED').length,
     [players],
   );
-  const topLeaders = useMemo(
-    () =>
-      [...players].sort((a, b) => b.score - a.score || b.levels_completed - a.levels_completed).slice(0, 8),
-    [players],
-  );
+  const rankedPlayers = useMemo(() => sortHallOfFame(players), [players]);
+  const topLeaders = useMemo(() => rankedPlayers.slice(0, 10), [rankedPlayers]);
 
   const gameTitle = settings ? pickLocalized(settings.game_title, lang, fallbackLang) : t('common:app.title');
   const eventTitle = settings ? pickLocalized(settings.event_title, lang, fallbackLang) : '';
@@ -124,6 +144,20 @@ export function DashboardView({
         )}
       >
         <div className="flex items-center gap-3.5">
+          <a
+            href="/play"
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-extrabold transition-colors',
+              dark
+                ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
+                : 'border-slate-200 bg-slate-100 text-slate-800 hover:bg-slate-200',
+            )}
+            data-testid="dashboard-home-link"
+          >
+            <Home className="h-4 w-4 text-sky-400" />
+            <span>{t('common:app.home')}</span>
+          </a>
+
           {settings?.college_logo_url && (
             <img
               src={settings.college_logo_url}
@@ -172,15 +206,18 @@ export function DashboardView({
               dark ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-slate-100',
             )}
           >
-            {(['GRID', 'PLANET', 'SPOTLIGHT'] as const).map((m) => (
+            {(['GRID', 'PLANET', 'SPOTLIGHT', 'HALL_OF_FAME'] as const).map((m) => (
               <button
                 key={m}
                 type="button"
                 onClick={() => setManualOverride({ forConfigured: configuredMode, mode: m })}
+                data-testid={`dashboard-mode-${m}`}
                 className={cn(
                   'inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold cursor-pointer transition-colors',
                   mode === m
-                    ? 'bg-indigo-600 text-white'
+                    ? m === 'HALL_OF_FAME'
+                      ? 'bg-amber-500 text-slate-950 shadow-xs'
+                      : 'bg-indigo-600 text-white'
                     : dark
                       ? 'text-slate-300 hover:bg-slate-700'
                       : 'text-slate-600 hover:bg-white',
@@ -189,6 +226,7 @@ export function DashboardView({
                 {m === 'GRID' && <LayoutGrid className="h-3.5 w-3.5" />}
                 {m === 'PLANET' && <Globe2 className="h-3.5 w-3.5" />}
                 {m === 'SPOTLIGHT' && <Award className="h-3.5 w-3.5" />}
+                {m === 'HALL_OF_FAME' && <Crown className="h-3.5 w-3.5" />}
                 <span className="hidden sm:inline">{t(`dashboard:modes.${m}`)}</span>
               </button>
             ))}
@@ -223,6 +261,14 @@ export function DashboardView({
             <RobotIllustration state="wave" size={110} />
             <p className="mt-4 text-lg font-bold opacity-80">{t('dashboard:noPlayers')}</p>
           </div>
+        ) : mode === 'HALL_OF_FAME' ? (
+          <HallOfFameFullView
+            players={rankedPlayers}
+            totalLevels={snapshot.total_levels}
+            showSchool={showSchool}
+            showScores={showScores}
+            dark={dark}
+          />
         ) : mode === 'GRID' ? (
           <div className="space-y-3">
             <div
@@ -286,68 +332,137 @@ export function DashboardView({
         )}
       </main>
 
-      {/* Bottom Section: Leaderboard & Recent Achievements */}
-      <footer className="grid gap-4 lg:grid-cols-12">
+      {/* Bottom Section: Real-Time Hall of Fame & Recent Achievements */}
+      <footer className="grid gap-4 lg:grid-cols-12" data-testid="dashboard-hall-of-fame">
         {showLeaderboard && (
           <section
             className={cn(
-              'rounded-2xl border p-4 lg:col-span-6',
-              dark ? 'border-slate-800 bg-slate-900/90' : 'border-slate-200 bg-white',
+              'rounded-2xl border p-4 lg:col-span-7',
+              dark
+                ? 'border-amber-500/30 bg-gradient-to-br from-slate-900/95 via-slate-900/90 to-indigo-950/90'
+                : 'border-amber-300 bg-white shadow-sm',
             )}
           >
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-base font-extrabold">
-                <Trophy className="h-5 w-5 text-amber-400" />
-                {t('dashboard:leaderboard')}
-              </h2>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-400/20 text-amber-400">
+                  <Crown className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="flex items-center gap-2 text-base font-extrabold">
+                    {t('dashboard:hallOfFame')}
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-black uppercase text-emerald-400">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+                      LIVE
+                    </span>
+                  </h2>
+                  <p className="text-[11px] opacity-70">{t('dashboard:hallOfFameSub')}</p>
+                </div>
+              </div>
               <span className="text-xs font-bold text-sky-400">
                 {t('dashboard:totalMissions')}: {snapshot.total_missions_completed}
               </span>
             </div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {topLeaders.map((p, idx) => (
-                <div
-                  key={p.id}
-                  className={cn(
-                    'flex items-center justify-between rounded-xl px-3 py-2 text-sm',
-                    dark ? 'bg-slate-800/70' : 'bg-slate-50',
-                  )}
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span
+
+            {/* Top 3 Podium Mini-Cards */}
+            {topLeaders.length > 0 && (
+              <div className="mb-3 grid gap-2.5 sm:grid-cols-3">
+                {topLeaders.slice(0, 3).map((p, idx) => {
+                  const av = avatarForPlayer(p.id);
+                  const medalColors = [
+                    'border-amber-400/70 bg-amber-500/15',
+                    'border-slate-300/60 bg-slate-400/10',
+                    'border-amber-700/60 bg-amber-800/15',
+                  ];
+                  const badgeColors = [
+                    'bg-amber-400 text-slate-950',
+                    'bg-slate-300 text-slate-950',
+                    'bg-amber-700 text-white',
+                  ];
+                  return (
+                    <div
+                      key={p.id}
                       className={cn(
-                        'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-extrabold',
-                        idx === 0
-                          ? 'bg-amber-400 text-slate-950'
-                          : idx === 1
-                            ? 'bg-slate-300 text-slate-950'
-                            : idx === 2
-                              ? 'bg-amber-700 text-white'
-                              : 'bg-slate-700 text-slate-200',
+                        'relative flex items-center gap-2.5 rounded-2xl border p-2.5',
+                        medalColors[idx] ?? 'border-slate-700 bg-slate-800',
                       )}
                     >
-                      {idx + 1}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate font-bold">{p.name}</p>
-                      {showSchool && <p className="truncate text-[11px] opacity-65">{p.school}</p>}
+                      <span
+                        className={cn(
+                          'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black shadow-sm',
+                          badgeColors[idx],
+                        )}
+                      >
+                        {idx === 0 ? '👑' : idx + 1}
+                      </span>
+                      <RobotIllustration
+                        styleName={av.style}
+                        color={av.color}
+                        size={42}
+                        state="celebrate"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-extrabold">{p.name}</p>
+                        {showSchool && <p className="truncate text-[11px] opacity-75">{p.school}</p>}
+                        <div className="mt-0.5 flex items-center gap-2 text-xs font-extrabold">
+                          {showScores && (
+                            <span className="text-amber-400">
+                              {p.score} {t('dashboard:pts')}
+                            </span>
+                          )}
+                          <span className="text-sky-400">
+                            {t('dashboard:lvlProgress', {
+                              done: p.levels_completed,
+                              total: snapshot.total_levels,
+                            })}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  {showScores && (
-                    <span className="ml-2 shrink-0 font-extrabold text-amber-400">
-                      {p.score} {t('dashboard:pts')}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Ranks 4 - 9 */}
+            {topLeaders.length > 3 && (
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {topLeaders.slice(3, 9).map((p, idx) => {
+                  const rank = idx + 4;
+                  return (
+                    <div
+                      key={p.id}
+                      className={cn(
+                        'flex items-center justify-between rounded-xl px-3 py-1.5 text-xs',
+                        dark ? 'bg-slate-800/70' : 'bg-slate-50',
+                      )}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-700 text-[11px] font-extrabold text-slate-200">
+                          {rank}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate font-bold">{p.name}</p>
+                          {showSchool && <p className="truncate text-[10px] opacity-65">{p.school}</p>}
+                        </div>
+                      </div>
+                      {showScores && (
+                        <span className="ml-2 shrink-0 font-extrabold text-amber-400">
+                          {p.score} {t('dashboard:pts')}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </section>
         )}
 
         <section
           className={cn(
             'rounded-2xl border p-4',
-            showLeaderboard ? 'lg:col-span-6' : 'lg:col-span-12',
+            showLeaderboard ? 'lg:col-span-5' : 'lg:col-span-12',
             dark ? 'border-slate-800 bg-slate-900/90' : 'border-slate-200 bg-white',
           )}
         >
@@ -375,6 +490,136 @@ export function DashboardView({
           )}
         </section>
       </footer>
+    </div>
+  );
+}
+
+function HallOfFameFullView({
+  players,
+  totalLevels,
+  showSchool,
+  showScores,
+  dark,
+}: {
+  players: DashboardPlayer[];
+  totalLevels: number;
+  showSchool: boolean;
+  showScores: boolean;
+  dark: boolean;
+}) {
+  const { t } = useTranslation('dashboard');
+  const top3 = players.slice(0, 3);
+  const rest = players.slice(3, 15);
+
+  return (
+    <div className="space-y-6">
+      {/* Podium for Top 3 */}
+      <div className="grid items-end gap-4 md:grid-cols-3 max-w-5xl mx-auto pt-2">
+        {[1, 0, 2].map((podiumIdx) => {
+          const p = top3[podiumIdx];
+          if (!p) return <div key={`empty-${podiumIdx}`} className="hidden md:block" />;
+          const av = avatarForPlayer(p.id);
+          const isFirst = podiumIdx === 0;
+          const isSecond = podiumIdx === 1;
+          return (
+            <div
+              key={p.id}
+              className={cn(
+                'flex flex-col items-center rounded-3xl border p-6 text-center transition-all shadow-xl',
+                isFirst
+                  ? 'border-2 border-amber-400 bg-gradient-to-b from-amber-500/20 via-slate-900/95 to-slate-900 md:-translate-y-3'
+                  : isSecond
+                    ? 'border-slate-300/60 bg-slate-900/90'
+                    : 'border-amber-700/60 bg-slate-900/90',
+                !dark && !isFirst && 'bg-white text-slate-900',
+              )}
+            >
+              <div
+                className={cn(
+                  'mb-2 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-black',
+                  isFirst
+                    ? 'bg-amber-400 text-slate-950'
+                    : isSecond
+                      ? 'bg-slate-300 text-slate-950'
+                      : 'bg-amber-700 text-white',
+                )}
+              >
+                {isFirst ? <Crown className="h-4 w-4" /> : <Medal className="h-4 w-4" />}
+                RANK #{podiumIdx + 1}
+              </div>
+
+              <RobotIllustration
+                styleName={av.style}
+                color={av.color}
+                size={isFirst ? 128 : 100}
+                state="celebrate"
+              />
+
+              <h3 className={cn('mt-3 font-black truncate max-w-full', isFirst ? 'text-2xl' : 'text-xl')}>
+                {p.name}
+              </h3>
+              {showSchool && <p className="text-xs opacity-75 truncate max-w-full">{p.school}</p>}
+
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-3 text-sm font-extrabold">
+                {showScores && (
+                  <span className="rounded-xl bg-amber-400/20 px-3 py-1 text-amber-300">
+                    <Trophy className="mr-1 inline h-4 w-4" />
+                    {p.score} {t('pts')}
+                  </span>
+                )}
+                <span className="rounded-xl bg-sky-500/20 px-3 py-1 text-sky-300">
+                  {t('lvlProgress', { done: p.levels_completed, total: totalLevels })}
+                </span>
+                {p.best_level_ms != null && (
+                  <span className="rounded-xl bg-emerald-500/20 px-2.5 py-1 text-xs text-emerald-300">
+                    ⚡ {formatDuration(Math.round(p.best_level_ms / 1000))}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Honor Roll Ranks 4 - 15 */}
+      {rest.length > 0 && (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
+          {rest.map((p, idx) => {
+            const rank = idx + 4;
+            const av = avatarForPlayer(p.id);
+            return (
+              <div
+                key={p.id}
+                className={cn(
+                  'flex items-center justify-between rounded-2xl border p-3',
+                  dark ? 'border-slate-800 bg-slate-900/85' : 'border-slate-200 bg-white',
+                )}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-black text-sky-300">
+                    #{rank}
+                  </span>
+                  <RobotIllustration styleName={av.style} color={av.color} size={40} state="idle" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-extrabold">{p.name}</p>
+                    {showSchool && <p className="truncate text-xs opacity-65">{p.school}</p>}
+                  </div>
+                </div>
+                <div className="text-right shrink-0 ml-2">
+                  {showScores && (
+                    <p className="text-sm font-black text-amber-400">
+                      {p.score} {t('pts')}
+                    </p>
+                  )}
+                  <p className="text-[11px] font-bold text-sky-400">
+                    {t('lvlProgress', { done: p.levels_completed, total: totalLevels })}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

@@ -41,7 +41,14 @@ Deno.serve(
       throw new HttpError(403, 'LEVEL_LOCKED');
     }
 
-    const outcome = evaluateSubmission(level.mission, body.program, cfg.blocks);
+    const missionWithAllBlocks = {
+      ...level.mission,
+      rules: {
+        ...level.mission.rules,
+        allowed_commands: cfg.blocks.filter((b) => b.enabled).map((b) => b.command_type),
+      },
+    };
+    const outcome = evaluateSubmission(missionWithAllBlocks, body.program, cfg.blocks);
     if (outcome.status === 'INVALID') {
       // Nothing ran, so it does not count as an attempt.
       return { accepted: true, status: 'INVALID', issues: outcome.issues, server_now: new Date().toISOString() };
@@ -101,6 +108,8 @@ Deno.serve(
           result,
           score: { awarded: 0, total: applied.total_score },
           levels_completed: applied.levels_completed,
+          hearts_remaining: applied.hearts_remaining,
+          out_of_hearts: Boolean(applied.out_of_hearts),
           server_now: new Date().toISOString(),
         };
       }
@@ -122,6 +131,18 @@ Deno.serve(
         }
       } else {
         events.push({ type: 'PLAYER_COMPILE_FAILED', ...base, payload: { level_index, code: result.failure?.code ?? 'UNKNOWN' } });
+        if (applied.out_of_hearts) {
+          events.push({
+            type: 'PLAYER_FINISHED',
+            ...base,
+            payload: {
+              reason: 'OUT_OF_HEARTS',
+              score: applied.total_score,
+              levels_completed: applied.levels_completed,
+              name: player.display_name,
+            },
+          });
+        }
       }
       await emitEvents(events);
 
@@ -136,6 +157,8 @@ Deno.serve(
         player_status: applied.player_status,
         expires_at: applied.expires_at,
         finished: applied.finished,
+        out_of_hearts: Boolean(applied.out_of_hearts),
+        hearts_remaining: applied.hearts_remaining,
         server_now: new Date().toISOString(),
       };
     }

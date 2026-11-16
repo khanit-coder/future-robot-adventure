@@ -67,5 +67,13 @@
       "TOO_MANY_BLOCKS": "Too many blocks! Maximum allowed is {{max}}.",
       "MISSING_REQUIRED": "This mission requires using the {{command}} block."
     }
+  },
+  "realCode": {
+    "title": "How This Program Looks in Real Coding Languages",
+    "subtitle": "The visual blocks you arranged translate directly into real-world programming languages used by software engineers and robotics developers!",
+    "viewBtn": "View Real Code",
+    "viewAllBtn": "Compare All 4 Languages",
+    "copy": "Copy",
+    "copied": "Copied!"
   }
 }

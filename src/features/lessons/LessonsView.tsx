@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Play, Rocket, Sparkles } from 'lucide-react';
+import { BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Home, Play, Rocket, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Command, CommandType } from '@engine';
 import { Button } from '@/components/ui/button';
@@ -39,6 +39,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
   const markLessonsStarted = usePlayerStore((s) => s.markLessonsStarted);
   const startGame = usePlayerStore((s) => s.startGame);
   const setShowLessonReview = usePlayerStore((s) => s.setShowLessonReview);
+  const resetToHome = usePlayerStore((s) => s.resetToHome);
 
   const lessons = useMemo(
     () => [...(config?.lessons ?? [])].sort((a, b) => a.position - b.position),
@@ -162,9 +163,14 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
           </div>
 
           <div className="flex items-center gap-2">
-            {reviewMode && (
+            {reviewMode ? (
               <Button variant="outline" size="sm" onClick={() => setShowLessonReview(false)}>
                 {t('common:app.back')}
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" onClick={() => void resetToHome()}>
+                <Home className="h-4 w-4 text-indigo-600" />
+                {t('common:app.home')}
               </Button>
             )}
             {!reviewMode && canSkip && (

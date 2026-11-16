@@ -46,6 +46,8 @@ export interface SubmitSolutionResponse {
   player_status?: PlayerSessionRow['status'];
   expires_at?: string | null;
   finished?: boolean;
+  out_of_hearts?: boolean;
+  hearts_remaining?: number;
   server_now?: string;
 }
 

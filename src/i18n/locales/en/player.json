@@ -41,15 +41,25 @@
     "lessonsBtn": "Lessons",
     "levelMapBtn": "Missions",
     "finishGame": "Finish & View Results",
+    "finishWarningBadge": "CRITICAL WARNING",
+    "finishWarningHeadline": "STOP! Are you sure you want to end the game right now?",
     "finishConfirmTitle": "Finish the Adventure Early?",
-    "finishConfirmDesc": "You still have levels remaining. If you finish now, your current score will be final.",
-    "finishConfirmBtn": "Yes, Finish Now",
+    "finishConfirmDesc": "WARNING: If you press Finish now, your game will immediately end, you cannot play any remaining levels, and your current score will be permanently locked!",
+    "finishConfirmBtn": "Yes, End Game Now",
+    "heartsLabel": "Hearts left: {{count}} / {{max}}",
+    "heartLostNote": "Lost 1 Heart! {{count}} left",
+    "gameOverTitle": "Out of Hearts! Game Over",
+    "gameOverDesc": "You have used all 5 hearts across the missions! Let's check your final score and download your achievement card.",
+    "gameOverBtn": "View Final Results & Card",
+    "homeConfirmTitle": "Return to Main Menu?",
+    "homeConfirmDesc": "Returning to the main registration screen will switch to a new player session.",
     "newConfigBanner": "A new level update is available for new players. Your active game stays safely on v{{version}}."
   },
   "results": {
     "titleCompleted": "Mission Accomplished!",
     "titleExpired": "Time's Up!",
     "titleFinished": "Adventure Complete!",
+    "titleOutOfHearts": "Game Over — Out of Hearts!",
     "subtitle": "Awesome coding work, {{name}}!",
     "totalScore": "Final Score",
     "levelsDone": "Levels Solved",
@@ -74,6 +84,13 @@
       "CLAIMED": "Claimed",
       "AVAILABLE": "Available",
       "OUT_OF_STOCK": "Out of Stock"
+    },
+    "shareCard": {
+      "badge": "Scan with Mobile Phone",
+      "title": "Scan QR Code to Download Your Social Media Card!",
+      "desc": "Use your smartphone camera or LINE QR scanner to download your personalized achievement card onto your phone and share it on Facebook, Instagram, or TikTok!",
+      "downloadBtn": "Download Card Image (PNG)",
+      "socialHint": "Ready to post on Social Media!"
     }
   }
 }
