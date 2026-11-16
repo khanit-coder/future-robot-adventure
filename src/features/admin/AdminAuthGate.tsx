@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input, Label } from '@/components/ui/input';
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
-import { RobotIllustration } from '@/components/common/RobotIllustration';
+import { FullPageLoading } from '@/components/common/LoadingSpinner';
 import { adminApi } from '@/services/api/adminApi';
 import { getSupabase } from '@/services/supabase/client';
 
@@ -69,12 +69,7 @@ export function AdminAuthGate({
   };
 
   if (checking) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-slate-50">
-        <RobotIllustration state="idle" size={88} />
-        <p className="text-sm font-semibold text-slate-500">{t('common:app.loading')}</p>
-      </div>
-    );
+    return <FullPageLoading message={t('common:app.loading')} />;
   }
 
   if (admin) {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Rocket, School, Sparkles, User, GraduationCap, AlertCircle, Lock } from 'lucide-react';
+import { Rocket, School, Sparkles, User, GraduationCap, AlertCircle, Lock, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Lang } from '@engine';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input, Label } from '@/components/ui/input';
 import { FullscreenButton } from '@/components/common/FullscreenButton';
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
+import { SoundToggle } from '@/components/common/SoundToggle';
 import { RobotIllustration } from '@/components/common/RobotIllustration';
+import { useFullscreen } from '@/hooks/useFullscreen';
+import { cn } from '@/utils/cn';
 import { ApiError } from '@/services/api/edge';
 import { useAppStore } from '@/stores/appStore';
 import { usePlayerStore } from '@/stores/playerStore';
@@ -16,6 +19,7 @@ import { currentLang } from '@/i18n/config';
 
 export function RegistrationView() {
   const { t, i18n } = useTranslation(['player', 'common']);
+  const { isFullscreen } = useFullscreen();
   const settings = useAppStore((s) => s.settings);
   const activeSession = useAppStore((s) => s.activeSession);
   const register = usePlayerStore((s) => s.register);
@@ -74,8 +78,18 @@ export function RegistrationView() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-900 text-white">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+    <div
+      className={cn(
+        'bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-900 text-white flex flex-col justify-between',
+        isFullscreen ? 'h-screen overflow-hidden' : 'min-h-screen',
+      )}
+    >
+      <header
+        className={cn(
+          'flex items-center justify-between px-4 shrink-0',
+          isFullscreen ? 'w-full max-w-[1400px] mx-auto py-3' : 'mx-auto max-w-6xl py-4',
+        )}
+      >
         <div className="flex items-center gap-3">
           {settings?.college_logo_url && (
             <img
@@ -93,12 +107,20 @@ export function RegistrationView() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <SoundToggle dark />
           <FullscreenButton dark />
           <LanguageSwitcher dark />
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-6xl items-center gap-8 px-4 pb-12 pt-4 lg:grid-cols-12">
+      <main
+        className={cn(
+          'items-center gap-8 px-4',
+          isFullscreen
+            ? 'flex-1 min-h-0 overflow-y-auto grid lg:grid-cols-12 max-w-[1400px] mx-auto py-4'
+            : 'mx-auto grid max-w-6xl pb-12 pt-4 lg:grid-cols-12',
+        )}
+      >
         {/* Hero side */}
         <div className="space-y-6 lg:col-span-6">
           <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-500/15 px-3.5 py-1.5 text-xs font-bold text-sky-200">
@@ -233,7 +255,11 @@ export function RegistrationView() {
                     className="w-full text-base"
                     data-testid="register-submit"
                   >
-                    <Rocket className="h-5 w-5" />
+                    {submitting ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <Rocket className="h-5 w-5" />
+                    )}
                     {submitting ? t('player:welcome.submitting') : t('player:welcome.submit')}
                   </Button>
                 </form>

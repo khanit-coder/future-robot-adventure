@@ -4,6 +4,7 @@ import type { BlockDefinition, Command, CommandType, Lang } from '@engine';
 import { refreshWorkspaceBlockLabels, registerRobotBlocks } from '@/blockly/blocks/robotBlocks';
 import { workspaceToCommands } from '@/blockly/generators/jsonGenerator';
 import { buildBlocklyToolbox } from '@/blockly/toolbox/buildToolbox';
+import { sfx } from '@/services/audio/soundEffects';
 
 interface BlocklyEditorProps {
   workspaceKey: string;
@@ -98,6 +99,12 @@ export function BlocklyEditor({
 
     const listener = (ev: Blockly.Events.Abstract) => {
       if (ev.isUiEvent) return;
+      if (ev.type === Blockly.Events.BLOCK_MOVE) {
+        const moveEv = ev as Blockly.Events.BlockMove;
+        if (moveEv.newParentId) {
+          sfx.playSnap();
+        }
+      }
       emit();
     };
     workspace.addChangeListener(listener);

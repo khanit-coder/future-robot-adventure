@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RobotIllustration } from '@/components/common/RobotIllustration';
+import { FullPageLoading } from '@/components/common/LoadingSpinner';
 import { subscribeLiveChannel } from '@/services/realtime/liveChannel';
 import { useAppStore } from '@/stores/appStore';
 import { usePlayerStore } from '@/stores/playerStore';
@@ -43,12 +43,7 @@ export function PlayerPage() {
   }, [player, loadGlobal, refreshState]);
 
   if (!bootstrapped) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-slate-50">
-        <RobotIllustration state="idle" size={96} />
-        <p className="text-sm font-semibold text-slate-500">{t('app.loading')}</p>
-      </div>
-    );
+    return <FullPageLoading message={t('app.loading')} />;
   }
 
   if (!player || !playerSession || !config) {

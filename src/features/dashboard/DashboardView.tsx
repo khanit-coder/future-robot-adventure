@@ -16,6 +16,8 @@ import { useTranslation } from 'react-i18next';
 import type { DashboardMode, DashboardSettingsRow, GameEvent, GameSettingsRow } from '@engine';
 import { FullscreenButton } from '@/components/common/FullscreenButton';
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
+import { SoundToggle } from '@/components/common/SoundToggle';
+import { useFullscreen } from '@/hooks/useFullscreen';
 import { RobotIllustration, type RobotVisualState } from '@/components/common/RobotIllustration';
 import { currentLang } from '@/i18n/config';
 import type { DashboardPlayer, DashboardSnapshot } from '@/services/api/publicApi';
@@ -64,6 +66,7 @@ export function DashboardView({
 }: DashboardViewProps) {
   const { t } = useTranslation(['dashboard', 'common']);
   const lang = currentLang();
+  const { isFullscreen } = useFullscreen();
   const fallbackLang = settings?.default_language ?? 'en';
 
   const configuredMode: DashboardMode = dashSettings?.mode ?? 'GRID';
@@ -132,7 +135,11 @@ export function DashboardView({
 
   return (
     <div
-      className={cn('flex min-h-screen flex-col justify-between bg-cover bg-center p-4 lg:p-6', themeClass)}
+      className={cn(
+        'flex flex-col justify-between bg-cover bg-center',
+        isFullscreen ? 'h-screen overflow-hidden p-3 sm:p-4' : 'min-h-screen p-4 lg:p-6',
+        themeClass,
+      )}
       style={
         dashSettings?.background_url ? { backgroundImage: `url(${dashSettings.background_url})` } : undefined
       }
@@ -140,7 +147,8 @@ export function DashboardView({
       {/* Top Header */}
       <header
         className={cn(
-          'flex flex-wrap items-center justify-between gap-4 rounded-2xl border px-5 py-3.5',
+          'flex flex-wrap items-center justify-between gap-4 rounded-2xl border shrink-0',
+          isFullscreen ? 'px-4 py-2' : 'px-5 py-3.5',
           dark ? 'border-slate-800 bg-slate-900/90' : 'border-slate-200 bg-white/95 shadow-xs',
         )}
       >
@@ -251,13 +259,14 @@ export function DashboardView({
                 : t('dashboard:offline')}
           </div>
 
+          <SoundToggle dark={dark} />
           <FullscreenButton dark={dark} />
           <LanguageSwitcher dark={dark} />
         </div>
       </header>
 
       {/* Main Display Area */}
-      <main className="my-4 flex-1">
+      <main className={cn('my-3 flex-1', isFullscreen && 'min-h-0 overflow-y-auto')}>
         {players.length === 0 ? (
           <div className="flex h-72 flex-col items-center justify-center rounded-3xl border border-dashed border-slate-700/60 p-8 text-center">
             <RobotIllustration state="wave" size={110} />

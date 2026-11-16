@@ -29,7 +29,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input, Label } from '@/components/ui/input';
 import { toast } from '@/stores/toastStore';
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
-import { RobotIllustration } from '@/components/common/RobotIllustration';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ApiError } from '@/services/api/edge';
 import { adminApi } from '@/services/api/adminApi';
 import { subscribeLiveChannel } from '@/services/realtime/liveChannel';
@@ -245,9 +245,8 @@ function AdminShell({ adminEmail, onSignOut }: { adminEmail: string; onSignOut: 
 
         <main className="flex-1 p-5 overflow-y-auto">
           {!data ? (
-            <div className="flex h-64 flex-col items-center justify-center gap-3">
-              <RobotIllustration state="idle" size={84} />
-              <p className="text-sm font-semibold text-slate-500">{t('common:app.loading')}</p>
+            <div className="flex h-64 flex-col items-center justify-center">
+              <LoadingSpinner size="lg" message={t('common:app.loading')} />
             </div>
           ) : (
             <ModuleBody id={moduleId} data={data} reload={reload} />

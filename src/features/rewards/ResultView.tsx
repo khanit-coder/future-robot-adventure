@@ -20,7 +20,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { FullscreenButton } from '@/components/common/FullscreenButton';
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
+import { SoundToggle } from '@/components/common/SoundToggle';
 import { RobotIllustration } from '@/components/common/RobotIllustration';
+import { useFullscreen } from '@/hooks/useFullscreen';
+import { sfx } from '@/services/audio/soundEffects';
+import { cn } from '@/utils/cn';
 import { toast } from '@/stores/toastStore';
 import { currentLang } from '@/i18n/config';
 import { playerApi } from '@/services/api/playerApi';
@@ -42,6 +46,7 @@ const AUTO_RETURN_SECONDS = 120;
 export function ResultView() {
   const { t } = useTranslation(['player', 'common']);
   const lang = currentLang();
+  const { isFullscreen } = useFullscreen();
   const settings = useAppStore((s) => s.settings);
   const player = usePlayerStore((s) => s.player)!;
   const playerSession = usePlayerStore((s) => s.playerSession)!;
@@ -56,8 +61,10 @@ export function ResultView() {
   const [cardImageUrl, setCardImageUrl] = useState<string>('');
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [autoReturnLeft, setAutoReturnLeft] = useState<number>(AUTO_RETURN_SECONDS);
+  const [isTimerPaused, setIsTimerPaused] = useState<boolean>(false);
 
   useEffect(() => {
+    if (isTimerPaused) return;
     const timer = window.setInterval(() => {
       setAutoReturnLeft((prev) => {
         if (prev <= 1) {
@@ -69,7 +76,7 @@ export function ResultView() {
       });
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [resetToHome]);
+  }, [resetToHome, isTimerPaused]);
 
   const fallbackLang = settings?.default_language ?? 'en';
   const rewardsEnabled = settings?.rewards_enabled ?? config.settings.rewards_enabled;
@@ -82,6 +89,14 @@ export function ResultView() {
   const isOutOfHearts =
     heartsRemaining === 0 && playerSession.levels_completed < config.levels.length;
 
+  useEffect(() => {
+    if (isOutOfHearts) {
+      sfx.playHeartLost();
+    } else {
+      sfx.playSuccess();
+    }
+  }, [isOutOfHearts]);
+
   const shareCardData: ShareCardData = useMemo(
     () => ({
       name: player.display_name,
@@ -92,6 +107,12 @@ export function ResultView() {
       heartsRemaining,
       lang,
       dateStr: new Date().toLocaleDateString(lang === 'th' ? 'th-TH' : 'en-US'),
+      collegeName: settings ? pickLocalized(settings.college_name, lang, fallbackLang) : undefined,
+      facultyName: settings ? pickLocalized(settings.event_title, lang, fallbackLang) : undefined,
+      collegeNameTh: settings?.college_name ? pickLocalized(settings.college_name, 'th', 'th') : undefined,
+      collegeNameEn: settings?.college_name ? pickLocalized(settings.college_name, 'en', 'en') : undefined,
+      facultyNameTh: settings?.event_title ? pickLocalized(settings.event_title, 'th', 'th') : undefined,
+      facultyNameEn: settings?.event_title ? pickLocalized(settings.event_title, 'en', 'en') : undefined,
     }),
     [
       player.display_name,
@@ -101,6 +122,8 @@ export function ResultView() {
       config.levels.length,
       heartsRemaining,
       lang,
+      settings,
+      fallbackLang,
     ],
   );
 
@@ -203,20 +226,46 @@ export function ResultView() {
             {settings ? pickLocalized(settings.game_title, lang, fallbackLang) : t('common:app.title')}
           </span>
         </div>
-        <div className="flex flex-wrap items-center gap-2.5">
-          <div
-            className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400/40 bg-amber-500/15 px-3 py-1.5 text-xs font-extrabold text-amber-300"
-            data-testid="auto-return-countdown"
-          >
-            <Clock className="h-3.5 w-3.5 animate-pulse" />
-            {t('player:results.autoReturnCountdown', { time: formatDuration(autoReturnLeft) })}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setIsTimerPaused((p) => !p)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400/40 bg-amber-500/15 px-3 py-1.5 text-xs font-extrabold text-amber-300 hover:bg-amber-500/25 transition-colors cursor-pointer select-none"
+              data-testid="auto-return-countdown"
+              title={isTimerPaused ? 'คลิกเพื่อให้นับถอยหลังต่อ' : 'คลิกเพื่อหยุดเวลานับถอยหลังชั่วคราว'}
+            >
+              <Clock className={cn('h-3.5 w-3.5', !isTimerPaused && 'animate-pulse')} />
+              <span>
+                {isTimerPaused
+                  ? (lang === 'th' ? `⏸️ หยุดเวลา (${formatDuration(autoReturnLeft)})` : `⏸️ Paused (${formatDuration(autoReturnLeft)})`)
+                  : t('player:results.autoReturnCountdown', { time: formatDuration(autoReturnLeft) })}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAutoReturnLeft((prev) => prev + 120);
+                toast('info', lang === 'th' ? 'เพิ่มเวลาอีก 2 นาทีเรียบร้อย' : 'Added +2 minutes');
+              }}
+              className="rounded-xl border border-amber-400/30 bg-amber-500/10 px-2 py-1.5 text-xs font-bold text-amber-200 hover:bg-amber-500/20 transition-colors cursor-pointer select-none"
+              title={lang === 'th' ? 'ขอเวลาเพิ่มอีก 2 นาที' : 'Add 2 minutes'}
+            >
+              +2m
+            </button>
           </div>
+          <SoundToggle dark />
           <FullscreenButton dark />
           <LanguageSwitcher dark />
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-6 px-4 pb-16 pt-2">
+      <main
+        className={cn(
+          'mx-auto space-y-6 px-4 pb-16 pt-2',
+          isFullscreen ? 'w-full max-w-[1300px] px-6' : 'max-w-5xl',
+        )}
+      >
         <Card className="border-slate-800 bg-slate-900/90 text-white shadow-2xl">
           <CardContent className="flex flex-col items-center p-8 text-center">
             <RobotIllustration

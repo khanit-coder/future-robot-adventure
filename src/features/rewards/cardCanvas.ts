@@ -9,6 +9,12 @@ export interface ShareCardData {
   heartsRemaining?: number;
   lang: Lang;
   dateStr?: string;
+  collegeName?: string;
+  facultyName?: string;
+  collegeNameTh?: string;
+  collegeNameEn?: string;
+  facultyNameTh?: string;
+  facultyNameEn?: string;
 }
 
 export const COLLEGE_NAME_TH = 'วิทยาลัยเทคโนโลยีขอนแก่น P-TECH';
@@ -30,6 +36,12 @@ export function buildCardDownloadUrl(data: ShareCardData, forceCurrentOrigin = f
   if (data.dateStr) {
     params.set('dt', data.dateStr);
   }
+  if (data.collegeName) params.set('col', data.collegeName);
+  if (data.facultyName) params.set('fac', data.facultyName);
+  if (data.collegeNameTh) params.set('colTh', data.collegeNameTh);
+  if (data.collegeNameEn) params.set('colEn', data.collegeNameEn);
+  if (data.facultyNameTh) params.set('facTh', data.facultyNameTh);
+  if (data.facultyNameEn) params.set('facEn', data.facultyNameEn);
 
   let origin = 'https://future-robot-adventure.pages.dev';
   if (typeof window !== 'undefined') {
@@ -53,6 +65,12 @@ export function parseCardParams(search: string): ShareCardData {
   const heartsRemaining = hpRaw !== null ? Math.max(0, Math.min(5, parseInt(hpRaw, 10) || 0)) : undefined;
   const lang: Lang = p.get('lg') === 'en' ? 'en' : 'th';
   const dateStr = p.get('dt') || new Date().toLocaleDateString(lang === 'th' ? 'th-TH' : 'en-US');
+  const collegeName = p.get('col') || undefined;
+  const facultyName = p.get('fac') || undefined;
+  const collegeNameTh = p.get('colTh') || undefined;
+  const collegeNameEn = p.get('colEn') || undefined;
+  const facultyNameTh = p.get('facTh') || undefined;
+  const facultyNameEn = p.get('facEn') || undefined;
 
   return {
     name,
@@ -63,6 +81,12 @@ export function parseCardParams(search: string): ShareCardData {
     heartsRemaining,
     lang,
     dateStr,
+    collegeName,
+    facultyName,
+    collegeNameTh,
+    collegeNameEn,
+    facultyNameTh,
+    facultyNameEn,
   };
 }
 
@@ -142,7 +166,7 @@ export function renderShareCardToDataUrl(data: ShareCardData): string {
     ctx.fill();
   }
 
-  // 4. Outer futuristic frame border
+  // 4. Outer futuristic frame border with cyber corner accents
   drawRoundedRect(ctx, 36, 36, W - 72, H - 72, 44);
   ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
   ctx.lineWidth = 4;
@@ -153,64 +177,114 @@ export function renderShareCardToDataUrl(data: ShareCardData): string {
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // 5. Top College & Faculty Header Banner
-  drawRoundedRect(ctx, 84, 82, W - 168, 162, 28);
-  const headerGrad = ctx.createLinearGradient(84, 82, W - 84, 244);
-  headerGrad.addColorStop(0, 'rgba(30, 41, 59, 0.92)');
+  // Cyber corner bracket accents ⌜ ⌝ ⌞ ⌟
+  const cornerLen = 28;
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  // Top-left
+  ctx.beginPath();
+  ctx.moveTo(36, 36 + cornerLen);
+  ctx.lineTo(36, 36);
+  ctx.lineTo(36 + cornerLen, 36);
+  ctx.stroke();
+  // Top-right
+  ctx.beginPath();
+  ctx.moveTo(W - 36 - cornerLen, 36);
+  ctx.lineTo(W - 36, 36);
+  ctx.lineTo(W - 36, 36 + cornerLen);
+  ctx.stroke();
+  // Bottom-left
+  ctx.beginPath();
+  ctx.moveTo(36, H - 36 - cornerLen);
+  ctx.lineTo(36, H - 36);
+  ctx.lineTo(36 + cornerLen, H - 36);
+  ctx.stroke();
+  // Bottom-right
+  ctx.beginPath();
+  ctx.moveTo(W - 36 - cornerLen, H - 36);
+  ctx.lineTo(W - 36, H - 36);
+  ctx.lineTo(W - 36, H - 36 - cornerLen);
+  ctx.stroke();
+  ctx.lineCap = 'butt';
+
+  // 5. Top College & Faculty Header Banner (Concise, punchy, high-contrast)
+  drawRoundedRect(ctx, 76, 76, W - 152, 148, 26);
+  const headerGrad = ctx.createLinearGradient(76, 76, W - 76, 224);
+  headerGrad.addColorStop(0, 'rgba(15, 23, 42, 0.95)');
   headerGrad.addColorStop(0.5, 'rgba(49, 46, 129, 0.92)');
-  headerGrad.addColorStop(1, 'rgba(30, 41, 59, 0.92)');
+  headerGrad.addColorStop(1, 'rgba(15, 23, 42, 0.95)');
   ctx.fillStyle = headerGrad;
   ctx.fill();
   ctx.strokeStyle = '#38bdf8';
   ctx.lineWidth = 2.5;
   ctx.stroke();
 
+  const collegeTh = data.collegeNameTh || (data.lang === 'th' && data.collegeName ? data.collegeName : COLLEGE_NAME_TH);
+  const collegeEn = data.collegeNameEn || (data.lang === 'en' && data.collegeName ? data.collegeName : COLLEGE_NAME_EN);
+  const facultyTh = data.facultyNameTh || (data.lang === 'th' && data.facultyName ? data.facultyName : FACULTY_NAME_TH);
+  const facultyEn = data.facultyNameEn || (data.lang === 'en' && data.facultyName ? data.facultyName : FACULTY_NAME_EN);
+
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#fde047';
-  ctx.font = '800 36px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
-  ctx.fillText(COLLEGE_NAME_TH, W / 2, 145);
+  // College Title
+  ctx.fillStyle = '#facc15';
+  ctx.font = '800 38px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
+  ctx.fillText(data.lang === 'th' ? collegeTh : collegeEn, W / 2, 134);
 
+  // Faculty Title
   ctx.fillStyle = '#38bdf8';
-  ctx.font = '700 30px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
-  ctx.fillText(FACULTY_NAME_TH, W / 2, 192);
+  ctx.font = '700 28px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
+  ctx.fillText(data.lang === 'th' ? facultyTh : facultyEn, W / 2, 185);
 
-  ctx.fillStyle = '#cbd5e1';
-  ctx.font = '600 19px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
-  ctx.fillText(`${COLLEGE_NAME_EN} • ${FACULTY_NAME_EN}`, W / 2, 226);
-
-  // 6. Game Title & Badge
+  // 6. Game Title & Achievement Badge
+  ctx.save();
+  ctx.shadowColor = 'rgba(56, 189, 248, 0.6)';
+  ctx.shadowBlur = 18;
   ctx.fillStyle = '#ffffff';
-  ctx.font = '900 48px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
-  ctx.fillText('FUTURE ROBOT ADVENTURE', W / 2, 315);
+  ctx.font = '900 52px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
+  ctx.fillText('FUTURE ROBOT ADVENTURE', W / 2, 280);
+  ctx.restore();
 
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '600 24px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
+  // Achievement Badge Pill
+  const badgeW = 560;
+  const badgeH = 42;
+  const badgeX = (W - badgeW) / 2;
+  const badgeY = 305;
+  drawRoundedRect(ctx, badgeX, badgeY, badgeW, badgeH, 21);
+  ctx.fillStyle = 'rgba(250, 204, 21, 0.16)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(250, 204, 21, 0.65)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.fillStyle = '#fde047';
+  ctx.font = '800 21px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
   ctx.fillText(
     data.lang === 'th'
-      ? 'เกียรติบัตรผู้พิชิตภารกิจเขียนโค้ดหุ่นยนต์แห่งอนาคต'
-      : ' Robot Coding Mission Achievement Card ',
+      ? '🏅 เกียรติบัตรสุดยอดนักโค้ดดิ้งหุ่นยนต์ 🏅'
+      : '🏅 CERTIFICATE OF CODING EXCELLENCE 🏅',
     W / 2,
-    355,
+    badgeY + 28,
   );
 
-  // 7. Center Robot Illustration Emblem
+  // 7. Center Robot Illustration Emblem & Rank Badge
   const rcx = W / 2;
-  const rcy = 500;
+  const rcy = 445;
 
   // Glowing ring behind robot
-  const ringGrad = ctx.createRadialGradient(rcx, rcy, 30, rcx, rcy, 125);
+  const ringGrad = ctx.createRadialGradient(rcx, rcy, 25, rcx, rcy, 115);
   ringGrad.addColorStop(0, 'rgba(56, 189, 248, 0.45)');
-  ringGrad.addColorStop(0.7, 'rgba(99, 102, 241, 0.2)');
+  ringGrad.addColorStop(0.7, 'rgba(99, 102, 241, 0.25)');
   ringGrad.addColorStop(1, 'rgba(99, 102, 241, 0)');
   ctx.fillStyle = ringGrad;
   ctx.beginPath();
-  ctx.arc(rcx, rcy, 125, 0, Math.PI * 2);
+  ctx.arc(rcx, rcy, 115, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.strokeStyle = '#38bdf8';
   ctx.lineWidth = 4;
   ctx.beginPath();
-  ctx.arc(rcx, rcy, 98, 0, Math.PI * 2);
+  ctx.arc(rcx, rcy, 90, 0, Math.PI * 2);
   ctx.stroke();
 
   // Draw Cute Robot inside emblem
@@ -220,140 +294,234 @@ export function renderShareCardToDataUrl(data: ShareCardData): string {
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 5;
   ctx.beginPath();
-  ctx.moveTo(0, -56);
-  ctx.lineTo(0, -82);
+  ctx.moveTo(0, -52);
+  ctx.lineTo(0, -78);
   ctx.stroke();
   ctx.fillStyle = '#facc15';
   ctx.beginPath();
-  ctx.arc(0, -86, 10, 0, Math.PI * 2);
+  ctx.arc(0, -82, 10, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
   // Head
-  drawRoundedRect(ctx, -46, -56, 92, 62, 18);
+  drawRoundedRect(ctx, -44, -52, 88, 60, 18);
   ctx.fillStyle = '#38bdf8';
   ctx.fill();
   ctx.stroke();
   // Visor
-  drawRoundedRect(ctx, -34, -44, 68, 34, 10);
+  drawRoundedRect(ctx, -32, -40, 64, 32, 10);
   ctx.fillStyle = '#0f172a';
   ctx.fill();
   // Happy eyes
   ctx.fillStyle = '#4ade80';
   ctx.beginPath();
-  ctx.arc(-15, -27, 7, 0, Math.PI * 2);
-  ctx.arc(15, -27, 7, 0, Math.PI * 2);
+  ctx.arc(-14, -24, 7, 0, Math.PI * 2);
+  ctx.arc(14, -24, 7, 0, Math.PI * 2);
   ctx.fill();
   // Body
-  drawRoundedRect(ctx, -38, 10, 76, 46, 14);
+  drawRoundedRect(ctx, -36, 12, 72, 44, 14);
   ctx.fillStyle = '#38bdf8';
   ctx.fill();
   ctx.stroke();
   // Chest core
   ctx.fillStyle = '#fde047';
   ctx.beginPath();
-  ctx.arc(0, 33, 11, 0, Math.PI * 2);
+  ctx.arc(0, 34, 11, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
-  // 8. Student Name & School Card Box
-  drawRoundedRect(ctx, 84, 635, W - 168, 255, 32);
-  ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+  // Coder Rank Badge (ลูกเล่นฉายานักพัฒนา)
+  let rankText = '⭐ ระดับ: นักโค้ดดาวรุ่ง (RISING STAR)';
+  let rankColor = '#4ade80';
+  let rankBg = 'rgba(74, 222, 128, 0.16)';
+  let rankBorder = 'rgba(74, 222, 128, 0.65)';
+
+  if (data.score >= 1200 || data.levelsCompleted >= data.totalLevels) {
+    rankText = data.lang === 'th' ? '🏆 ระดับ: ปรมาจารย์โค้ดดิ้ง (MASTER)' : '🏆 RANK: CODING MASTER';
+    rankColor = '#facc15';
+    rankBg = 'rgba(250, 204, 21, 0.18)';
+    rankBorder = 'rgba(250, 204, 21, 0.7)';
+  } else if (data.score >= 600 || data.levelsCompleted >= Math.ceil(data.totalLevels / 2)) {
+    rankText = data.lang === 'th' ? '🚀 ระดับ: ยอดนักโค้ดมือโปร (PRO)' : '🚀 RANK: PRO CODER';
+    rankColor = '#38bdf8';
+    rankBg = 'rgba(56, 189, 248, 0.18)';
+    rankBorder = 'rgba(56, 189, 248, 0.7)';
+  } else {
+    rankText = data.lang === 'th' ? '⭐ ระดับ: นักโค้ดดาวรุ่ง (RISING STAR)' : '⭐ RANK: RISING STAR';
+  }
+
+  const rankW = 440;
+  const rankH = 42;
+  const rankX = (W - rankW) / 2;
+  const rankY = 562;
+  drawRoundedRect(ctx, rankX, rankY, rankW, rankH, 21);
+  ctx.fillStyle = rankBg;
+  ctx.fill();
+  ctx.strokeStyle = rankBorder;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.fillStyle = rankColor;
+  ctx.font = '800 20px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
+  ctx.fillText(rankText, W / 2, rankY + 28);
+
+  // 8. Student Name & School Card Box (Enlarged, high-contrast, prestigious)
+  const studentBoxY = 626;
+  const studentBoxH = 265;
+  drawRoundedRect(ctx, 76, studentBoxY, W - 152, studentBoxH, 32);
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.94)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(250, 204, 21, 0.7)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Inner cyber ticks in student box
+  ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(96, studentBoxY + 36);
+  ctx.lineTo(96, studentBoxY + 20);
+  ctx.lineTo(112, studentBoxY + 20);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(W - 96, studentBoxY + 36);
+  ctx.lineTo(W - 96, studentBoxY + 20);
+  ctx.lineTo(W - 112, studentBoxY + 20);
+  ctx.stroke();
+  ctx.lineCap = 'butt';
+
+  // Label
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '700 22px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
+  ctx.fillText(
+    data.lang === 'th' ? 'ชื่อผู้เข้าร่วมภารกิจ / STUDENT NAME' : 'STUDENT NAME',
+    W / 2,
+    studentBoxY + 52,
+  );
+
+  // Big Student Name
+  ctx.save();
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '900 66px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
+  ctx.shadowColor = 'rgba(255, 255, 255, 0.35)';
+  ctx.shadowBlur = 10;
+  ctx.fillText(truncateText(ctx, data.name, W - 220), W / 2, studentBoxY + 130);
+  ctx.restore();
+
+  // School Pill
+  const schoolPillY = studentBoxY + 165;
+  const schoolPillH = 72;
+  const schoolPillW = W - 240;
+  const schoolPillX = (W - schoolPillW) / 2;
+  drawRoundedRect(ctx, schoolPillX, schoolPillY, schoolPillW, schoolPillH, 20);
+  ctx.fillStyle = 'rgba(56, 189, 248, 0.16)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  ctx.fillStyle = '#7dd3fc';
+  ctx.font = '700 32px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
+  const schoolLabel = data.lang === 'th' ? `🏫 โรงเรียน: ${data.school}` : `🏫 School: ${data.school}`;
+  ctx.fillText(truncateText(ctx, schoolLabel, schoolPillW - 40), W / 2, schoolPillY + 47);
+
+  // 9. Stats Row (Score & Missions Cleared - Extra Large & Punchy)
+  const boxY = 915;
+  const boxH = 195;
+  const boxW = (W - 152 - 32) / 2;
+
+  // Box 1: Total Score
+  drawRoundedRect(ctx, 76, boxY, boxW, boxH, 28);
+  ctx.fillStyle = 'rgba(30, 41, 59, 0.94)';
   ctx.fill();
   ctx.strokeStyle = 'rgba(250, 204, 21, 0.65)';
   ctx.lineWidth = 3;
   ctx.stroke();
 
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '700 22px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
-  ctx.fillText(
-    data.lang === 'th' ? 'ชื่อนักเรียน / STUDENT NAME' : 'STUDENT NAME',
-    W / 2,
-    685,
+  // Radial score glow
+  const scoreGlow = ctx.createRadialGradient(
+    76 + boxW / 2,
+    boxY + 130,
+    10,
+    76 + boxW / 2,
+    boxY + 130,
+    120,
   );
-
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '900 54px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
-  ctx.fillText(truncateText(ctx, data.name, W - 240), W / 2, 752);
-
-  // School pill
-  drawRoundedRect(ctx, 144, 785, W - 288, 74, 20);
-  ctx.fillStyle = 'rgba(56, 189, 248, 0.16)';
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  ctx.fillStyle = '#7dd3fc';
-  ctx.font = '700 30px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
-  const schoolLabel = data.lang === 'th' ? `โรงเรียน: ${data.school}` : `School: ${data.school}`;
-  ctx.fillText(truncateText(ctx, schoolLabel, W - 330), W / 2, 833);
-
-  // 9. Stats Row (Score, Levels Cleared, Rank Badge)
-  const boxY = 925;
-  const boxH = 185;
-  const boxW = (W - 168 - 36) / 2;
-
-  // Box 1: Total Score
-  drawRoundedRect(ctx, 84, boxY, boxW, boxH, 26);
-  ctx.fillStyle = 'rgba(30, 41, 59, 0.9)';
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(250, 204, 21, 0.5)';
-  ctx.lineWidth = 2.5;
-  ctx.stroke();
+  scoreGlow.addColorStop(0, 'rgba(250, 204, 21, 0.18)');
+  scoreGlow.addColorStop(1, 'rgba(250, 204, 21, 0)');
+  ctx.fillStyle = scoreGlow;
+  ctx.fillRect(76, boxY, boxW, boxH);
 
   ctx.fillStyle = '#fde047';
   ctx.font = '700 24px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
-  ctx.fillText(data.lang === 'th' ? '🏆 คะแนนที่ทำได้ (SCORE)' : '🏆 TOTAL SCORE', 84 + boxW / 2, boxY + 55);
+  ctx.fillText(data.lang === 'th' ? '🏆 คะแนนรวม (SCORE)' : '🏆 TOTAL SCORE', 76 + boxW / 2, boxY + 54);
 
   ctx.fillStyle = '#ffffff';
-  ctx.font = '900 64px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
-  ctx.fillText(`${data.score}`, 84 + boxW / 2, boxY + 138);
+  ctx.font = '900 80px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
+  ctx.fillText(`${data.score}`, 76 + boxW / 2, boxY + 148);
 
   // Box 2: Missions Cleared
-  const box2X = 84 + boxW + 36;
-  drawRoundedRect(ctx, box2X, boxY, boxW, boxH, 26);
-  ctx.fillStyle = 'rgba(30, 41, 59, 0.9)';
+  const box2X = 76 + boxW + 32;
+  drawRoundedRect(ctx, box2X, boxY, boxW, boxH, 28);
+  ctx.fillStyle = 'rgba(30, 41, 59, 0.94)';
   ctx.fill();
-  ctx.strokeStyle = 'rgba(74, 222, 128, 0.5)';
-  ctx.lineWidth = 2.5;
+  ctx.strokeStyle = 'rgba(74, 222, 128, 0.65)';
+  ctx.lineWidth = 3;
   ctx.stroke();
+
+  // Radial missions glow
+  const missionGlow = ctx.createRadialGradient(
+    box2X + boxW / 2,
+    boxY + 130,
+    10,
+    box2X + boxW / 2,
+    boxY + 130,
+    120,
+  );
+  missionGlow.addColorStop(0, 'rgba(74, 222, 128, 0.18)');
+  missionGlow.addColorStop(1, 'rgba(74, 222, 128, 0)');
+  ctx.fillStyle = missionGlow;
+  ctx.fillRect(box2X, boxY, boxW, boxH);
 
   ctx.fillStyle = '#4ade80';
   ctx.font = '700 24px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
   ctx.fillText(
-    data.lang === 'th' ? '🚀 ภารกิจที่สำเร็จ (MISSIONS)' : '🚀 MISSIONS SOLVED',
+    data.lang === 'th' ? '🎯 ภารกิจสำเร็จ (MISSIONS)' : '🎯 MISSIONS SOLVED',
     box2X + boxW / 2,
-    boxY + 55,
+    boxY + 54,
   );
 
   ctx.fillStyle = '#ffffff';
-  ctx.font = '900 64px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
-  ctx.fillText(`${data.levelsCompleted} / ${data.totalLevels}`, box2X + boxW / 2, boxY + 138);
+  ctx.font = '900 80px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
+  ctx.fillText(`${data.levelsCompleted} / ${data.totalLevels}`, box2X + boxW / 2, boxY + 148);
 
-  // 10. Footer Banner
-  drawRoundedRect(ctx, 84, 1145, W - 168, 120, 24);
+  // 10. Footer Banner (Concise, neat, high-tech)
+  const footerY = 1135;
+  const footerH = 125;
+  drawRoundedRect(ctx, 76, footerY, W - 152, footerH, 24);
   ctx.fillStyle = 'rgba(79, 70, 229, 0.28)';
   ctx.fill();
-  ctx.strokeStyle = 'rgba(129, 140, 248, 0.4)';
+  ctx.strokeStyle = 'rgba(129, 140, 248, 0.45)';
   ctx.lineWidth = 2;
   ctx.stroke();
 
   ctx.fillStyle = '#e0e7ff';
-  ctx.font = '700 26px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
+  ctx.font = '800 26px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
   ctx.fillText(
     data.lang === 'th'
-      ? '✨ ขอแสดงความยินดีกับนักเขียนโค้ดรุ่นเยาว์แห่งโลกอนาคต! ✨'
+      ? '✨ ขอแสดงความยินดีกับยอดนักเขียนโค้ดแห่งอนาคต! ✨'
       : '✨ Congratulations, Future Robot Programmer! ✨',
     W / 2,
-    1195,
+    footerY + 52,
   );
 
   ctx.fillStyle = '#93c5fd';
   ctx.font = '600 21px "Plus Jakarta Sans", "Noto Sans Thai", sans-serif';
   ctx.fillText(
-    `#KKTech #PTECH #คณะเทคโนโลยีสารสนเทศ #FutureRobotAdventure • ${data.dateStr ?? ''}`,
+    `#KKTech #PTECH #คณะเทคโนโลยีสารสนเทศ • ${data.dateStr ?? ''}`,
     W / 2,
-    1238,
+    footerY + 95,
   );
 
   return canvas.toDataURL('image/png');

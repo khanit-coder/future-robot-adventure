@@ -4,10 +4,13 @@ import { Download, Share2, Sparkles, Home, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { currentLang } from '@/i18n/config';
 import {
   COLLEGE_NAME_TH,
+  COLLEGE_NAME_EN,
   FACULTY_NAME_TH,
+  FACULTY_NAME_EN,
   parseCardParams,
   renderShareCardToDataUrl,
 } from './cardCanvas';
@@ -62,8 +65,8 @@ export function CardDownloadPage() {
       const file = new File([blob], fileName, { type: 'image/png' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
-          title: 'Future Robot Adventure — P-TECH KKT',
-          text: `${cardData.name} (${cardData.school}) พิชิตภารกิจเขียนโค้ดหุ่นยนต์ที่ ${COLLEGE_NAME_TH} ${FACULTY_NAME_TH}!`,
+          title: 'Future Robot Adventure',
+          text: `${cardData.name} (${cardData.school}) พิชิตภารกิจเขียนโค้ดหุ่นยนต์ที่ ${cardData.collegeNameTh || cardData.collegeName || COLLEGE_NAME_TH} ${cardData.facultyNameTh || cardData.facultyName || FACULTY_NAME_TH}!`,
           files: [file],
         });
         return;
@@ -80,8 +83,16 @@ export function CardDownloadPage() {
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-900 text-white px-4 py-6">
       <header className="mx-auto flex max-w-lg items-center justify-between pb-4">
         <div>
-          <p className="text-xs font-extrabold text-amber-300">{COLLEGE_NAME_TH}</p>
-          <p className="text-xs font-bold text-sky-300">{FACULTY_NAME_TH}</p>
+          <p className="text-xs font-extrabold text-amber-300">
+            {isTh
+              ? cardData.collegeNameTh || cardData.collegeName || COLLEGE_NAME_TH
+              : cardData.collegeNameEn || cardData.collegeName || COLLEGE_NAME_EN}
+          </p>
+          <p className="text-xs font-bold text-sky-300">
+            {isTh
+              ? cardData.facultyNameTh || cardData.facultyName || FACULTY_NAME_TH
+              : cardData.facultyNameEn || cardData.facultyName || FACULTY_NAME_EN}
+          </p>
         </div>
         <LanguageSwitcher dark />
       </header>
@@ -94,13 +105,21 @@ export function CardDownloadPage() {
               {isTh ? 'การ์ดผู้พิชิตภารกิจพร้อมดาวน์โหลด!' : 'Your Achievement Card is Ready!'}
             </div>
 
-            {dataUrl && (
+            {dataUrl ? (
               <div className="overflow-hidden rounded-2xl border-2 border-sky-400/50 shadow-xl">
                 <img
                   src={dataUrl}
                   alt={cardData.name}
                   className="w-full h-auto block"
                   data-testid="share-card-image"
+                />
+              </div>
+            ) : (
+              <div className="flex h-72 flex-col items-center justify-center rounded-2xl border border-slate-800 bg-slate-950 p-6">
+                <LoadingSpinner
+                  size="lg"
+                  message={isTh ? 'กำลังสร้างการ์ดผลงาน...' : 'Generating Achievement Card...'}
+                  dark
                 />
               </div>
             )}

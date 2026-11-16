@@ -14,6 +14,7 @@ import {
   ensureBuiltinRobotSheet,
   registerRobotAnims,
 } from '@/game-engine/animations/proceduralRobot';
+import { sfx } from '@/services/audio/soundEffects';
 
 export interface ScenePlayCallbacks {
   onStep?: (event: TraceEvent, index: number) => void;
@@ -403,9 +404,11 @@ export class MissionScene extends Phaser.Scene {
 
     if (token !== this.playbackToken) return;
     if (result.success) {
+      sfx.playSuccess();
       this.playRobotState(this.completionAnim);
       this.spawnSuccessSparkles();
     } else {
+      sfx.playFail();
       this.playRobotState('fail');
     }
     await this.waitMs(350);
@@ -425,6 +428,7 @@ export class MissionScene extends Phaser.Scene {
 
     switch (ev.kind) {
       case 'move': {
+        sfx.playStep();
         this.playRobotState('walk');
         this.updateDirArrow(ev.dir);
         if (this.robotSprite) {
@@ -474,6 +478,7 @@ export class MissionScene extends Phaser.Scene {
         break;
       }
       case 'jump': {
+        sfx.playJump();
         this.playRobotState('jump');
         this.updateDirArrow(ev.dir);
         if (this.robotSprite) {
@@ -521,6 +526,7 @@ export class MissionScene extends Phaser.Scene {
         break;
       }
       case 'pickup': {
+        sfx.playPickup();
         this.playRobotState('wave');
         const map = ev.item === 'crystal' ? this.crystalNodes : this.friendNodes;
         const node = map.get(ev.index);
@@ -550,6 +556,7 @@ export class MissionScene extends Phaser.Scene {
         break;
       }
       case 'activate': {
+        sfx.playActivate();
         this.playRobotState('wave');
         const node = this.generatorNodes.get(ev.index);
         if (node) {
@@ -566,6 +573,7 @@ export class MissionScene extends Phaser.Scene {
         break;
       }
       case 'bump': {
+        sfx.playFail();
         this.playRobotState('fail');
         const target = this.cellCenter(ev.target);
         const start = { x: this.robotContainer.x, y: this.robotContainer.y };
@@ -580,6 +588,7 @@ export class MissionScene extends Phaser.Scene {
         break;
       }
       case 'fall': {
+        sfx.playFail();
         this.playRobotState('fail');
         await this.tweenPromise({
           targets: this.robotContainer,

@@ -1,38 +1,28 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Home, Play, Rocket, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Command, CommandType } from '@engine';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { FullscreenButton } from '@/components/common/FullscreenButton';
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
+import { SoundToggle } from '@/components/common/SoundToggle';
+import { useFullscreen } from '@/hooks/useFullscreen';
+import { cn } from '@/utils/cn';
 import { MarkdownText } from '@/components/common/MarkdownText';
-import { RobotIllustration, type RobotVisualState } from '@/components/common/RobotIllustration';
-import { localizedBlockLabel } from '@/blockly/toolbox/buildToolbox';
+import { RobotIllustration } from '@/components/common/RobotIllustration';
+import { InteractiveRobotDemo } from './InteractiveRobotDemo';
 import { useAppStore } from '@/stores/appStore';
 import { usePlayerStore } from '@/stores/playerStore';
 import { currentLang } from '@/i18n/config';
 import { pickLocalized } from '@/utils/localize';
 import { toast } from '@/stores/toastStore';
 
-function flattenDemoSteps(cmds: Command[]): { type: CommandType; param?: number }[] {
-  const out: { type: CommandType; param?: number }[] = [];
-  for (const c of cmds) {
-    if (c.type === 'REPEAT' && c.body) {
-      const times = c.times ?? 2;
-      for (let i = 0; i < times; i++) out.push(...flattenDemoSteps(c.body));
-    } else {
-      out.push({ type: c.type, param: c.steps ?? c.seconds ?? c.times });
-    }
-  }
-  return out;
-}
-
 export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
   const { t } = useTranslation(['player', 'common']);
   const lang = currentLang();
+  const { isFullscreen } = useFullscreen();
   const settings = useAppStore((s) => s.settings);
   const config = usePlayerStore((s) => s.config);
   const lessonsDone = usePlayerStore((s) => s.lessonsDone);
@@ -48,14 +38,6 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
   );
   const [index, setIndex] = useState(0);
   const [busy, setBusy] = useState(false);
-  const [demoStep, setDemoStep] = useState<{ lessonId: string; step: number }>({
-    lessonId: '',
-    step: -1,
-  });
-  const [demoRobot, setDemoRobot] = useState<{ lessonId: string; state: RobotVisualState }>({
-    lessonId: '',
-    state: 'idle',
-  });
 
   useEffect(() => {
     if (!reviewMode) {
@@ -71,35 +53,6 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
   const allLessonsCompleted = lessons.every((l) => lessonsDone.includes(l.id));
   const canSkip = Boolean(config?.settings.allow_skip_lessons || !config?.settings.lessons_mandatory);
   const progressPct = lessons.length > 0 ? Math.round((lessonsDone.length / lessons.length) * 100) : 100;
-
-  const flatDemo = useMemo(
-    () => (lesson?.demo_program ? flattenDemoSteps(lesson.demo_program) : []),
-    [lesson],
-  );
-
-  const activeDemoStep = lesson && demoStep.lessonId === lesson.id ? demoStep.step : -1;
-  const activeDemoRobotState: RobotVisualState =
-    lesson && demoRobot.lessonId === lesson.id ? demoRobot.state : 'idle';
-
-  const runDemo = async () => {
-    if (!lesson || flatDemo.length === 0) return;
-    const lid = lesson.id;
-    for (let i = 0; i < flatDemo.length; i++) {
-      setDemoStep({ lessonId: lid, step: i });
-      const cmd = flatDemo[i].type;
-      if (cmd === 'MOVE_FORWARD' || cmd === 'MOVE_BACKWARD') setDemoRobot({ lessonId: lid, state: 'walk' });
-      else if (cmd === 'JUMP') setDemoRobot({ lessonId: lid, state: 'jump' });
-      else if (cmd === 'WAVE' || cmd === 'PICK_UP' || cmd === 'ACTIVATE')
-        setDemoRobot({ lessonId: lid, state: 'wave' });
-      else if (cmd === 'CELEBRATE') setDemoRobot({ lessonId: lid, state: 'celebrate' });
-      else if (cmd === 'TURN_LEFT' || cmd === 'TURN_RIGHT') setDemoRobot({ lessonId: lid, state: 'turn' });
-      else setDemoRobot({ lessonId: lid, state: 'idle' });
-      await new Promise((r) => setTimeout(r, 650));
-    }
-    setDemoStep({ lessonId: lid, step: -1 });
-    setDemoRobot({ lessonId: lid, state: 'celebrate' });
-    setTimeout(() => setDemoRobot({ lessonId: lid, state: 'idle' }), 900);
-  };
 
   const handleNextOrDone = async () => {
     if (!lesson || busy) return;
@@ -148,9 +101,19 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+    <div
+      className={cn(
+        'bg-slate-50 flex flex-col',
+        isFullscreen ? 'h-screen overflow-hidden' : 'min-h-screen',
+      )}
+    >
+      <header className="border-b border-slate-200 bg-white shrink-0">
+        <div
+          className={cn(
+            'flex flex-wrap items-center justify-between gap-3 px-4 py-2.5',
+            isFullscreen ? 'w-full max-w-[1400px] mx-auto' : 'mx-auto max-w-5xl',
+          )}
+        >
           <div className="flex items-center gap-2.5">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white">
               <BookOpen className="h-5 w-5" />
@@ -184,16 +147,29 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                 {t('player:lessons.skipAll')}
               </Button>
             )}
+            <SoundToggle />
             <FullscreenButton />
             <LanguageSwitcher />
           </div>
         </div>
-        <div className="mx-auto max-w-5xl px-4 pb-3">
+        <div
+          className={cn(
+            'px-4 pb-2.5',
+            isFullscreen ? 'w-full max-w-[1400px] mx-auto' : 'mx-auto max-w-5xl',
+          )}
+        >
           <Progress value={progressPct} className="h-2.5" />
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-5 px-4 py-6">
+      <main
+        className={cn(
+          'space-y-5 px-4 py-5',
+          isFullscreen
+            ? 'flex-1 min-h-0 overflow-y-auto w-full max-w-[1400px] mx-auto'
+            : 'mx-auto max-w-5xl',
+        )}
+      >
         {/* Step dots */}
         <div className="flex flex-wrap items-center gap-2">
           {lessons.map((l, i) => {
@@ -272,56 +248,21 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                   {t('player:lessons.demoTitle')}
                 </div>
 
-                <div className="mt-4 flex flex-col items-center justify-center rounded-2xl bg-slate-950/70 p-6 border border-slate-800">
-                  <RobotIllustration robot={defaultRobot} state={activeDemoRobotState} size={112} />
-                </div>
-
                 {lesson.demo_program && lesson.demo_program.length > 0 ? (
-                  <div className="mt-4 space-y-2">
-                    <div className="flex flex-wrap gap-2">
-                      {lesson.demo_program.map((cmd, ci) => (
-                        <div
-                          key={ci}
-                          className="rounded-xl border border-sky-500/40 bg-sky-500/15 px-3 py-1.5 text-xs font-bold text-sky-100"
-                        >
-                          {localizedBlockLabel(config?.blocks ?? [], cmd.type, lang, fallback)}
-                          {cmd.steps ? ` (${cmd.steps})` : ''}
-                          {cmd.times ? ` ×${cmd.times}` : ''}
-                          {cmd.body
-                            ? ` [ ${cmd.body
-                                .map((b) => localizedBlockLabel(config?.blocks ?? [], b.type, lang, fallback))
-                                .join(' → ')} ]`
-                            : ''}
-                        </div>
-                      ))}
-                    </div>
-
-                    {activeDemoStep >= 0 && flatDemo[activeDemoStep] && (
-                      <p className="text-xs font-semibold text-amber-300">
-                        ▶{' '}
-                        {localizedBlockLabel(
-                          config?.blocks ?? [],
-                          flatDemo[activeDemoStep].type,
-                          lang,
-                          fallback,
-                        )}
-                      </p>
-                    )}
-
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="mt-2 w-full"
-                      onClick={() => void runDemo()}
-                    >
-                      <Play className="h-4 w-4" />
-                      {t('player:lessons.runDemo')}
-                    </Button>
+                  <div className="mt-3">
+                    <InteractiveRobotDemo
+                      key={lesson.id}
+                      demoProgram={lesson.demo_program}
+                      lang={lang}
+                      fallbackLang={fallback}
+                      robotAsset={defaultRobot}
+                    />
                   </div>
                 ) : (
-                  <p className="mt-4 rounded-xl bg-slate-800/60 p-3.5 text-sm text-slate-300">
-                    {t('player:lessons.noDemo')}
-                  </p>
+                  <div className="mt-4 flex flex-col items-center justify-center rounded-2xl bg-slate-950/70 p-6 border border-slate-800">
+                    <RobotIllustration robot={defaultRobot} state="wave" size={96} />
+                    <p className="mt-3 text-sm text-slate-400">{t('player:lessons.noDemo')}</p>
+                  </div>
                 )}
               </div>
 

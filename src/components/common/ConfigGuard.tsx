@@ -7,6 +7,7 @@ import { useAppStore } from '@/stores/appStore';
 import { pickLocalized } from '@/utils/localize';
 import { RobotIllustration } from './RobotIllustration';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { FullPageLoading } from './LoadingSpinner';
 
 export function ConfigGuard({
   children,
@@ -38,12 +39,7 @@ export function ConfigGuard({
   }
 
   if (!loaded) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-50">
-        <RobotIllustration state="idle" size={96} />
-        <p className="text-sm font-semibold text-slate-500">{t('app.loading')}</p>
-      </div>
-    );
+    return <FullPageLoading message={t('app.loading')} />;
   }
 
   if (!bypassMaintenance && settings?.maintenance_mode) {

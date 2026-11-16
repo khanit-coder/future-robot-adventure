@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useFullscreen } from '@/hooks/useFullscreen';
 import { cn } from '@/utils/cn';
 
 export function FullscreenButton({
@@ -11,31 +11,7 @@ export function FullscreenButton({
   className?: string;
 }) {
   const { t } = useTranslation('common');
-  const [isFullscreen, setIsFullscreen] = useState<boolean>(() =>
-    typeof document !== 'undefined' ? Boolean(document.fullscreenElement) : false,
-  );
-
-  useEffect(() => {
-    const onFullscreenChange = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement));
-    };
-    document.addEventListener('fullscreenchange', onFullscreenChange);
-    return () => {
-      document.removeEventListener('fullscreenchange', onFullscreenChange);
-    };
-  }, []);
-
-  const toggleFullscreen = useCallback(async () => {
-    try {
-      if (!document.fullscreenElement) {
-        await document.documentElement.requestFullscreen();
-      } else if (document.exitFullscreen) {
-        await document.exitFullscreen();
-      }
-    } catch {
-      // Ignore if fullscreen is blocked by browser environment
-    }
-  }, []);
+  const { isFullscreen, toggleFullscreen } = useFullscreen();
 
   const label = isFullscreen ? t('app.exitFullscreen') : t('app.fullscreen');
 
@@ -47,7 +23,7 @@ export function FullscreenButton({
       aria-label={label}
       data-testid="fullscreen-toggle-btn"
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-bold transition-colors cursor-pointer',
+        'inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-bold transition-colors cursor-pointer select-none',
         dark
           ? 'border-slate-700 bg-slate-800/80 text-slate-200 hover:bg-slate-700'
           : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100',

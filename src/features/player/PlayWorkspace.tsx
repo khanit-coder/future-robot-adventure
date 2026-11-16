@@ -13,6 +13,7 @@ import {
   HelpCircle,
   Home,
   Lightbulb,
+  Loader2,
   Map as MapIcon,
   Play,
   RotateCcw,
@@ -39,6 +40,11 @@ import { PhaserViewport } from '@/game-engine/PhaserViewport';
 import type { RobotGameEngine } from '@/game-engine/RobotGameEngine';
 import { FullscreenButton } from '@/components/common/FullscreenButton';
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { SoundToggle } from '@/components/common/SoundToggle';
+import { useFullscreen } from '@/hooks/useFullscreen';
+import { sfx } from '@/services/audio/soundEffects';
+import { cn } from '@/utils/cn';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -69,6 +75,7 @@ export function PlayWorkspace() {
 function PlayLevelSession({ level }: { level: LevelConfig }) {
   const { t } = useTranslation(['player', 'game', 'common']);
   const lang = currentLang();
+  const { isFullscreen } = useFullscreen();
 
   const settings = useAppStore((s) => s.settings);
   const player = usePlayerStore((s) => s.player)!;
@@ -264,6 +271,7 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
 
       if (lostAllHearts) {
         setOptimisticHearts(0);
+        sfx.playHeartLost();
         if (execResult.failure) {
           setFeedbackError(t(`game:feedback.failures.${execResult.failure.code}`));
         }
@@ -275,6 +283,7 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
       setOptimisticHearts(null);
 
       if (execResult.success) {
+        sfx.playSuccess();
         setVictoryModal({
           scoreAwarded: res.score?.awarded ?? 0,
           breakdown: res.score?.breakdown ?? null,
@@ -355,17 +364,32 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
     : '';
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-100">
+    <div
+      className={cn(
+        'flex flex-col bg-slate-100',
+        isFullscreen ? 'h-screen overflow-hidden' : 'min-h-screen',
+      )}
+    >
       {/* Announcement bar */}
       {announcementText && (
-        <div className="bg-amber-400 px-4 py-1.5 text-center text-xs font-bold text-slate-950">
+        <div className="bg-amber-400 px-4 py-1.5 text-center text-xs font-bold text-slate-950 shrink-0">
           📢 {announcementText}
         </div>
       )}
 
       {/* Top HUD */}
-      <header className="border-b border-slate-200 bg-white px-4 py-2.5 shadow-xs">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3">
+      <header
+        className={cn(
+          'border-b border-slate-200 bg-white shadow-xs shrink-0',
+          isFullscreen ? 'px-4 py-1.5' : 'px-4 py-2.5',
+        )}
+      >
+        <div
+          className={cn(
+            'flex flex-wrap items-center justify-between gap-3',
+            isFullscreen ? 'w-full' : 'mx-auto max-w-[1600px]',
+          )}
+        >
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
@@ -464,6 +488,7 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
               {t('player:workspace.finishGame')}
             </Button>
 
+            <SoundToggle />
             <FullscreenButton />
             <LanguageSwitcher />
           </div>
@@ -471,16 +496,33 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
       </header>
 
       {latestVersion && latestVersion > config.version && (
-        <div className="bg-indigo-50 px-4 py-1 text-center text-xs font-medium text-indigo-800 border-b border-indigo-100">
+        <div className="bg-indigo-50 px-4 py-1 text-center text-xs font-medium text-indigo-800 border-b border-indigo-100 shrink-0">
           {t('player:workspace.newConfigBanner', { version: config.version })}
         </div>
       )}
 
       {/* Main Split Workspace */}
-      <main className="mx-auto grid w-full max-w-[1600px] flex-1 gap-4 p-4 lg:grid-cols-12">
+      <main
+        className={cn(
+          'mx-auto grid w-full flex-1 gap-4 lg:grid-cols-12',
+          isFullscreen
+            ? 'h-full min-h-0 max-w-none px-4 py-2 overflow-hidden'
+            : 'max-w-[1600px] p-4',
+        )}
+      >
         {/* Left: Phaser Stage + Mission Info + Hints */}
-        <div className="flex flex-col gap-4 lg:col-span-5">
-          <div className="relative h-[320px] sm:h-[360px] rounded-2xl overflow-hidden shadow-md">
+        <div
+          className={cn(
+            'flex flex-col lg:col-span-5',
+            isFullscreen ? 'h-full min-h-0 overflow-y-auto pr-1 gap-3' : 'gap-4',
+          )}
+        >
+          <div
+            className={cn(
+              'relative rounded-2xl overflow-hidden shadow-md shrink-0',
+              isFullscreen ? 'h-[36vh] min-h-[220px] max-h-[380px]' : 'h-[320px] sm:h-[360px]',
+            )}
+          >
             <PhaserViewport
               mission={level.mission}
               robot={robotCfg}
@@ -490,9 +532,14 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                 engineRef.current = eng;
               }}
             />
+            {compiling && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/45 backdrop-blur-[2px] transition-all">
+                <LoadingSpinner size="md" message={t('game:compiling')} dark />
+              </div>
+            )}
           </div>
 
-          <Card>
+          <Card className={cn(isFullscreen && 'flex-1 min-h-0 overflow-y-auto')}>
             <CardContent className="space-y-4 p-5">
               <div className="flex items-start justify-between gap-2">
                 <div>
@@ -604,8 +651,18 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
         </div>
 
         {/* Right: Blockly Visual Coding Area + COMPILE */}
-        <div className="flex flex-col gap-3 lg:col-span-7">
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-xs">
+        <div
+          className={cn(
+            'flex flex-col lg:col-span-7',
+            isFullscreen ? 'h-full min-h-0 gap-2' : 'gap-3',
+          )}
+        >
+          <div
+            className={cn(
+              'flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white shadow-xs shrink-0',
+              isFullscreen ? 'px-4 py-2' : 'px-4 py-3',
+            )}
+          >
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant={overBlockLimit ? 'danger' : 'info'}>
                 {t('game:blocksUsed', { used: blocksUsed, max: level.mission.rules.max_blocks })}
@@ -650,13 +707,22 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                 data-testid="compile-btn"
                 className="px-7 font-extrabold tracking-wide shadow-md"
               >
-                <Play className="h-5 w-5 fill-current" />
+                {compiling ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Play className="h-5 w-5 fill-current" />
+                )}
                 {compiling ? t('game:compiling') : t('game:compile')}
               </Button>
             </div>
           </div>
 
-          <div className="flex-1 min-h-[420px]">
+          <div
+            className={cn(
+              'rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden',
+              isFullscreen ? 'flex-1 min-h-0 h-full' : 'flex-1 min-h-[420px]',
+            )}
+          >
             <BlocklyEditor
               workspaceKey={`${playerSession.id}:${level.id}`}
               blocks={config.blocks}
@@ -949,18 +1015,33 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
               <Heart key={idx} className="h-7 w-7 fill-slate-300 text-slate-300" />
             ))}
           </div>
-          <Button
-            variant="destructive"
-            size="lg"
-            className="w-full font-extrabold text-base py-6"
-            onClick={() => {
-              setShowGameOverModal(false);
-              void refreshState();
-            }}
-            data-testid="game-over-results-btn"
-          >
-            {t('player:workspace.gameOverBtn')}
-          </Button>
+          <div className="flex flex-col gap-2.5 pt-2">
+            <Button
+              variant="destructive"
+              size="lg"
+              className="w-full font-extrabold text-base py-5 cursor-pointer shadow-md"
+              onClick={() => {
+                setShowGameOverModal(false);
+                void refreshState();
+              }}
+              data-testid="game-over-results-btn"
+            >
+              {t('player:workspace.gameOverBtn')}
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full font-bold text-base py-5 border-slate-300 text-slate-700 hover:bg-slate-100 cursor-pointer"
+              onClick={() => {
+                setShowGameOverModal(false);
+                void resetToHome();
+              }}
+              data-testid="game-over-restart-btn"
+            >
+              <RotateCcw className="h-4 w-4 text-indigo-600 mr-2" />
+              {lang === 'th' ? 'ขอแก้ตัวใหม่ (เริ่มรอบใหม่)' : 'Try Again (Restart Game)'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
