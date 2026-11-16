@@ -1,0 +1,33 @@
+{
+  "live": "LIVE",
+  "reconnecting": "Reconnecting...",
+  "offline": "Offline",
+  "onlinePlayers": "Online",
+  "activePlayers": "Playing",
+  "finishedPlayers": "Finished",
+  "totalMissions": "Missions Solved",
+  "page": "Page {{current}} / {{total}}",
+  "modes": {
+    "GRID": "Robot Grid",
+    "PLANET": "Planet Map",
+    "SPOTLIGHT": "Spotlight"
+  },
+  "leaderboard": "Top Coders",
+  "recentAchievements": "Recent Achievements",
+  "noPlayers": "Waiting for students to join the adventure...",
+  "noEvents": "Recent achievements will appear here in real time.",
+  "pts": "pts",
+  "lvlProgress": "Lv {{done}}/{{total}}",
+  "statuses": {
+    "REGISTERED": "Ready",
+    "LEARNING": "Learning",
+    "PLAYING": "Coding",
+    "FINISHED": "Completed!",
+    "TIME_EXPIRED": "Time Up"
+  },
+  "events": {
+    "PLAYER_JOINED": "{{name}} joined the mission!",
+    "PLAYER_LEVEL_COMPLETED": "{{name}} cleared Level {{level}} (+{{score}} pts)",
+    "PLAYER_FINISHED": "{{name}} completed the adventure with {{score}} pts!"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "app": {
+    "title": "Future Robot Adventure",
+    "tagline": "Learn to Code. Explore the Future.",
+    "loading": "Loading...",
+    "retry": "Try Again",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "close": "Close",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "add": "Add",
+    "duplicate": "Duplicate",
+    "search": "Search...",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "active": "Active",
+    "inactive": "Inactive",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "yes": "Yes",
+    "no": "No",
+    "error": "Something went wrong",
+    "maintenanceTitle": "System Maintenance",
+    "configMissingTitle": "Backend Configuration Needed",
+    "configMissingDesc": "Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file to connect to Supabase."
+  },
+  "nav": {
+    "play": "Player",
+    "dashboard": "Live Dashboard",
+    "admin": "Admin"
+  },
+  "lang": {
+    "label": "Language",
+    "th": "ไทย",
+    "en": "EN"
+  },
+  "errors": {
+    "NETWORK": "Cannot reach the server. Please check your internet connection.",
+    "RATE_LIMITED": "Too many requests. Please wait a few seconds.",
+    "REGISTRATION_CLOSED": "Registration is currently closed by the staff.",
+    "NO_ACTIVE_SESSION": "No active event session right now. Please ask the staff.",
+    "SESSION_CLOSED": "This event session has ended.",
+    "TIME_EXPIRED": "Time is up! Your final score has been saved.",
+    "MAINTENANCE": "The system is temporarily paused for maintenance.",
+    "LESSONS_REQUIRED": "Please complete the lessons before starting the mission.",
+    "LEVEL_LOCKED": "Complete the previous mission to unlock this level.",
+    "UNAUTHENTICATED": "Session expired. Refreshing...",
+    "FORBIDDEN": "You do not have permission for this action."
+  }
+}

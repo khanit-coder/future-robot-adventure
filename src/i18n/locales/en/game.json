@@ -1,0 +1,71 @@
+{
+  "compile": "COMPILE",
+  "compiling": "Running...",
+  "resetWorkspace": "Reset Blocks",
+  "resetScene": "Reset Robot",
+  "commandGuide": "Commands",
+  "blocksUsed": "Blocks: {{used}} / {{max}}",
+  "requiredBlocks": "Must use:",
+  "difficulty": "Difficulty",
+  "objectives": "Mission Objectives",
+  "hints": "Hints",
+  "revealHint": "Reveal Hint ({{penalty}} pts)",
+  "revealHintFree": "View Hint",
+  "noHintsLeft": "All hints revealed",
+  "hintPenaltyNote": "Using a hint removes the No-Hint Bonus and subtracts {{penalty}} pts.",
+  "level": "Level {{n}}",
+  "world": "World {{n}}",
+  "status": {
+    "locked": "Locked",
+    "unlocked": "Play",
+    "completed": "Cleared"
+  },
+  "categories": {
+    "movement": "Movement",
+    "actions": "Actions",
+    "logic": "Logic"
+  },
+  "objectiveTypes": {
+    "REACH_GOAL": "Reach the glowing goal pad",
+    "COLLECT_CRYSTALS": "Collect energy crystals ({{current}}/{{target}})",
+    "ACTIVATE_GENERATORS": "Activate energy generators ({{current}}/{{target}})",
+    "RESCUE_FRIENDS": "Rescue stranded robots ({{current}}/{{target}})",
+    "CELEBRATE": "Celebrate on the goal pad"
+  },
+  "feedback": {
+    "successTitle": "Mission Complete!",
+    "alreadyCleared": "Cleared again! (Score already recorded)",
+    "nextLevel": "Next Level",
+    "finishAdventure": "See Final Results",
+    "retryLevel": "Edit Code & Try Again",
+    "scoreBreakdown": {
+      "base": "Mission Base",
+      "noHint": "No Hints Bonus",
+      "noError": "First-Try Bonus",
+      "time": "Speed Bonus",
+      "hintPenalty": "Hint Penalty",
+      "total": "Mission Score"
+    },
+    "failures": {
+      "HIT_WALL": "Oops! The robot bumped into a wall.",
+      "HIT_EDGE": "Careful! The robot reached the edge of the platform.",
+      "HIT_HURDLE": "There is a barrier ahead! Use Jump to hop over it.",
+      "DOOR_CLOSED": "The security door is locked! Activate the energy generator first.",
+      "FELL_IN_GAP": "Watch out! The robot fell into a gap. Jump over gaps!",
+      "JUMP_BLOCKED": "Cannot jump there — check what is in front of the robot.",
+      "TOO_MANY_STEPS": "Too many steps! Try using fewer repeats.",
+      "OBJECTIVES_INCOMPLETE": "Not quite! Check the command order and objectives, then try again."
+    },
+    "validation": {
+      "MALFORMED": "Some blocks are disconnected or invalid.",
+      "EMPTY_PROGRAM": "Drag at least one command block into the workspace first!",
+      "UNKNOWN_COMMAND": "Found an unknown command block.",
+      "COMMAND_NOT_ALLOWED": "Command {{command}} is not enabled in this level.",
+      "PARAM_RANGE": "Value for {{command}} must be between {{min}} and {{max}}.",
+      "REPEAT_EMPTY": "Your Repeat block is empty! Put blocks inside it.",
+      "TOO_DEEP": "Loops are nested too deeply (max {{max}}).",
+      "TOO_MANY_BLOCKS": "Too many blocks! Maximum allowed is {{max}}.",
+      "MISSING_REQUIRED": "This mission requires using the {{command}} block."
+    }
+  }
+}

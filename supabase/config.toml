@@ -1,0 +1,44 @@
+project_id = "future-robot-adventure"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+enable_signup = true
+enable_anonymous_sign_ins = true
+
+[storage]
+enabled = true
+file_size_limit = "5MiB"
+
+[functions.register-player]
+verify_jwt = true
+
+[functions.player-action]
+verify_jwt = true
+
+[functions.submit-solution]
+verify_jwt = true
+
+[functions.claim-reward]
+verify_jwt = true
+
+[functions.publish-config]
+verify_jwt = true
+
+[functions.admin-action]
+verify_jwt = true

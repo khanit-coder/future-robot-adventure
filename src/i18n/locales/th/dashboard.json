@@ -1,0 +1,33 @@
+{
+  "live": "สด",
+  "reconnecting": "กำลังเชื่อมต่อใหม่...",
+  "offline": "ออฟไลน์",
+  "onlinePlayers": "ออนไลน์",
+  "activePlayers": "กำลังเล่น",
+  "finishedPlayers": "จบเกมแล้ว",
+  "totalMissions": "ภารกิจที่สำเร็จ",
+  "page": "หน้า {{current}} / {{total}}",
+  "modes": {
+    "GRID": "ตารางหุ่นยนต์",
+    "PLANET": "แผนที่ดาวเคราะห์",
+    "SPOTLIGHT": "สปอตไลต์"
+  },
+  "leaderboard": "อันดับคะแนนสูงสุด",
+  "recentAchievements": "ความสำเร็จล่าสุด",
+  "noPlayers": "กำลังรอให้น้อง ๆ เข้าร่วมภารกิจ...",
+  "noEvents": "ความสำเร็จล่าสุดจะแสดงที่นี่แบบเรียลไทม์",
+  "pts": "คะแนน",
+  "lvlProgress": "ด่าน {{done}}/{{total}}",
+  "statuses": {
+    "REGISTERED": "พร้อมแล้ว",
+    "LEARNING": "กำลังเรียน",
+    "PLAYING": "กำลังเขียนโค้ด",
+    "FINISHED": "สำเร็จแล้ว!",
+    "TIME_EXPIRED": "หมดเวลา"
+  },
+  "events": {
+    "PLAYER_JOINED": "{{name}} เข้าร่วมภารกิจแล้ว!",
+    "PLAYER_LEVEL_COMPLETED": "{{name}} ผ่านด่าน {{level}} (+{{score}} คะแนน)",
+    "PLAYER_FINISHED": "{{name}} พิชิตภารกิจครบด้วย {{score}} คะแนน!"
+  }
+}

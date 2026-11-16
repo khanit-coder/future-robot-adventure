@@ -1,0 +1,13 @@
+export * from './types.ts';
+export * from './commands.ts';
+export { parseProgram } from './validate.ts';
+export { runProgram, validateMission, tileAt } from './interpreter.ts';
+export { computeMissionScore, DEFAULT_SCORE_RULES, isLevelUnlocked } from './scoring.ts';
+export type { ScoreInput, ProgressSummary } from './scoring.ts';
+export { evaluateSubmission } from './evaluate.ts';
+export type { EvaluationOutcome } from './evaluate.ts';
+export { SAMPLE_LEVELS } from './sample-levels.ts';
+export type { SampleLevel } from './sample-levels.ts';
+export { buildSnapshot } from './snapshot.ts';
+export type { SnapshotBuild } from './snapshot.ts';
+export type * from './rows.ts';

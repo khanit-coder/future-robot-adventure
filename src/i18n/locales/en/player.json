@@ -1,0 +1,79 @@
+{
+  "welcome": {
+    "badge": "Open House Coding Challenge",
+    "heading": "Ready to Program Your Robot?",
+    "subtitle": "Register your name and school to learn visual block coding and solve space missions!",
+    "displayName": "Student Nickname / Display Name",
+    "displayNamePlaceholder": "e.g. Tonkla, Mint, Alex",
+    "school": "School Name",
+    "schoolPlaceholder": "e.g. Demonstration School",
+    "grade": "Grade Level (Optional)",
+    "gradePlaceholder": "e.g. Grade 6, M.2",
+    "preferredLang": "Preferred Language",
+    "submit": "Join Adventure",
+    "submitting": "Joining...",
+    "closedTitle": "Registration Paused",
+    "closedDesc": "Registration is currently closed. Please wait for the Open House staff to open it.",
+    "noSessionTitle": "Event Not Started Yet",
+    "noSessionDesc": "There is no active event session at the moment. Please check back shortly.",
+    "validation": {
+      "nameRequired": "Please enter your display name.",
+      "schoolRequired": "Please enter your school name."
+    }
+  },
+  "lessons": {
+    "header": "Robot Coding Academy",
+    "step": "Lesson {{current}} of {{total}}",
+    "completed": "Completed",
+    "markDone": "Mark as Learned & Next",
+    "skipAll": "Skip Tutorial",
+    "startAdventure": "Start Adventure!",
+    "starting": "Starting Mission Timer...",
+    "demoTitle": "Live Command Preview",
+    "runDemo": "Preview Commands",
+    "noDemo": "Read carefully and press Next when ready!"
+  },
+  "workspace": {
+    "timeLeft": "Time Left",
+    "unlimitedTime": "No Time Limit",
+    "score": "Score",
+    "levels": "Levels",
+    "lessonsBtn": "Lessons",
+    "levelMapBtn": "Missions",
+    "finishGame": "Finish & View Results",
+    "finishConfirmTitle": "Finish the Adventure Early?",
+    "finishConfirmDesc": "You still have levels remaining. If you finish now, your current score will be final.",
+    "finishConfirmBtn": "Yes, Finish Now",
+    "newConfigBanner": "A new level update is available for new players. Your active game stays safely on v{{version}}."
+  },
+  "results": {
+    "titleCompleted": "Mission Accomplished!",
+    "titleExpired": "Time's Up!",
+    "titleFinished": "Adventure Complete!",
+    "subtitle": "Awesome coding work, {{name}}!",
+    "totalScore": "Final Score",
+    "levelsDone": "Levels Solved",
+    "attempts": "Total Compiles",
+    "hintsUsed": "Hints Used",
+    "bestTime": "Fastest Level",
+    "playAgainNote": "Thank you for playing at our College Open House!",
+    "rewardsDisabled": "Reward claims are currently disabled. Show your score screen to the staff!",
+    "rewardsTitle": "Available Rewards",
+    "rewardsSubtitle": "Choose one eligible reward to reserve with your score.",
+    "minScore": "Requires {{score}} pts",
+    "stockLeft": "{{left}} left",
+    "outOfStock": "Out of Stock",
+    "notEnoughScore": "Need {{need}} more pts",
+    "reserveBtn": "Reserve Reward",
+    "reserving": "Reserving...",
+    "reservedTitle": "Reward Reserved!",
+    "claimedTitle": "Reward Claimed!",
+    "claimCodeLabel": "Show this code at the prize booth",
+    "rewardStatus": {
+      "RESERVED": "Reserved — Ready for Pickup",
+      "CLAIMED": "Claimed",
+      "AVAILABLE": "Available",
+      "OUT_OF_STOCK": "Out of Stock"
+    }
+  }
+}
