@@ -5,6 +5,7 @@ import type { Lang } from '@engine';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input, Label } from '@/components/ui/input';
+import { FullscreenButton } from '@/components/common/FullscreenButton';
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
 import { RobotIllustration } from '@/components/common/RobotIllustration';
 import { ApiError } from '@/services/api/edge';
@@ -91,7 +92,10 @@ export function RegistrationView() {
             <p className="text-sm font-bold text-white">{eventTitle}</p>
           </div>
         </div>
-        <LanguageSwitcher dark />
+        <div className="flex items-center gap-2">
+          <FullscreenButton dark />
+          <LanguageSwitcher dark />
+        </div>
       </header>
 
       <main className="mx-auto grid max-w-6xl items-center gap-8 px-4 pb-12 pt-4 lg:grid-cols-12">

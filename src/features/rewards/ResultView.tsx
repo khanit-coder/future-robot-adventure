@@ -18,6 +18,7 @@ import type { RewardRow } from '@engine';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { FullscreenButton } from '@/components/common/FullscreenButton';
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
 import { RobotIllustration } from '@/components/common/RobotIllustration';
 import { toast } from '@/stores/toastStore';
@@ -36,6 +37,7 @@ import {
 } from './cardCanvas';
 
 const MAX_HEARTS = 5;
+const AUTO_RETURN_SECONDS = 120;
 
 export function ResultView() {
   const { t } = useTranslation(['player', 'common']);
@@ -53,6 +55,21 @@ export function ResultView() {
   const [reservingId, setReservingId] = useState<string | null>(null);
   const [cardImageUrl, setCardImageUrl] = useState<string>('');
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
+  const [autoReturnLeft, setAutoReturnLeft] = useState<number>(AUTO_RETURN_SECONDS);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setAutoReturnLeft((prev) => {
+        if (prev <= 1) {
+          window.clearInterval(timer);
+          void resetToHome();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [resetToHome]);
 
   const fallbackLang = settings?.default_language ?? 'en';
   const rewardsEnabled = settings?.rewards_enabled ?? config.settings.rewards_enabled;
@@ -186,7 +203,17 @@ export function ResultView() {
             {settings ? pickLocalized(settings.game_title, lang, fallbackLang) : t('common:app.title')}
           </span>
         </div>
-        <LanguageSwitcher dark />
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div
+            className="inline-flex items-center gap-1.5 rounded-xl border border-amber-400/40 bg-amber-500/15 px-3 py-1.5 text-xs font-extrabold text-amber-300"
+            data-testid="auto-return-countdown"
+          >
+            <Clock className="h-3.5 w-3.5 animate-pulse" />
+            {t('player:results.autoReturnCountdown', { time: formatDuration(autoReturnLeft) })}
+          </div>
+          <FullscreenButton dark />
+          <LanguageSwitcher dark />
+        </div>
       </header>
 
       <main className="mx-auto max-w-5xl space-y-6 px-4 pb-16 pt-2">
@@ -258,14 +285,14 @@ export function ResultView() {
 
             <p className="mt-5 text-sm text-slate-300">{t('player:results.playAgainNote')}</p>
 
-            <div className="mt-4">
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
               <Button
                 variant="outline"
                 onClick={() => void resetToHome()}
                 className="border-sky-400/50 bg-sky-500/10 text-sky-200 hover:bg-sky-500/20"
               >
                 <Home className="h-4 w-4" />
-                {t('common:app.backToHome')}
+                {t('common:app.backToHome')} ({formatDuration(autoReturnLeft)})
               </Button>
             </div>
           </CardContent>

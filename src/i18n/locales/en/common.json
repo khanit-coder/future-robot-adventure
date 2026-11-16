@@ -18,6 +18,8 @@
     "back": "Back",
     "home": "Home",
     "backToHome": "Back to Home",
+    "fullscreen": "Fullscreen",
+    "exitFullscreen": "Exit Fullscreen",
     "next": "Next",
     "previous": "Previous",
     "active": "Active",

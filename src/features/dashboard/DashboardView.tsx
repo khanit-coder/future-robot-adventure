@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { DashboardMode, DashboardSettingsRow, GameEvent, GameSettingsRow } from '@engine';
+import { FullscreenButton } from '@/components/common/FullscreenButton';
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
 import { RobotIllustration, type RobotVisualState } from '@/components/common/RobotIllustration';
 import { currentLang } from '@/i18n/config';
@@ -250,6 +251,7 @@ export function DashboardView({
                 : t('dashboard:offline')}
           </div>
 
+          <FullscreenButton dark={dark} />
           <LanguageSwitcher dark={dark} />
         </div>
       </header>

@@ -67,6 +67,7 @@
     "hintsUsed": "Hints Used",
     "bestTime": "Fastest Level",
     "playAgainNote": "Thank you for playing at our College Open House!",
+    "autoReturnCountdown": "Auto-returning to Home in {{time}}",
     "rewardsDisabled": "Reward claims are currently disabled. Show your score screen to the staff!",
     "rewardsTitle": "Available Rewards",
     "rewardsSubtitle": "Choose one eligible reward to reserve with your score.",

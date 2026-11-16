@@ -37,6 +37,7 @@ import {
 import { localizedBlockLabel } from '@/blockly/toolbox/buildToolbox';
 import { PhaserViewport } from '@/game-engine/PhaserViewport';
 import type { RobotGameEngine } from '@/game-engine/RobotGameEngine';
+import { FullscreenButton } from '@/components/common/FullscreenButton';
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -463,6 +464,7 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
               {t('player:workspace.finishGame')}
             </Button>
 
+            <FullscreenButton />
             <LanguageSwitcher />
           </div>
         </div>

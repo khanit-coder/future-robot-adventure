@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { FullscreenButton } from '@/components/common/FullscreenButton';
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
 import { MarkdownText } from '@/components/common/MarkdownText';
 import { RobotIllustration, type RobotVisualState } from '@/components/common/RobotIllustration';
@@ -183,6 +184,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                 {t('player:lessons.skipAll')}
               </Button>
             )}
+            <FullscreenButton />
             <LanguageSwitcher />
           </div>
         </div>
