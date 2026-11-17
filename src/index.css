@@ -20,23 +20,35 @@ body,
   margin: 0;
 }
 
-/* Strictly lock viewport to 100vh without page scrollbars in Fullscreen mode */
-html.fra-fullscreen,
-html.fra-fullscreen body,
-html.fra-fullscreen #root {
+/* Strictly lock viewport to 100vh without page scrollbars in Fullscreen mode ONLY for workspaces */
+html.fra-fullscreen:has(.fra-play-workspace),
+html.fra-fullscreen:has(.fra-play-workspace) body,
+html.fra-fullscreen:has(.fra-play-workspace) #root,
+html.fra-fullscreen:has(.fra-lessons-workspace),
+html.fra-fullscreen:has(.fra-lessons-workspace) body,
+html.fra-fullscreen:has(.fra-lessons-workspace) #root {
   height: 100vh !important;
   max-height: 100vh !important;
   overflow: hidden !important;
 }
 
-/* Proportional UI scaling in Fullscreen mode for general landing/dashboard pages; keep crisp compact size in coding/lessons workspace */
-html.fra-fullscreen:not(:has(.fra-play-workspace)):not(:has(.fra-lessons-workspace)) {
-  font-size: clamp(15px, 0.95vw, 18px);
+/* Ensure scrollable pages (Results / Rewards, Registration, Certificate, Dashboard) can scroll smoothly in Fullscreen */
+html.fra-fullscreen:not(:has(.fra-play-workspace)):not(:has(.fra-lessons-workspace)),
+html.fra-fullscreen:not(:has(.fra-play-workspace)):not(:has(.fra-lessons-workspace)) body,
+html.fra-fullscreen:not(:has(.fra-play-workspace)):not(:has(.fra-lessons-workspace)) #root,
+html.fra-fullscreen:has(.fra-scrollable),
+html.fra-fullscreen:has(.fra-scrollable) body,
+html.fra-fullscreen:has(.fra-scrollable) #root {
+  height: auto !important;
+  min-height: 100vh !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
 }
 
-html.fra-fullscreen .fra-play-workspace,
-html.fra-fullscreen .fra-lessons-workspace {
-  font-size: 14.5px;
+/* Keep full, crisp, legible typography in Fullscreen mode (never shrink font size below 16px) */
+html.fra-fullscreen {
+  font-size: 16px !important;
 }
 
 /* Gentle robot animations used on the lightweight Dashboard, Lessons, and Preview cards */

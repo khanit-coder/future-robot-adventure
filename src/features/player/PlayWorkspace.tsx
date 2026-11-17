@@ -432,10 +432,10 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
             )}
             <div>
               <div className="flex items-center gap-1.5">
-                <span className={cn('font-extrabold text-slate-900', isFullscreen ? 'text-xs sm:text-sm' : '')}>
+                <span className="font-extrabold text-slate-900 text-sm sm:text-base">
                   {player.display_name}
                 </span>
-                <Badge variant="secondary" className={isFullscreen ? 'text-[11px] py-0 px-1.5' : ''}>
+                <Badge variant="secondary" className="text-xs font-semibold py-0.5 px-2">
                   {player.school}
                 </Badge>
               </div>
@@ -447,12 +447,10 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
             </div>
           </div>
 
-          <div className={cn('flex items-center', isFullscreen ? 'gap-1.5' : 'flex-wrap gap-2.5')}>
+          <div className="flex items-center gap-2 flex-wrap">
             {/* 5 Hearts Indicator */}
             <div
-              className={`inline-flex items-center gap-1 rounded-xl border font-extrabold ${
-                isFullscreen ? 'px-2 py-0.5 text-xs' : 'px-3 py-1.5 text-sm'
-              } ${
+              className={`inline-flex items-center gap-1 rounded-xl border font-extrabold px-2.5 sm:px-3 py-1 text-sm ${
                 heartsRemaining <= 1
                   ? 'border-rose-400 bg-rose-50 text-rose-700 animate-pulse'
                   : 'border-rose-200 bg-rose-50/70 text-rose-800'
@@ -463,42 +461,36 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
               {Array.from({ length: MAX_HEARTS }).map((_, idx) => (
                 <Heart
                   key={idx}
-                  className={`transition-transform ${
-                    isFullscreen ? 'h-3.5 w-3.5' : 'h-4 w-4'
-                  } ${
+                  className={`transition-transform h-4 w-4 ${
                     idx < heartsRemaining
                       ? 'fill-rose-500 text-rose-500 scale-100'
                       : 'fill-slate-300 text-slate-300 scale-90'
                   }`}
                 />
               ))}
-              <span className="ml-1 text-xs font-black">
+              <span className="ml-1 text-xs sm:text-sm font-black">
                 {heartsRemaining}/{MAX_HEARTS}
               </span>
             </div>
 
             {/* Timer */}
             <div
-              className={`inline-flex items-center gap-1 rounded-xl border font-extrabold ${
-                isFullscreen ? 'px-2 py-0.5 text-xs' : 'px-3 py-1.5 text-sm'
-              } ${
+              className={`inline-flex items-center gap-1.5 rounded-xl border font-extrabold px-2.5 sm:px-3 py-1 text-sm ${
                 secondsLeft !== null && secondsLeft <= 120
                   ? 'border-rose-300 bg-rose-50 text-rose-700 animate-pulse'
                   : 'border-slate-200 bg-slate-50 text-slate-800'
               }`}
               data-testid="player-timer"
             >
-              <Clock className={isFullscreen ? 'h-3.5 w-3.5 text-indigo-600' : 'h-4 w-4 text-indigo-600'} />
+              <Clock className="h-4 w-4 text-indigo-600" />
               {secondsLeft === null ? t('player:workspace.unlimitedTime') : formatDuration(secondsLeft)}
             </div>
 
             {/* Score */}
             <div
-              className={`inline-flex items-center gap-1 rounded-xl border border-amber-200 bg-amber-50 font-extrabold text-amber-900 ${
-                isFullscreen ? 'px-2 py-0.5 text-xs' : 'px-3 py-1.5 text-sm'
-              }`}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 font-extrabold text-amber-900 px-2.5 sm:px-3 py-1 text-sm"
             >
-              <Trophy className={isFullscreen ? 'h-3.5 w-3.5 text-amber-500' : 'h-4 w-4 text-amber-500'} />
+              <Trophy className="h-4 w-4 text-amber-500" />
               <span data-testid="player-score">{playerSession.total_score}</span>
             </div>
 
@@ -507,11 +499,11 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
               variant="outline"
               size="sm"
               onClick={() => setShowMap(true)}
-              className={isFullscreen ? 'h-7 px-2 text-xs' : ''}
+              className="h-8 px-2.5 text-xs sm:text-sm font-bold"
             >
               <MapIcon className="h-3.5 w-3.5 text-indigo-600" />
               <span>{t('player:workspace.levelMapBtn')}</span>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-xs text-slate-500">
                 ({playerSession.levels_completed}/{config.levels.length})
               </span>
             </Button>
@@ -521,7 +513,7 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowLessonReview(true)}
-                className={isFullscreen ? 'h-7 px-2 text-xs' : ''}
+                className="h-8 px-2.5 text-xs sm:text-sm font-bold"
               >
                 <BookOpen className="h-3.5 w-3.5 text-sky-600" />
                 <span className="hidden xl:inline">{t('player:workspace.lessonsBtn')}</span>
@@ -533,7 +525,7 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
               size="sm"
               onClick={() => setShowFinishConfirm(true)}
               data-testid="finish-game-btn"
-              className={isFullscreen ? 'h-7 px-2 text-xs' : ''}
+              className="h-8 px-2.5 text-xs sm:text-sm font-bold"
             >
               <Flag className="h-3.5 w-3.5" />
               <span>{t('player:workspace.finishGame')}</span>
@@ -604,21 +596,16 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
             >
               <div className="flex items-center justify-between gap-1.5 shrink-0">
                 <div className="flex items-center gap-1.5 truncate">
-                  <Badge className={isFullscreen ? 'text-[11px] py-0 px-1.5' : ''}>
+                  <Badge className="text-xs font-bold py-0.5 px-2">
                     {t('game:level', { n: level.position })}
                   </Badge>
                   {levelProgress?.status === 'COMPLETED' && (
-                    <Badge variant="success" className={isFullscreen ? 'text-[11px] py-0 px-1.5' : ''}>
-                      <CheckCircle2 className="h-3 w-3" />
+                    <Badge variant="success" className="text-xs font-bold py-0.5 px-2">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
                       {t('game:status.completed')} ({levelProgress.score})
                     </Badge>
                   )}
-                  <h2
-                    className={cn(
-                      'font-extrabold text-slate-900 truncate',
-                      isFullscreen ? 'text-sm sm:text-base' : 'text-xl',
-                    )}
-                  >
+                  <h2 className="font-black text-slate-900 text-base sm:text-lg lg:text-xl truncate">
                     {pickLocalized(level.title, lang, fallbackLang, level.code)}
                   </h2>
                 </div>
@@ -628,7 +615,7 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                     variant="outline"
                     size="sm"
                     onClick={() => setShowCodeModal(true)}
-                    className={cn('shrink-0', isFullscreen ? 'h-6 text-[11px] px-2' : '')}
+                    className="shrink-0 h-7 text-xs px-2.5 font-bold"
                   >
                     <Code2 className="h-3.5 w-3.5 text-indigo-600" />
                     {t('game:realCode.viewBtn')}
@@ -636,7 +623,7 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                 )}
               </div>
 
-              <p className={cn('text-slate-600 shrink-0', isFullscreen ? 'text-xs line-clamp-2' : 'text-sm')}>
+              <p className="text-slate-600 shrink-0 text-sm line-clamp-2">
                 {pickLocalized(level.description, lang, fallbackLang)}
               </p>
 
@@ -647,7 +634,7 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                   isFullscreen ? 'p-2 space-y-1' : 'p-3.5 space-y-2',
                 )}
               >
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
                   {t('game:objectives')}
                 </p>
                 <div className="space-y-1">
@@ -664,11 +651,9 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                             ? level.mission.map.friends.length
                             : 1);
                     return (
-                      <div key={idx} className={cn('flex items-center gap-2', isFullscreen ? 'text-xs' : 'text-sm')}>
+                      <div key={idx} className="flex items-center gap-2 text-sm font-medium">
                         <CheckCircle2
-                          className={`shrink-0 ${done ? 'text-emerald-600' : 'text-slate-300'} ${
-                            isFullscreen ? 'h-3.5 w-3.5' : 'h-4 w-4'
-                          }`}
+                          className={`shrink-0 h-4 w-4 ${done ? 'text-emerald-600' : 'text-slate-300'}`}
                         />
                         <span className={done ? 'font-semibold text-emerald-800' : 'text-slate-700'}>
                           {t(`game:objectiveTypes.${obj.type}`, {
@@ -686,10 +671,7 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
               {feedbackError && (
                 <div
                   role="alert"
-                  className={cn(
-                    'flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 font-semibold text-rose-800 shrink-0',
-                    isFullscreen ? 'p-2 text-xs' : 'p-3.5 text-sm',
-                  )}
+                  className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 font-semibold text-rose-800 shrink-0 p-2.5 sm:p-3 text-sm"
                 >
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" />
                   <span>{feedbackError}</span>
@@ -699,14 +681,11 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
               {/* Hints */}
               {hintsTotal > 0 && (
                 <div
-                  className={cn(
-                    'rounded-lg border border-amber-200 bg-amber-50/70 shrink-0',
-                    isFullscreen ? 'p-2 space-y-1' : 'p-3.5 space-y-2.5',
-                  )}
+                  className="rounded-lg border border-amber-200 bg-amber-50/70 shrink-0 p-2.5 sm:p-3 space-y-1.5"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-800">
-                      <Lightbulb className="h-3.5 w-3.5 text-amber-600" />
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-800">
+                      <Lightbulb className="h-4 w-4 text-amber-600" />
                       {t('game:hints')} ({hintsUsed}/{hintsTotal})
                     </span>
                     {hintsUsed < hintsTotal ? (
@@ -714,18 +693,18 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                         variant="secondary"
                         size="sm"
                         onClick={() => void handleRevealHint()}
-                        className={isFullscreen ? 'h-6 text-[11px] px-2 py-0.5' : ''}
+                        className="h-7 text-xs px-2.5 py-0.5 font-bold"
                       >
                         {levelProgress?.status === 'COMPLETED'
                           ? t('game:revealHintFree')
                           : t('game:revealHint', { penalty: config.settings.score_rules.hint_penalty })}
                       </Button>
                     ) : (
-                      <span className="text-[11px] font-semibold text-amber-700">{t('game:noHintsLeft')}</span>
+                      <span className="text-xs font-semibold text-amber-700">{t('game:noHintsLeft')}</span>
                     )}
                   </div>
                   {hints.length > 0 ? (
-                    <ul className="space-y-1 text-xs text-amber-950">
+                    <ul className="space-y-1 text-xs sm:text-sm text-amber-950">
                       {hints.map((h, i) => (
                         <li key={i} className="rounded-lg bg-white/80 px-2.5 py-1 border border-amber-200/80">
                           💡 {pickLocalized(h, lang, fallbackLang)}
@@ -733,7 +712,7 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-[11px] text-amber-800">
+                    <p className="text-xs text-amber-800">
                       {t('game:hintPenaltyNote', { penalty: config.settings.score_rules.hint_penalty })}
                     </p>
                   )}
@@ -757,11 +736,11 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
             )}
           >
             <div className="flex flex-wrap items-center gap-1.5">
-              <Badge variant={overBlockLimit ? 'danger' : 'info'} className={isFullscreen ? 'text-xs py-0.5 px-2' : ''}>
+              <Badge variant={overBlockLimit ? 'danger' : 'info'} className="text-xs sm:text-sm py-1 px-2.5 font-bold">
                 {t('game:blocksUsed', { used: blocksUsed, max: level.mission.rules.max_blocks })}
               </Badge>
               {(level.mission.rules.required_commands ?? []).length > 0 && (
-                <Badge variant="warning" className={isFullscreen ? 'text-xs py-0.5 px-2' : ''}>
+                <Badge variant="warning" className="text-xs sm:text-sm py-1 px-2.5 font-bold">
                   {t('game:requiredBlocks')}{' '}
                   {(level.mission.rules.required_commands ?? [])
                     .map((c) => localizedBlockLabel(config.blocks, c, lang, fallbackLang))
@@ -776,18 +755,18 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                 size="sm"
                 onClick={() => setShowHowToPlay(true)}
                 data-testid="how-to-play-btn"
-                className={isFullscreen ? 'h-7 text-xs px-2' : ''}
+                className="h-8 px-2.5 sm:px-3 text-xs sm:text-sm font-bold"
               >
-                <Compass className="h-3.5 w-3.5 text-indigo-700" />
+                <Compass className="h-4 w-4 text-indigo-700" />
                 <span>{lang === 'th' ? 'วิธีเล่น 4 ขั้นตอน' : 'How to Play'}</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowGuide(true)}
-                className={isFullscreen ? 'h-7 text-xs px-2 hidden sm:inline-flex' : ''}
+                className="h-8 px-2.5 sm:px-3 text-xs sm:text-sm font-bold hidden sm:inline-flex"
               >
-                <HelpCircle className="h-3.5 w-3.5" />
+                <HelpCircle className="h-4 w-4" />
                 <span>{t('game:commandGuide')}</span>
               </Button>
               <Button
@@ -795,10 +774,10 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                 size="sm"
                 onClick={() => engineRef.current?.reset()}
                 disabled={compiling}
-                className={isFullscreen ? 'h-7 text-xs px-2' : ''}
+                className="h-8 px-2.5 text-xs sm:text-sm font-bold"
                 title={t('game:resetScene')}
               >
-                <RotateCcw className="h-3.5 w-3.5" />
+                <RotateCcw className="h-4 w-4" />
                 <span className="hidden xl:inline">{t('game:resetScene')}</span>
               </Button>
               <Button
@@ -806,7 +785,7 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                 size="sm"
                 onClick={() => setResetSignal((n) => n + 1)}
                 disabled={compiling}
-                className={isFullscreen ? 'h-7 text-xs px-2' : ''}
+                className="h-8 px-2.5 text-xs sm:text-sm font-bold"
                 title={t('game:resetWorkspace')}
               >
                 <span className="hidden xl:inline">{t('game:resetWorkspace')}</span>
@@ -814,14 +793,10 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
               </Button>
               <Button
                 variant="success"
-                size={isFullscreen ? 'sm' : 'lg'}
                 onClick={() => void handleCompile()}
                 disabled={compiling}
                 data-testid="compile-btn"
-                className={cn(
-                  'font-black tracking-wide shadow-md transition-all',
-                  isFullscreen ? 'h-8 px-4 text-xs' : 'px-7',
-                )}
+                className="h-9 px-5 sm:px-6 text-sm sm:text-base font-black tracking-wide shadow-md transition-all cursor-pointer"
               >
                 {compiling ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -835,76 +810,69 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
 
           {/* Interactive 4-Step Gameplay Guide Strip */}
           <div
-            className={cn(
-              'flex items-center justify-between gap-1 rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50 via-sky-50 to-emerald-50 shadow-2xs shrink-0',
-              isFullscreen ? 'px-2 py-1 text-xs' : 'flex-wrap px-3.5 py-2 rounded-2xl gap-2',
-            )}
+            className="flex items-center justify-between gap-1.5 rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50 via-sky-50 to-emerald-50 px-3 py-1.5 shadow-2xs shrink-0"
             data-testid="step-by-step-guide-bar"
           >
-            <div className="flex items-center gap-1 sm:gap-1.5 text-xs font-extrabold overflow-x-auto">
+            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-extrabold overflow-x-auto">
               <button
                 type="button"
                 onClick={() => setShowHowToPlay(true)}
                 className={cn(
-                  'inline-flex items-center gap-1 rounded-md transition-all cursor-pointer whitespace-nowrap',
-                  isFullscreen ? 'px-1.5 py-0.5 text-[11px]' : 'px-2.5 py-1',
+                  'inline-flex items-center gap-1.5 rounded-md px-2 sm:px-2.5 py-1 transition-all cursor-pointer whitespace-nowrap',
                   blocksUsed === 0
                     ? 'bg-indigo-600 text-white shadow-xs'
                     : 'bg-white/80 text-slate-700 hover:bg-white',
                 )}
               >
-                <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-300 text-[9px] font-black text-slate-950">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-300 text-[10px] font-black text-slate-950">
                   1
                 </span>
                 <span>{lang === 'th' ? 'วางแผนดูแผนที่' : 'Plan on Map'}</span>
               </button>
-              <span className="text-slate-400 text-[10px]">➔</span>
+              <span className="text-slate-400 text-xs">➔</span>
               <button
                 type="button"
                 onClick={() => setShowHowToPlay(true)}
                 className={cn(
-                  'inline-flex items-center gap-1 rounded-md transition-all cursor-pointer whitespace-nowrap',
-                  isFullscreen ? 'px-1.5 py-0.5 text-[11px]' : 'px-2.5 py-1',
+                  'inline-flex items-center gap-1.5 rounded-md px-2 sm:px-2.5 py-1 transition-all cursor-pointer whitespace-nowrap',
                   blocksUsed === 0
                     ? 'bg-sky-600 text-white shadow-xs animate-pulse'
                     : 'bg-white/80 text-slate-700 hover:bg-white',
                 )}
               >
-                <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-300 text-[9px] font-black text-slate-950">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-300 text-[10px] font-black text-slate-950">
                   2
                 </span>
                 <span>{lang === 'th' ? 'เปิดถาดคำสั่งซ้ายมือ' : 'Open Block Tray'}</span>
               </button>
-              <span className="text-slate-400 text-[10px]">➔</span>
+              <span className="text-slate-400 text-xs">➔</span>
               <button
                 type="button"
                 onClick={() => setShowHowToPlay(true)}
                 className={cn(
-                  'inline-flex items-center gap-1 rounded-md transition-all cursor-pointer whitespace-nowrap',
-                  isFullscreen ? 'px-1.5 py-0.5 text-[11px]' : 'px-2.5 py-1',
+                  'inline-flex items-center gap-1.5 rounded-md px-2 sm:px-2.5 py-1 transition-all cursor-pointer whitespace-nowrap',
                   blocksUsed > 0 && !overBlockLimit
                     ? 'bg-indigo-600 text-white shadow-xs'
                     : 'bg-white/80 text-slate-700 hover:bg-white',
                 )}
               >
-                <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-300 text-[9px] font-black text-slate-950">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-300 text-[10px] font-black text-slate-950">
                   3
                 </span>
                 <span>{lang === 'th' ? 'ลากบล็อกมาเรียงต่อกัน' : 'Drag & Snap Blocks'}</span>
               </button>
-              <span className="text-slate-400 text-[10px]">➔</span>
+              <span className="text-slate-400 text-xs">➔</span>
               <button
                 type="button"
                 onClick={() => setShowHowToPlay(true)}
                 className={cn(
-                  'inline-flex items-center gap-1 rounded-md transition-all cursor-pointer whitespace-nowrap',
-                  isFullscreen ? 'px-1.5 py-0.5 text-[11px]' : 'px-2.5 py-1',
+                  'inline-flex items-center gap-1.5 rounded-md px-2 sm:px-2.5 py-1 transition-all cursor-pointer whitespace-nowrap',
                   blocksUsed > 0 && !overBlockLimit
                     ? 'bg-emerald-600 text-white shadow-xs animate-pulse'
                     : 'bg-white/80 text-slate-700 hover:bg-white',
                 )}
               >
-                <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-300 text-[9px] font-black text-slate-950">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-300 text-[10px] font-black text-slate-950">
                   4
                 </span>
                 <span>{lang === 'th' ? 'กดปุ่ม COMPILE' : 'Press COMPILE'}</span>
@@ -914,7 +882,7 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
             <button
               type="button"
               onClick={() => setShowHowToPlay(true)}
-              className="text-[11px] font-extrabold text-indigo-700 underline hover:text-indigo-900 cursor-pointer shrink-0 hidden sm:inline"
+              className="text-xs font-extrabold text-indigo-700 underline hover:text-indigo-900 cursor-pointer shrink-0 hidden sm:inline"
             >
               {lang === 'th' ? 'ดูภาพตัวอย่างวิธีเล่น →' : 'See Visual Guide →'}
             </button>

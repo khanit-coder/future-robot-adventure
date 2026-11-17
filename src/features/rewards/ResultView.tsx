@@ -228,7 +228,12 @@ export function ResultView() {
   const defaultRobot = config.robots.find((r) => r.is_default) ?? config.robots[0] ?? null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-900 text-white">
+    <div
+      className={cn(
+        'min-h-screen bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-900 text-white fra-result-view fra-scrollable',
+        isFullscreen ? 'h-screen overflow-y-auto' : 'overflow-y-auto',
+      )}
+    >
       <header
         className={cn(
           'mx-auto flex flex-wrap items-center justify-between gap-3 px-6 py-4',

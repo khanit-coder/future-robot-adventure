@@ -137,7 +137,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
               </div>
             )}
             <div>
-              <h1 className={cn('font-extrabold text-slate-900', isFullscreen ? 'text-sm' : 'text-base')}>
+              <h1 className="font-extrabold text-slate-900 text-sm sm:text-base">
                 {t('player:lessons.header')}
               </h1>
               <p className="text-xs font-medium text-slate-500">
@@ -148,11 +148,11 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
 
           <div className="flex items-center gap-2">
             {reviewMode ? (
-              <Button variant="outline" size="sm" onClick={() => setShowLessonReview(false)} className={isFullscreen ? 'h-7 text-xs px-2' : ''}>
+              <Button variant="outline" size="sm" onClick={() => setShowLessonReview(false)} className="h-8 text-xs sm:text-sm px-3">
                 {t('common:app.back')}
               </Button>
             ) : (
-              <Button variant="outline" size="sm" onClick={() => void resetToHome()} className={isFullscreen ? 'h-7 text-xs px-2' : ''}>
+              <Button variant="outline" size="sm" onClick={() => void resetToHome()} className="h-8 text-xs sm:text-sm px-3">
                 <Home className="h-3.5 w-3.5 text-indigo-600" />
                 <span className="hidden sm:inline">{t('common:app.home')}</span>
               </Button>
@@ -164,7 +164,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                 disabled={busy}
                 onClick={() => void handleStartAdventure(true)}
                 data-testid="skip-lessons-btn"
-                className={cn('font-extrabold shadow-sm', isFullscreen ? 'h-7 text-xs px-2.5' : '')}
+                className="font-extrabold shadow-sm h-8 text-xs sm:text-sm px-3"
               >
                 <Rocket className="h-3.5 w-3.5" />
                 <span>{lang === 'th' ? 'ข้ามเนื้อหาไปเล่นเกมเลย' : t('player:lessons.skipAll')}</span>
@@ -233,7 +233,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
         )}
 
         {/* Step dots */}
-        <div className={cn('flex items-center shrink-0', isFullscreen ? 'gap-1' : 'flex-wrap gap-2')}>
+        <div className="flex items-center gap-1.5 flex-wrap shrink-0">
           {lessons.map((l, i) => {
             const done = lessonsDone.includes(l.id);
             const active = i === index;
@@ -245,8 +245,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                   if (done || i <= lessonsDone.length || reviewMode || canSkip) setIndex(i);
                 }}
                 className={cn(
-                  'inline-flex items-center gap-1 rounded-full font-bold transition-all cursor-pointer',
-                  isFullscreen ? 'px-2 py-0.5 text-[11px]' : 'px-3 py-1 text-xs',
+                  'inline-flex items-center gap-1 rounded-full font-bold px-3 py-1 text-xs transition-all cursor-pointer',
                   active
                     ? 'bg-indigo-600 text-white shadow-xs'
                     : done
@@ -254,7 +253,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                       : 'bg-slate-200 text-slate-600',
                 )}
               >
-                {done && <CheckCircle2 className={isFullscreen ? 'h-3 w-3' : 'h-3.5 w-3.5'} />}
+                {done && <CheckCircle2 className="h-3.5 w-3.5" />}
                 {i + 1}
               </button>
             );
@@ -283,26 +282,16 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
               )}
             >
               <div className="flex flex-wrap items-center justify-between gap-2 shrink-0">
-                <Badge variant={isCurrentDone ? 'success' : 'default'} className={isFullscreen ? 'text-[11px] py-0 px-2' : ''}>
+                <Badge variant={isCurrentDone ? 'success' : 'default'} className="text-xs font-semibold py-0.5 px-2">
                   {isCurrentDone
                     ? t('player:lessons.completed')
                     : t('player:lessons.step', { current: index + 1, total: lessons.length })}
                 </Badge>
               </div>
-              <h2
-                className={cn(
-                  'font-extrabold text-slate-900 shrink-0',
-                  isFullscreen ? 'text-lg sm:text-xl' : 'text-2xl',
-                )}
-              >
+              <h2 className="font-extrabold text-slate-900 shrink-0 text-xl sm:text-2xl">
                 {pickLocalized(lesson.title, lang, fallback)}
               </h2>
-              <p
-                className={cn(
-                  'font-semibold text-indigo-700 shrink-0',
-                  isFullscreen ? 'text-xs' : 'text-sm',
-                )}
-              >
+              <p className="font-semibold text-indigo-700 shrink-0 text-sm">
                 {pickLocalized(lesson.summary, lang, fallback)}
               </p>
 
@@ -329,7 +318,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                 </a>
               )}
 
-              <div className={cn('prose prose-slate max-w-none text-slate-700', isFullscreen ? 'text-xs leading-relaxed' : 'text-sm')}>
+              <div className="prose prose-slate max-w-none text-slate-700 text-sm leading-relaxed">
                 <MarkdownText text={pickLocalized(lesson.body, lang, fallback)} />
               </div>
             </CardContent>

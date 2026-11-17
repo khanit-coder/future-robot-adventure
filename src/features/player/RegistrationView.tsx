@@ -89,7 +89,7 @@ export function RegistrationView() {
   return (
     <div
       className={cn(
-        'bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-900 text-white flex flex-col',
+        'bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-900 text-white flex flex-col fra-scrollable',
         isFullscreen ? 'h-screen overflow-y-auto' : 'min-h-screen',
       )}
     >
