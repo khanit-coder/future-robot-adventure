@@ -14,6 +14,8 @@ import type { AdminWorkspaceData } from '@/features/admin/adminTypes';
 import { ImageUploader } from '@/features/admin/components/ImageUploader';
 import { LocalizedFields } from '@/features/admin/components/LocalizedFields';
 import { SpritesheetTemplateGuide } from './SpritesheetTemplateGuide';
+import { SpritesheetAligner } from './SpritesheetAligner';
+import { BUILTIN_ROBOT_STYLES, SPECIAL_ROBOT_COLORS } from '@/game-engine/animations/robotStyles';
 import { BUILTIN_ANIMATIONS } from '@/game-engine/animations/animationConstants';
 import { getSupabase } from '@/services/supabase/client';
 import { pickLocalized } from '@/utils/localize';
@@ -231,15 +233,20 @@ export function RobotManagerModule({
 
                 {draft.kind === 'builtin' ? (
                   <div className="space-y-1.5">
-                    <Label>Builtin Style</Label>
+                    <Label>Builtin Style ({BUILTIN_ROBOT_STYLES.length} รูปแบบ)</Label>
                     <Select
                       value={draft.builtin_style ?? 'bolt'}
                       onChange={(e) => setDraft({ ...draft, builtin_style: e.target.value })}
                     >
-                      <option value="bolt">Bolt (Classic)</option>
-                      <option value="nova">Nova (Dual Antenna)</option>
-                      <option value="gizmo">Gizmo (Hover Thruster)</option>
+                      {BUILTIN_ROBOT_STYLES.map((st) => (
+                        <option key={st.id} value={st.id}>
+                          {st.badge} {pickLocalized(st.name, lang, 'en')}
+                        </option>
+                      ))}
                     </Select>
+                    <p className="text-[11px] text-slate-500">
+                      {BUILTIN_ROBOT_STYLES.find((s) => s.id === (draft.builtin_style ?? 'bolt'))?.desc[lang === 'th' ? 'th' : 'en']}
+                    </p>
                   </div>
                 ) : (
                   <ImageUploader
@@ -257,6 +264,20 @@ export function RobotManagerModule({
 
               {draft.kind === 'spritesheet' && (
                 <div className="space-y-4">
+                  {draft.sprite_url && (
+                    <SpritesheetAligner
+                      spriteUrl={draft.sprite_url}
+                      frameWidth={draft.frame_width ?? 96}
+                      frameHeight={draft.frame_height ?? 96}
+                      onDimensionsChange={(w, h) => setDraft({ ...draft, frame_width: w, frame_height: h })}
+                      onSpriteUrlChange={async (newUrl) => {
+                        setDraft((d) => (d ? { ...d, sprite_url: newUrl } : d));
+                        await getSupabase().from('robot_assets').update({ sprite_url: newUrl }).eq('id', draft.id);
+                        await onReload();
+                      }}
+                    />
+                  )}
+
                   <SpritesheetTemplateGuide
                     currentRobot={draft}
                     onApplyTemplate={handleApplyTemplate}
@@ -299,15 +320,55 @@ export function RobotManagerModule({
                 </div>
               )}
 
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div className="space-y-1.5">
-                  <Label>Primary Color</Label>
-                  <Input
-                    type="color"
-                    value={draft.primary_color}
-                    onChange={(e) => setDraft({ ...draft, primary_color: e.target.value })}
-                  />
+              {/* Primary Color & Special Editions */}
+              <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <Label className="font-bold text-sm">
+                    ชุดสีพิเศษ (Special Edition Colors) & สีหลัก
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-500">กำหนดเอง:</span>
+                    <Input
+                      type="color"
+                      value={draft.primary_color}
+                      onChange={(e) => setDraft({ ...draft, primary_color: e.target.value })}
+                      className="h-8 w-14 p-0.5 cursor-pointer border-slate-300"
+                    />
+                  </div>
                 </div>
+
+                {/* Special color chips */}
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  {SPECIAL_ROBOT_COLORS.map((col) => {
+                    const isSelected = draft.primary_color?.toLowerCase() === col.hex.toLowerCase();
+                    return (
+                      <button
+                        key={col.id}
+                        type="button"
+                        onClick={() => setDraft({ ...draft, primary_color: col.hex })}
+                        className={`flex items-center gap-2 rounded-xl border p-2 text-left transition-all cursor-pointer ${
+                          isSelected
+                            ? 'border-indigo-600 bg-white ring-2 ring-indigo-500 shadow-sm dark:bg-slate-800'
+                            : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900'
+                        }`}
+                      >
+                        <span
+                          className="h-5 w-5 shrink-0 rounded-full border border-black/20 shadow-xs"
+                          style={{ backgroundColor: col.hex }}
+                        />
+                        <div className="min-w-0">
+                          <p className="truncate text-xs font-bold text-slate-800 dark:text-slate-200">
+                            {col.badge} {lang === 'th' ? col.name.th : col.name.en}
+                          </p>
+                          <p className="text-[10px] font-mono text-slate-400 uppercase">{col.hex}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label>Scale (0.2–4.0)</Label>
                   <Input
