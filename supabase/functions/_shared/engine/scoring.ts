@@ -8,6 +8,7 @@ export const DEFAULT_SCORE_RULES: ScoreRules = {
   time_bonus_full_seconds: 30,
   time_bonus_zero_seconds: 180,
   hint_penalty: 10,
+  game_theme: 'space',
 };
 
 export interface ScoreInput {

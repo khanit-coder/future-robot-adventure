@@ -59,6 +59,7 @@ import { loadSavedWorkspace, saveWorkspaceState, usePlayerStore } from '@/stores
 import { formatDuration, pickLocalized } from '@/utils/localize';
 import { HowToPlayGuideModal } from './HowToPlayGuideModal';
 import { LevelMap } from './LevelMap';
+import { useGameTheme } from './useGameTheme';
 
 const MAX_HEARTS = 5;
 
@@ -77,6 +78,7 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
   const { t } = useTranslation(['player', 'game', 'common']);
   const lang = currentLang();
   const { isFullscreen } = useFullscreen();
+  const { isCyber, isEsports, isAcademy, isArcade, isDark } = useGameTheme();
 
   const settings = useAppStore((s) => s.settings);
   const player = usePlayerStore((s) => s.player)!;
@@ -368,7 +370,11 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
   return (
     <div
       className={cn(
-        'flex flex-col bg-slate-100',
+        'flex flex-col transition-colors duration-300',
+        isCyber && 'bg-slate-950 text-slate-100',
+        isEsports && 'bg-slate-950 text-slate-100',
+        isAcademy && 'bg-slate-100 text-slate-900',
+        isArcade && 'bg-indigo-950 text-slate-100',
         isFullscreen ? 'h-screen max-h-screen overflow-hidden fra-play-workspace' : 'min-h-screen',
       )}
     >
@@ -382,7 +388,11 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
       {/* Top HUD */}
       <header
         className={cn(
-          'border-b border-slate-200 bg-white shadow-xs shrink-0',
+          'border-b shrink-0 transition-colors duration-300',
+          isCyber && 'border-sky-500/25 bg-slate-900/95 backdrop-blur-md shadow-[0_4px_20px_rgba(56,189,248,0.12)] text-white',
+          isEsports && 'border-violet-500/35 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 shadow-lg text-white',
+          isAcademy && 'border-slate-200 bg-white shadow-xs text-slate-900',
+          isArcade && 'border-pink-400/40 bg-indigo-950/95 shadow-md text-white',
           isFullscreen ? 'px-3 py-1' : 'px-4 py-2.5',
         )}
       >
@@ -399,9 +409,14 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
               onClick={() => setShowHomeConfirm(true)}
               data-testid="workspace-home-btn"
               title={t('common:app.backToHome')}
-              className={isFullscreen ? 'h-7 px-2 text-xs' : ''}
+              className={cn(
+                isFullscreen ? 'h-7 px-2 text-xs' : '',
+                isCyber && 'border-sky-500/40 bg-slate-800/80 text-sky-200 hover:border-sky-400 hover:bg-slate-800',
+                isEsports && 'border-violet-500/40 bg-slate-900 text-violet-200 hover:border-amber-400',
+                isArcade && 'border-pink-400/40 bg-indigo-900/80 text-pink-200 hover:border-pink-300',
+              )}
             >
-              <Home className="h-3.5 w-3.5 text-indigo-600" />
+              <Home className={cn('h-3.5 w-3.5', isCyber ? 'text-sky-400' : isEsports ? 'text-amber-400' : isArcade ? 'text-pink-400' : 'text-indigo-600')} />
               <span className="hidden sm:inline">{t('common:app.home')}</span>
             </Button>
 
@@ -432,15 +447,31 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
             )}
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-slate-900 text-sm sm:text-base">
+                <span
+                  className={cn(
+                    'font-extrabold text-sm sm:text-base',
+                    isCyber && 'text-sky-200 font-black drop-shadow-[0_0_8px_rgba(56,189,248,0.4)] tracking-wide',
+                    isEsports && 'text-white font-black uppercase tracking-tight',
+                    isAcademy && 'text-slate-900',
+                    isArcade && 'text-amber-300 font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]',
+                  )}
+                >
                   {player.display_name}
                 </span>
-                <Badge variant="secondary" className="text-xs font-semibold py-0.5 px-2">
+                <Badge
+                  variant="secondary"
+                  className={cn(
+                    'text-xs font-semibold py-0.5 px-2',
+                    isCyber && 'border border-sky-400/30 bg-sky-500/15 text-sky-200',
+                    isEsports && 'border border-violet-400/40 bg-violet-950/60 text-violet-200 font-bold',
+                    isArcade && 'border border-pink-400/40 bg-pink-500/20 text-pink-200',
+                  )}
+                >
                   {player.school}
                 </Badge>
               </div>
               {!isFullscreen && (
-                <p className="text-xs text-slate-500">
+                <p className={cn('text-xs', isCyber ? 'text-sky-300/70' : isEsports ? 'text-slate-400' : isArcade ? 'text-pink-300/80' : 'text-slate-500')}>
                   {settings ? pickLocalized(settings.game_title, lang, fallbackLang) : t('common:app.title')}
                 </p>
               )}
@@ -450,11 +481,18 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
           <div className="flex items-center gap-2 flex-wrap">
             {/* 5 Hearts Indicator */}
             <div
-              className={`inline-flex items-center gap-1 rounded-xl border font-extrabold px-2.5 sm:px-3 py-1 text-sm ${
+              className={cn(
+                'inline-flex items-center gap-1 rounded-xl border font-extrabold px-2.5 sm:px-3 py-1 text-sm transition-all',
                 heartsRemaining <= 1
                   ? 'border-rose-400 bg-rose-50 text-rose-700 animate-pulse'
-                  : 'border-rose-200 bg-rose-50/70 text-rose-800'
-              }`}
+                  : isCyber
+                    ? 'border-rose-500/40 bg-rose-950/30 text-rose-300 shadow-[0_0_8px_rgba(244,63,94,0.2)]'
+                    : isEsports
+                      ? 'border-rose-500/40 bg-slate-900 text-rose-400'
+                      : isArcade
+                        ? 'border-pink-500/40 bg-pink-950/50 text-pink-300'
+                        : 'border-rose-200 bg-rose-50/70 text-rose-800',
+              )}
               data-testid="player-hearts"
               title={t('player:workspace.heartsLabel', { count: heartsRemaining, max: MAX_HEARTS })}
             >
@@ -475,22 +513,35 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
 
             {/* Timer */}
             <div
-              className={`inline-flex items-center gap-1.5 rounded-xl border font-extrabold px-2.5 sm:px-3 py-1 text-sm ${
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-xl border font-extrabold px-2.5 sm:px-3 py-1 text-sm',
                 secondsLeft !== null && secondsLeft <= 120
                   ? 'border-rose-300 bg-rose-50 text-rose-700 animate-pulse'
-                  : 'border-slate-200 bg-slate-50 text-slate-800'
-              }`}
+                  : isCyber
+                    ? 'border-sky-500/35 bg-slate-800/90 text-sky-200 font-mono shadow-[0_0_8px_rgba(56,189,248,0.2)]'
+                    : isEsports
+                      ? 'border-violet-500/35 bg-slate-900 text-slate-200'
+                      : isArcade
+                        ? 'border-purple-400/40 bg-purple-950/60 text-purple-200'
+                        : 'border-slate-200 bg-slate-50 text-slate-800',
+              )}
               data-testid="player-timer"
             >
-              <Clock className="h-4 w-4 text-indigo-600" />
+              <Clock className={cn('h-4 w-4', isCyber ? 'text-sky-400' : isEsports ? 'text-amber-400' : isArcade ? 'text-pink-400' : 'text-indigo-600')} />
               {secondsLeft === null ? t('player:workspace.unlimitedTime') : formatDuration(secondsLeft)}
             </div>
 
             {/* Score */}
             <div
-              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 font-extrabold text-amber-900 px-2.5 sm:px-3 py-1 text-sm"
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-xl border font-extrabold px-2.5 sm:px-3 py-1 text-sm',
+                isCyber && 'border-amber-400/40 bg-amber-950/30 text-amber-300 font-mono shadow-[0_0_8px_rgba(245,158,11,0.25)]',
+                isEsports && 'border-amber-500/50 bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-300 font-black',
+                isAcademy && 'border-amber-200 bg-amber-50 text-amber-900',
+                isArcade && 'border-amber-400/50 bg-amber-950/50 text-amber-300 font-black',
+              )}
             >
-              <Trophy className="h-4 w-4 text-amber-500" />
+              <Trophy className="h-4 w-4 text-amber-400" />
               <span data-testid="player-score">{playerSession.total_score}</span>
             </div>
 
@@ -499,11 +550,16 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
               variant="outline"
               size="sm"
               onClick={() => setShowMap(true)}
-              className="h-8 px-2.5 text-xs sm:text-sm font-bold"
+              className={cn(
+                'h-8 px-2.5 text-xs sm:text-sm font-bold',
+                isCyber && 'border-sky-500/30 bg-slate-800/80 text-sky-200 hover:border-sky-400',
+                isEsports && 'border-violet-500/30 bg-slate-900 text-slate-200 hover:border-violet-400',
+                isArcade && 'border-pink-400/30 bg-indigo-900/80 text-pink-200 hover:border-pink-300',
+              )}
             >
-              <MapIcon className="h-3.5 w-3.5 text-indigo-600" />
+              <MapIcon className={cn('h-3.5 w-3.5', isCyber ? 'text-sky-400' : isEsports ? 'text-amber-400' : isArcade ? 'text-pink-400' : 'text-indigo-600')} />
               <span>{t('player:workspace.levelMapBtn')}</span>
-              <span className="text-xs text-slate-500">
+              <span className={cn('text-xs', isCyber ? 'text-sky-400/70' : isEsports ? 'text-slate-400' : isArcade ? 'text-pink-300/70' : 'text-slate-500')}>
                 ({playerSession.levels_completed}/{config.levels.length})
               </span>
             </Button>
@@ -513,9 +569,14 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowLessonReview(true)}
-                className="h-8 px-2.5 text-xs sm:text-sm font-bold"
+                className={cn(
+                  'h-8 px-2.5 text-xs sm:text-sm font-bold',
+                  isCyber && 'border-sky-500/30 bg-slate-800/80 text-sky-200 hover:border-sky-400',
+                  isEsports && 'border-violet-500/30 bg-slate-900 text-slate-200 hover:border-violet-400',
+                  isArcade && 'border-pink-400/30 bg-indigo-900/80 text-pink-200 hover:border-pink-300',
+                )}
               >
-                <BookOpen className="h-3.5 w-3.5 text-sky-600" />
+                <BookOpen className="h-3.5 w-3.5 text-sky-400" />
                 <span className="hidden xl:inline">{t('player:workspace.lessonsBtn')}</span>
               </Button>
             )}
@@ -531,8 +592,8 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
               <span>{t('player:workspace.finishGame')}</span>
             </Button>
 
-            <FullscreenButton />
-            <SettingsMenu />
+            <FullscreenButton dark={isDark} />
+            <SettingsMenu dark={isDark} />
           </div>
         </div>
       </header>
@@ -584,7 +645,11 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
 
           <Card
             className={cn(
-              'flex flex-col border border-slate-200 shadow-xs bg-white rounded-xl',
+              'flex flex-col border shadow-xs rounded-xl transition-all',
+              isCyber && 'border-sky-500/25 bg-slate-900/90 text-white shadow-[0_0_15px_rgba(56,189,248,0.1)]',
+              isEsports && 'border-violet-500/30 bg-slate-900/90 text-white shadow-md',
+              isAcademy && 'border-slate-200 bg-white text-slate-900',
+              isArcade && 'border-2 border-pink-400/30 bg-indigo-900/80 text-white shadow-md',
               isFullscreen ? 'flex-1 min-h-0 overflow-hidden' : '',
             )}
           >
@@ -596,7 +661,14 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
             >
               <div className="flex items-center justify-between gap-1.5 shrink-0">
                 <div className="flex items-center gap-1.5 truncate">
-                  <Badge className="text-xs font-bold py-0.5 px-2">
+                  <Badge
+                    className={cn(
+                      'text-xs font-bold py-0.5 px-2',
+                      isCyber && 'border border-sky-400/30 bg-sky-500/15 text-sky-200',
+                      isEsports && 'border border-violet-400/30 bg-violet-950/60 text-violet-200',
+                      isArcade && 'border border-pink-400/30 bg-pink-500/20 text-pink-200',
+                    )}
+                  >
                     {t('game:level', { n: level.position })}
                   </Badge>
                   {levelProgress?.status === 'COMPLETED' && (
@@ -605,7 +677,15 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                       {t('game:status.completed')} ({levelProgress.score})
                     </Badge>
                   )}
-                  <h2 className="font-black text-slate-900 text-base sm:text-lg lg:text-xl truncate">
+                  <h2
+                    className={cn(
+                      'font-black text-base sm:text-lg lg:text-xl truncate',
+                      isCyber && 'text-sky-200 drop-shadow-[0_0_8px_rgba(56,189,248,0.3)]',
+                      isEsports && 'text-white font-black uppercase tracking-tight',
+                      isAcademy && 'text-slate-900',
+                      isArcade && 'text-amber-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]',
+                    )}
+                  >
                     {pickLocalized(level.title, lang, fallbackLang, level.code)}
                   </h2>
                 </div>
@@ -615,26 +695,45 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                     variant="outline"
                     size="sm"
                     onClick={() => setShowCodeModal(true)}
-                    className="shrink-0 h-7 text-xs px-2.5 font-bold"
+                    className={cn(
+                      'shrink-0 h-7 text-xs px-2.5 font-bold',
+                      isCyber && 'border-sky-500/30 bg-slate-800 text-sky-200 hover:border-sky-400',
+                      isEsports && 'border-violet-500/30 bg-slate-900 text-slate-200 hover:border-amber-400',
+                      isArcade && 'border-pink-400/30 bg-indigo-900 text-pink-200',
+                    )}
                   >
-                    <Code2 className="h-3.5 w-3.5 text-indigo-600" />
+                    <Code2 className="h-3.5 w-3.5 text-indigo-400" />
                     {t('game:realCode.viewBtn')}
                   </Button>
                 )}
               </div>
 
-              <p className="text-slate-600 shrink-0 text-sm line-clamp-2">
+              <p
+                className={cn(
+                  'shrink-0 text-sm line-clamp-2',
+                  isCyber ? 'text-sky-200/80' : isEsports ? 'text-slate-300' : isArcade ? 'text-pink-100/90' : 'text-slate-600',
+                )}
+              >
                 {pickLocalized(level.description, lang, fallbackLang)}
               </p>
 
               {/* Objectives checklist */}
               <div
                 className={cn(
-                  'rounded-lg bg-slate-50 border border-slate-200/80 shrink-0',
+                  'rounded-lg shrink-0 transition-colors',
+                  isCyber && 'bg-slate-950/60 border border-sky-500/20 text-slate-200',
+                  isEsports && 'bg-slate-950/60 border border-violet-500/20 text-slate-200',
+                  isAcademy && 'bg-slate-50 border border-slate-200/80 text-slate-800',
+                  isArcade && 'bg-indigo-950/70 border border-pink-400/20 text-slate-200',
                   isFullscreen ? 'p-2 space-y-1' : 'p-3.5 space-y-2',
                 )}
               >
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                <p
+                  className={cn(
+                    'text-xs font-bold uppercase tracking-wider',
+                    isCyber ? 'text-sky-400' : isEsports ? 'text-amber-400' : isArcade ? 'text-pink-400' : 'text-slate-500',
+                  )}
+                >
                   {t('game:objectives')}
                 </p>
                 <div className="space-y-1">
@@ -653,9 +752,15 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                     return (
                       <div key={idx} className="flex items-center gap-2 text-sm font-medium">
                         <CheckCircle2
-                          className={`shrink-0 h-4 w-4 ${done ? 'text-emerald-600' : 'text-slate-300'}`}
+                          className={cn('shrink-0 h-4 w-4', done ? 'text-emerald-400' : isDark ? 'text-slate-600' : 'text-slate-300')}
                         />
-                        <span className={done ? 'font-semibold text-emerald-800' : 'text-slate-700'}>
+                        <span
+                          className={cn(
+                            done
+                              ? isDark ? 'font-bold text-emerald-300' : 'font-semibold text-emerald-800'
+                              : isDark ? 'text-slate-300' : 'text-slate-700',
+                          )}
+                        >
                           {t(`game:objectiveTypes.${obj.type}`, {
                             current: status?.current ?? 0,
                             target,
@@ -671,9 +776,14 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
               {feedbackError && (
                 <div
                   role="alert"
-                  className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 font-semibold text-rose-800 shrink-0 p-2.5 sm:p-3 text-sm"
+                  className={cn(
+                    'flex items-start gap-2 rounded-lg font-semibold shrink-0 p-2.5 sm:p-3 text-sm',
+                    isDark
+                      ? 'border border-rose-500/40 bg-rose-950/40 text-rose-200'
+                      : 'border border-rose-200 bg-rose-50 text-rose-800',
+                  )}
                 >
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" />
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-400" />
                   <span>{feedbackError}</span>
                 </div>
               )}
@@ -681,11 +791,16 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
               {/* Hints */}
               {hintsTotal > 0 && (
                 <div
-                  className="rounded-lg border border-amber-200 bg-amber-50/70 shrink-0 p-2.5 sm:p-3 space-y-1.5"
+                  className={cn(
+                    'rounded-lg shrink-0 p-2.5 sm:p-3 space-y-1.5',
+                    isDark
+                      ? 'border border-amber-500/30 bg-amber-950/30 text-amber-200'
+                      : 'border border-amber-200 bg-amber-50/70 text-amber-950',
+                  )}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-800">
-                      <Lightbulb className="h-4 w-4 text-amber-600" />
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-400">
+                      <Lightbulb className="h-4 w-4 text-amber-400" />
                       {t('game:hints')} ({hintsUsed}/{hintsTotal})
                     </span>
                     {hintsUsed < hintsTotal ? (
@@ -700,19 +815,27 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                           : t('game:revealHint', { penalty: config.settings.score_rules.hint_penalty })}
                       </Button>
                     ) : (
-                      <span className="text-xs font-semibold text-amber-700">{t('game:noHintsLeft')}</span>
+                      <span className="text-xs font-semibold text-amber-400">{t('game:noHintsLeft')}</span>
                     )}
                   </div>
                   {hints.length > 0 ? (
-                    <ul className="space-y-1 text-xs sm:text-sm text-amber-950">
+                    <ul className="space-y-1 text-xs sm:text-sm">
                       {hints.map((h, i) => (
-                        <li key={i} className="rounded-lg bg-white/80 px-2.5 py-1 border border-amber-200/80">
+                        <li
+                          key={i}
+                          className={cn(
+                            'rounded-lg px-2.5 py-1',
+                            isDark
+                              ? 'bg-slate-900/90 border border-amber-500/25 text-amber-200'
+                              : 'bg-white/80 border border-amber-200/80 text-amber-950',
+                          )}
+                        >
                           💡 {pickLocalized(h, lang, fallbackLang)}
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-xs text-amber-800">
+                    <p className={cn('text-xs', isDark ? 'text-amber-300/80' : 'text-amber-800')}>
                       {t('game:hintPenaltyNote', { penalty: config.settings.score_rules.hint_penalty })}
                     </p>
                   )}
@@ -731,7 +854,11 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
         >
           <div
             className={cn(
-              'flex items-center justify-between gap-1.5 rounded-xl border border-slate-200 bg-white shadow-xs shrink-0',
+              'flex items-center justify-between gap-1.5 rounded-xl border shrink-0 transition-colors',
+              isCyber && 'border-sky-500/25 bg-slate-900/90 shadow-[0_0_15px_rgba(56,189,248,0.1)] text-white',
+              isEsports && 'border-violet-500/30 bg-slate-900/90 shadow-md text-white',
+              isAcademy && 'border-slate-200 bg-white shadow-xs text-slate-900',
+              isArcade && 'border-2 border-pink-400/30 bg-indigo-900/80 shadow-md text-white',
               isFullscreen ? 'px-2.5 py-1.5' : 'flex-wrap px-4 py-3 gap-2 rounded-2xl',
             )}
           >
@@ -755,16 +882,26 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                 size="sm"
                 onClick={() => setShowHowToPlay(true)}
                 data-testid="how-to-play-btn"
-                className="h-8 px-2.5 sm:px-3 text-xs sm:text-sm font-bold"
+                className={cn(
+                  'h-8 px-2.5 sm:px-3 text-xs sm:text-sm font-bold',
+                  isCyber && 'border-sky-500/30 bg-sky-950/60 text-sky-200 hover:border-sky-400',
+                  isEsports && 'border-violet-500/30 bg-violet-950/60 text-violet-200 hover:border-amber-400',
+                  isArcade && 'border-pink-400/30 bg-pink-950/60 text-pink-200',
+                )}
               >
-                <Compass className="h-4 w-4 text-indigo-700" />
+                <Compass className={cn('h-4 w-4', isCyber ? 'text-sky-400' : isEsports ? 'text-amber-400' : isArcade ? 'text-pink-400' : 'text-indigo-700')} />
                 <span>{lang === 'th' ? 'วิธีเล่น 4 ขั้นตอน' : 'How to Play'}</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowGuide(true)}
-                className="h-8 px-2.5 sm:px-3 text-xs sm:text-sm font-bold hidden sm:inline-flex"
+                className={cn(
+                  'h-8 px-2.5 sm:px-3 text-xs sm:text-sm font-bold hidden sm:inline-flex',
+                  isCyber && 'border-sky-500/30 bg-slate-800 text-sky-200 hover:border-sky-400',
+                  isEsports && 'border-violet-500/30 bg-slate-900 text-slate-200',
+                  isArcade && 'border-pink-400/30 bg-indigo-900 text-pink-200',
+                )}
               >
                 <HelpCircle className="h-4 w-4" />
                 <span>{t('game:commandGuide')}</span>
@@ -774,7 +911,12 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                 size="sm"
                 onClick={() => engineRef.current?.reset()}
                 disabled={compiling}
-                className="h-8 px-2.5 text-xs sm:text-sm font-bold"
+                className={cn(
+                  'h-8 px-2.5 text-xs sm:text-sm font-bold',
+                  isCyber && 'border-sky-500/30 bg-slate-800 text-sky-200 hover:border-sky-400',
+                  isEsports && 'border-violet-500/30 bg-slate-900 text-slate-200',
+                  isArcade && 'border-pink-400/30 bg-indigo-900 text-pink-200',
+                )}
                 title={t('game:resetScene')}
               >
                 <RotateCcw className="h-4 w-4" />
@@ -785,7 +927,12 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                 size="sm"
                 onClick={() => setResetSignal((n) => n + 1)}
                 disabled={compiling}
-                className="h-8 px-2.5 text-xs sm:text-sm font-bold"
+                className={cn(
+                  'h-8 px-2.5 text-xs sm:text-sm font-bold',
+                  isCyber && 'border-sky-500/30 bg-slate-800 text-sky-200 hover:border-sky-400',
+                  isEsports && 'border-violet-500/30 bg-slate-900 text-slate-200',
+                  isArcade && 'border-pink-400/30 bg-indigo-900 text-pink-200',
+                )}
                 title={t('game:resetWorkspace')}
               >
                 <span className="hidden xl:inline">{t('game:resetWorkspace')}</span>
@@ -796,7 +943,12 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                 onClick={() => void handleCompile()}
                 disabled={compiling}
                 data-testid="compile-btn"
-                className="h-9 px-5 sm:px-6 text-sm sm:text-base font-black tracking-wide shadow-md transition-all cursor-pointer"
+                className={cn(
+                  'h-9 px-5 sm:px-6 text-sm sm:text-base font-black tracking-wide shadow-md transition-all cursor-pointer',
+                  isCyber && 'bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 hover:from-emerald-300 hover:to-cyan-300 shadow-[0_0_15px_rgba(52,211,153,0.4)]',
+                  isEsports && 'bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 hover:from-amber-300 hover:to-amber-400 shadow-md',
+                  isArcade && 'bg-gradient-to-r from-pink-500 via-purple-500 to-amber-400 text-white shadow-md',
+                )}
               >
                 {compiling ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -810,7 +962,13 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
 
           {/* Interactive 4-Step Gameplay Guide Strip */}
           <div
-            className="flex items-center justify-between gap-1.5 rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50 via-sky-50 to-emerald-50 px-3 py-1.5 shadow-2xs shrink-0"
+            className={cn(
+              'flex items-center justify-between gap-1.5 rounded-xl border px-3 py-1.5 shadow-2xs shrink-0 transition-colors',
+              isCyber && 'border-sky-500/35 bg-gradient-to-r from-slate-900 via-sky-950/50 to-slate-900 text-sky-200 shadow-[0_0_10px_rgba(56,189,248,0.15)]',
+              isEsports && 'border-amber-500/30 bg-gradient-to-r from-slate-900 via-purple-950/40 to-slate-900 text-amber-200',
+              isAcademy && 'border-indigo-200 bg-gradient-to-r from-indigo-50 via-sky-50 to-emerald-50 text-slate-800',
+              isArcade && 'border-pink-400/35 bg-gradient-to-r from-indigo-900 via-pink-950/50 to-indigo-900 text-pink-200',
+            )}
             data-testid="step-by-step-guide-bar"
           >
             <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-extrabold overflow-x-auto">
@@ -820,8 +978,8 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                 className={cn(
                   'inline-flex items-center gap-1.5 rounded-md px-2 sm:px-2.5 py-1 transition-all cursor-pointer whitespace-nowrap',
                   blocksUsed === 0
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'bg-white/80 text-slate-700 hover:bg-white',
+                    ? isCyber ? 'bg-sky-500 text-slate-950 font-black shadow-xs' : 'bg-indigo-600 text-white shadow-xs'
+                    : isDark ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-800' : 'bg-white/80 text-slate-700 hover:bg-white',
                 )}
               >
                 <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-300 text-[10px] font-black text-slate-950">
@@ -829,15 +987,15 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                 </span>
                 <span>{lang === 'th' ? 'วางแผนดูแผนที่' : 'Plan on Map'}</span>
               </button>
-              <span className="text-slate-400 text-xs">➔</span>
+              <span className={cn('text-xs', isDark ? 'text-slate-500' : 'text-slate-400')}>➔</span>
               <button
                 type="button"
                 onClick={() => setShowHowToPlay(true)}
                 className={cn(
                   'inline-flex items-center gap-1.5 rounded-md px-2 sm:px-2.5 py-1 transition-all cursor-pointer whitespace-nowrap',
                   blocksUsed === 0
-                    ? 'bg-sky-600 text-white shadow-xs animate-pulse'
-                    : 'bg-white/80 text-slate-700 hover:bg-white',
+                    ? isCyber ? 'bg-cyan-400 text-slate-950 font-black shadow-xs animate-pulse' : 'bg-sky-600 text-white shadow-xs animate-pulse'
+                    : isDark ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-800' : 'bg-white/80 text-slate-700 hover:bg-white',
                 )}
               >
                 <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-300 text-[10px] font-black text-slate-950">
@@ -845,15 +1003,15 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                 </span>
                 <span>{lang === 'th' ? 'เปิดถาดคำสั่งซ้ายมือ' : 'Open Block Tray'}</span>
               </button>
-              <span className="text-slate-400 text-xs">➔</span>
+              <span className={cn('text-xs', isDark ? 'text-slate-500' : 'text-slate-400')}>➔</span>
               <button
                 type="button"
                 onClick={() => setShowHowToPlay(true)}
                 className={cn(
                   'inline-flex items-center gap-1.5 rounded-md px-2 sm:px-2.5 py-1 transition-all cursor-pointer whitespace-nowrap',
                   blocksUsed > 0 && !overBlockLimit
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'bg-white/80 text-slate-700 hover:bg-white',
+                    ? isCyber ? 'bg-sky-500 text-slate-950 font-black shadow-xs' : 'bg-indigo-600 text-white shadow-xs'
+                    : isDark ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-800' : 'bg-white/80 text-slate-700 hover:bg-white',
                 )}
               >
                 <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-300 text-[10px] font-black text-slate-950">
@@ -861,15 +1019,15 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
                 </span>
                 <span>{lang === 'th' ? 'ลากบล็อกมาเรียงต่อกัน' : 'Drag & Snap Blocks'}</span>
               </button>
-              <span className="text-slate-400 text-xs">➔</span>
+              <span className={cn('text-xs', isDark ? 'text-slate-500' : 'text-slate-400')}>➔</span>
               <button
                 type="button"
                 onClick={() => setShowHowToPlay(true)}
                 className={cn(
                   'inline-flex items-center gap-1.5 rounded-md px-2 sm:px-2.5 py-1 transition-all cursor-pointer whitespace-nowrap',
                   blocksUsed > 0 && !overBlockLimit
-                    ? 'bg-emerald-600 text-white shadow-xs animate-pulse'
-                    : 'bg-white/80 text-slate-700 hover:bg-white',
+                    ? isCyber ? 'bg-emerald-400 text-slate-950 font-black shadow-xs animate-pulse' : 'bg-emerald-600 text-white shadow-xs animate-pulse'
+                    : isDark ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-800' : 'bg-white/80 text-slate-700 hover:bg-white',
                 )}
               >
                 <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-300 text-[10px] font-black text-slate-950">
@@ -882,7 +1040,10 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
             <button
               type="button"
               onClick={() => setShowHowToPlay(true)}
-              className="text-xs font-extrabold text-indigo-700 underline hover:text-indigo-900 cursor-pointer shrink-0 hidden sm:inline"
+              className={cn(
+                'text-xs font-extrabold underline cursor-pointer shrink-0 hidden sm:inline',
+                isCyber ? 'text-sky-300 hover:text-sky-200' : isEsports ? 'text-amber-300 hover:text-amber-200' : isArcade ? 'text-pink-300 hover:text-pink-200' : 'text-indigo-700 hover:text-indigo-900',
+              )}
             >
               {lang === 'th' ? 'ดูภาพตัวอย่างวิธีเล่น →' : 'See Visual Guide →'}
             </button>
@@ -890,7 +1051,11 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
 
           <div
             className={cn(
-              'rounded-xl border border-slate-200 bg-white shadow-xs overflow-hidden',
+              'rounded-xl border shadow-xs overflow-hidden transition-colors',
+              isCyber && 'border-sky-500/25 bg-slate-900 shadow-[0_0_15px_rgba(56,189,248,0.1)]',
+              isEsports && 'border-violet-500/30 bg-slate-900 shadow-md',
+              isAcademy && 'border-slate-200 bg-white shadow-xs',
+              isArcade && 'border-2 border-pink-400/30 bg-indigo-950 shadow-md',
               isFullscreen ? 'flex-1 min-h-0 h-full' : 'rounded-2xl flex-1 min-h-[420px]',
             )}
           >

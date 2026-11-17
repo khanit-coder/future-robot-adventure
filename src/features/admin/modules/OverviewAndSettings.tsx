@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { ExternalLink, Save } from 'lucide-react';
+import { Check, ExternalLink, Save } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { GameSettingsRow, ScoreRules } from '@engine';
+import type { GameSettingsRow, GameTheme, ScoreRules } from '@engine';
 import { computeMissionScore } from '@engine';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,8 @@ import { publicApi, type DashboardSnapshot } from '@/services/api/publicApi';
 import type { AdminWorkspaceData } from '@/features/admin/adminTypes';
 import { LocalizedFields } from '@/features/admin/components/LocalizedFields';
 import { ImageUploader } from '@/features/admin/components/ImageUploader';
+import { cn } from '@/utils/cn';
+import { THEME_OPTIONS } from '../themeOptions';
 
 export function OverviewModule({ data }: { data: AdminWorkspaceData }) {
   const { t } = useTranslation(['admin', 'common']);
@@ -230,6 +232,7 @@ export function BrandingModule({
 }) {
   const { t } = useTranslation(['admin', 'common']);
   const [form, setForm] = useState<GameSettingsRow>(data.settings);
+  const [gameTheme, setGameTheme] = useState<GameTheme>(data.settings.score_rules?.game_theme ?? 'space');
   const [saving, setSaving] = useState(false);
 
   const persistField = async (patch: Partial<GameSettingsRow>) => {
@@ -245,7 +248,12 @@ export function BrandingModule({
         game_logo_url: form.game_logo_url,
         primary_color: form.primary_color,
         secondary_color: form.secondary_color,
+        score_rules: {
+          ...form.score_rules,
+          game_theme: gameTheme,
+        },
       });
+      localStorage.setItem('fra_game_theme', gameTheme);
       await onReload();
       toast('success', t('admin:common.saved'));
     } catch (e) {
@@ -261,6 +269,92 @@ export function BrandingModule({
         <CardTitle>{t('admin:modules.branding')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Student Game Page Theme / Style 1–4 */}
+        <div className="space-y-3 rounded-2xl border border-indigo-200/80 bg-indigo-50/30 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/20">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <Label className="text-base font-extrabold flex items-center gap-2">
+                <span>สไตล์หน้าเล่นเกมของนักเรียน (Student Game Page Theme)</span>
+                <Badge variant="secondary" className="text-xs font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200">
+                  หน้าจอ /play ของนักเรียน
+                </Badge>
+              </Label>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                เลือกสไตล์ 1, 2, 3 หรือ 4 สำหรับหน้านักเรียนเข้าเล่นเกม (ตั้งค่าแยกอิสระจากหน้าจอแดชบอร์ด)
+              </p>
+            </div>
+            <span className="text-xs text-indigo-700 dark:text-indigo-300 font-bold">
+              ปัจจุบัน: แบบที่ {THEME_OPTIONS.find((t) => t.id === gameTheme)?.number ?? 1}
+            </span>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {THEME_OPTIONS.map((item) => {
+              const isSelected = gameTheme === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setGameTheme(item.id)}
+                  className={cn(
+                    'group relative flex flex-col justify-between rounded-2xl border p-4 text-left transition-all cursor-pointer',
+                    isSelected
+                      ? 'border-indigo-600 bg-white ring-2 ring-indigo-500/40 shadow-md dark:border-indigo-400 dark:bg-slate-900 dark:ring-indigo-400/40'
+                      : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900',
+                  )}
+                >
+                  <div className="w-full">
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={cn(
+                          'flex h-7 w-7 items-center justify-center rounded-full text-xs font-black',
+                          isSelected
+                            ? 'bg-indigo-600 text-white dark:bg-indigo-500'
+                            : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+                        )}
+                      >
+                        {item.number}
+                      </span>
+                      {isSelected ? (
+                        <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-black text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                          <Check className="h-3 w-3" /> หน้านักเรียน
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-semibold text-slate-400">
+                          {item.nameEn}
+                        </span>
+                      )}
+                    </div>
+
+                    <h4 className="mt-2.5 text-sm font-extrabold text-slate-900 dark:text-white">
+                      {item.name}
+                    </h4>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                      {item.desc}
+                    </p>
+                  </div>
+
+                  {/* Card mini preview */}
+                  <div
+                    className={cn(
+                      'mt-3.5 flex w-full items-center justify-between rounded-xl border p-2 text-xs font-bold transition-all',
+                      item.cardPreviewClass,
+                    )}
+                  >
+                    <span className={cn('text-[11px] font-black', item.textColor)}>
+                      {item.badgeText}
+                    </span>
+                    <span
+                      className="h-2.5 w-2.5 rounded-full shadow-xs"
+                      style={{ backgroundColor: item.accentBg }}
+                    />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="grid gap-6 sm:grid-cols-2">
           <ImageUploader
             folder="logos"

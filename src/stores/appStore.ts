@@ -39,6 +39,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (settings) {
         document.documentElement.style.setProperty('--fra-primary', settings.primary_color);
         document.documentElement.style.setProperty('--fra-secondary', settings.secondary_color);
+        if (settings.score_rules?.game_theme) {
+          document.documentElement.setAttribute('data-fra-theme', settings.score_rules.game_theme);
+          localStorage.setItem('fra_game_theme', settings.score_rules.game_theme);
+        }
         // Apply admin's default language only if user hasn't picked one yet in localStorage.
         if (!localStorage.getItem('fra_lang') && settings.default_language) {
           void i18n.changeLanguage(settings.default_language);

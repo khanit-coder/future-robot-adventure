@@ -184,6 +184,8 @@ export type ProgramParseResult =
 /* Scoring                                                             */
 /* ------------------------------------------------------------------ */
 
+export type GameTheme = 'space' | 'lab' | 'planet' | 'light';
+
 export interface ScoreRules {
   mission_base: number;
   no_hint_bonus: number;
@@ -194,6 +196,7 @@ export interface ScoreRules {
   /** No time bonus when solving takes this long or more. */
   time_bonus_zero_seconds: number;
   hint_penalty: number;
+  game_theme?: GameTheme;
 }
 
 export interface ScoreBreakdown {

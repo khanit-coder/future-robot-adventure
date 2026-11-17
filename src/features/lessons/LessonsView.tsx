@@ -11,6 +11,7 @@ import { useFullscreen } from '@/hooks/useFullscreen';
 import { cn } from '@/utils/cn';
 import { MarkdownText } from '@/components/common/MarkdownText';
 import { RobotIllustration } from '@/components/common/RobotIllustration';
+import { useGameTheme } from '@/features/player/useGameTheme';
 import { InteractiveRobotDemo } from './InteractiveRobotDemo';
 import { useAppStore } from '@/stores/appStore';
 import { usePlayerStore } from '@/stores/playerStore';
@@ -22,6 +23,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
   const { t } = useTranslation(['player', 'common']);
   const lang = currentLang();
   const { isFullscreen } = useFullscreen();
+  const { isCyber, isEsports, isAcademy, isArcade, isDark } = useGameTheme();
   const settings = useAppStore((s) => s.settings);
   const config = usePlayerStore((s) => s.config);
   const lessonsDone = usePlayerStore((s) => s.lessonsDone);
@@ -105,11 +107,23 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
   return (
     <div
       className={cn(
-        'bg-slate-50 flex flex-col',
+        'flex flex-col transition-colors duration-300',
+        isCyber && 'bg-slate-950 text-slate-100',
+        isEsports && 'bg-slate-950 text-slate-100',
+        isAcademy && 'bg-slate-50 text-slate-900',
+        isArcade && 'bg-indigo-950 text-slate-100',
         isFullscreen ? 'h-screen max-h-screen overflow-hidden fra-lessons-workspace' : 'min-h-screen',
       )}
     >
-      <header className="border-b border-slate-200 bg-white shrink-0">
+      <header
+        className={cn(
+          'border-b shrink-0 transition-colors duration-300',
+          isCyber && 'border-sky-500/25 bg-slate-900/95 text-white shadow-[0_4px_20px_rgba(56,189,248,0.1)]',
+          isEsports && 'border-violet-500/30 bg-slate-900 text-white shadow-md',
+          isAcademy && 'border-slate-200 bg-white text-slate-900 shadow-xs',
+          isArcade && 'border-pink-400/40 bg-indigo-950 text-white shadow-md',
+        )}
+      >
         <div
           className={cn(
             'flex flex-wrap items-center justify-between gap-3',
@@ -137,10 +151,23 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
               </div>
             )}
             <div>
-              <h1 className="font-extrabold text-slate-900 text-sm sm:text-base">
+              <h1
+                className={cn(
+                  'font-extrabold text-sm sm:text-base',
+                  isCyber && 'text-sky-200 drop-shadow-[0_0_8px_rgba(56,189,248,0.4)]',
+                  isEsports && 'text-white font-black',
+                  isAcademy && 'text-slate-900',
+                  isArcade && 'text-amber-300',
+                )}
+              >
                 {t('player:lessons.header')}
               </h1>
-              <p className="text-xs font-medium text-slate-500">
+              <p
+                className={cn(
+                  'text-xs font-medium',
+                  isCyber ? 'text-sky-400/80' : isEsports ? 'text-slate-400' : isArcade ? 'text-pink-300/80' : 'text-slate-500',
+                )}
+              >
                 {t('player:lessons.step', { current: index + 1, total: lessons.length })}
               </p>
             </div>
@@ -148,12 +175,22 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
 
           <div className="flex items-center gap-2">
             {reviewMode ? (
-              <Button variant="outline" size="sm" onClick={() => setShowLessonReview(false)} className="h-8 text-xs sm:text-sm px-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowLessonReview(false)}
+                className={cn('h-8 text-xs sm:text-sm px-3', isDark && 'border-slate-700 bg-slate-800 text-slate-200')}
+              >
                 {t('common:app.back')}
               </Button>
             ) : (
-              <Button variant="outline" size="sm" onClick={() => void resetToHome()} className="h-8 text-xs sm:text-sm px-3">
-                <Home className="h-3.5 w-3.5 text-indigo-600" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void resetToHome()}
+                className={cn('h-8 text-xs sm:text-sm px-3', isDark && 'border-slate-700 bg-slate-800 text-slate-200')}
+              >
+                <Home className={cn('h-3.5 w-3.5', isCyber ? 'text-sky-400' : isEsports ? 'text-amber-400' : isArcade ? 'text-pink-400' : 'text-indigo-600')} />
                 <span className="hidden sm:inline">{t('common:app.home')}</span>
               </Button>
             )}
@@ -170,8 +207,8 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                 <span>{lang === 'th' ? 'ข้ามเนื้อหาไปเล่นเกมเลย' : t('player:lessons.skipAll')}</span>
               </Button>
             )}
-            <FullscreenButton />
-            <SettingsMenu />
+            <FullscreenButton dark={isDark} />
+            <SettingsMenu dark={isDark} />
           </div>
         </div>
         <div
@@ -271,7 +308,11 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
           {/* Lesson content */}
           <Card
             className={cn(
-              'lg:col-span-6 xl:col-span-6 flex flex-col',
+              'lg:col-span-6 xl:col-span-6 flex flex-col transition-colors',
+              isCyber && 'border-sky-500/25 bg-slate-900/90 text-white shadow-[0_0_15px_rgba(56,189,248,0.1)]',
+              isEsports && 'border-violet-500/30 bg-slate-900/90 text-white shadow-md',
+              isAcademy && 'border-slate-200 bg-white text-slate-900',
+              isArcade && 'border-2 border-pink-400/30 bg-indigo-900/80 text-white shadow-md',
               isFullscreen ? 'h-full min-h-0 overflow-hidden' : '',
             )}
           >
@@ -288,10 +329,20 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                     : t('player:lessons.step', { current: index + 1, total: lessons.length })}
                 </Badge>
               </div>
-              <h2 className="font-extrabold text-slate-900 shrink-0 text-xl sm:text-2xl">
+              <h2
+                className={cn(
+                  'shrink-0 text-xl sm:text-2xl',
+                  isCyber ? 'text-sky-200 font-black drop-shadow-[0_0_8px_rgba(56,189,248,0.3)]' : isEsports ? 'text-white font-black' : isArcade ? 'text-amber-300 font-black' : 'font-extrabold text-slate-900',
+                )}
+              >
                 {pickLocalized(lesson.title, lang, fallback)}
               </h2>
-              <p className="font-semibold text-indigo-700 shrink-0 text-sm">
+              <p
+                className={cn(
+                  'shrink-0 text-sm font-semibold',
+                  isCyber ? 'text-sky-400' : isEsports ? 'text-amber-400' : isArcade ? 'text-pink-300' : 'text-indigo-700',
+                )}
+              >
                 {pickLocalized(lesson.summary, lang, fallback)}
               </p>
 

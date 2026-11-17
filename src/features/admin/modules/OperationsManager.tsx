@@ -498,62 +498,8 @@ export function PlayerManagerModule({ data }: { data: AdminWorkspaceData }) {
   );
 }
 
-const DASHBOARD_THEME_OPTIONS: Array<{
-  id: DashboardSettingsRow['theme'];
-  number: number;
-  name: string;
-  nameEn: string;
-  desc: string;
-  cardPreviewClass: string;
-  textColor: string;
-  badgeText: string;
-  accentBg: string;
-}> = [
-  {
-    id: 'space',
-    number: 1,
-    name: 'แบบที่ 1: Cyber Futuristic',
-    nameEn: 'Hologram Space',
-    desc: 'สไตล์ไซไฟอวกาศล้ำยุค นีออนสีฟ้า-ทอง เรืองแสงดิจิทัล (ค่าแนะนำ)',
-    cardPreviewClass: 'border-sky-500/40 bg-slate-900 shadow-[0_0_15px_rgba(56,189,248,0.2)]',
-    textColor: 'text-sky-300',
-    badgeText: 'NEON CYBER HUD',
-    accentBg: '#38bdf8',
-  },
-  {
-    id: 'lab',
-    number: 2,
-    name: 'แบบที่ 2: Modern eSports',
-    nameEn: 'Championship',
-    desc: 'สไตล์สังเวียนเกมเมอร์/อีสปอร์ต โทนม่วงเข้มตัดทอง ทรงพลังและดุดัน',
-    cardPreviewClass: 'border-violet-500/40 bg-slate-950 shadow-md',
-    textColor: 'text-amber-400',
-    badgeText: 'PRO TOURNAMENT',
-    accentBg: '#a855f7',
-  },
-  {
-    id: 'light',
-    number: 3,
-    name: 'แบบที่ 3: Clean Tech Academy',
-    nameEn: 'Bright Classroom',
-    desc: 'สไตล์มินิมอลเทคโนโลยีสะอาดตา พื้นขาว อ่านง่าย เหมาะกับห้องเรียน',
-    cardPreviewClass: 'border-slate-300 bg-white shadow-xs',
-    textColor: 'text-indigo-600',
-    badgeText: 'CLEAN ACADEMY',
-    accentBg: '#4f46e5',
-  },
-  {
-    id: 'planet',
-    number: 4,
-    name: 'แบบที่ 4: Comic Arcade Quest',
-    nameEn: 'Retro Arcade',
-    desc: 'สไตล์เกมตู้การ์ตูนเรโทร ขอบมน สีสันสดใส ชมพู-ม่วง-เหลือง สนุกสนาน',
-    cardPreviewClass: 'border-pink-400/40 bg-indigo-950 shadow-md',
-    textColor: 'text-pink-300',
-    badgeText: 'ARCADE RETRO',
-    accentBg: '#ec4899',
-  },
-];
+import { THEME_OPTIONS } from '../themeOptions';
+import type { GameTheme } from '@engine';
 
 export function DashboardEditorModule({
   data,
@@ -564,6 +510,7 @@ export function DashboardEditorModule({
 }) {
   const { t } = useTranslation(['admin', 'common']);
   const [form, setForm] = useState<DashboardSettingsRow>(data.dashboard);
+  const [gameTheme, setGameTheme] = useState<GameTheme>(data.settings.score_rules?.game_theme ?? 'space');
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
@@ -584,6 +531,13 @@ export function DashboardEditorModule({
         theme: form.theme,
         background_url: form.background_url,
       });
+      await adminApi.updateSettings(data.settings.id, {
+        score_rules: {
+          ...data.settings.score_rules,
+          game_theme: gameTheme,
+        },
+      });
+      localStorage.setItem('fra_game_theme', gameTheme);
       await onReload();
       toast('success', t('admin:common.saved'));
     } catch (e) {
@@ -598,20 +552,26 @@ export function DashboardEditorModule({
       <CardHeader>
         <CardTitle>{t('admin:modules.dashboard')}</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* 4 Interactive Theme Style Cards */}
-        <div className="space-y-2">
+      <CardContent className="space-y-8">
+        {/* Section 1: Dashboard Theme / Style 1–4 */}
+        <div className="space-y-3 rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/40">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <Label className="text-sm font-bold">
-              เลือกสไตล์หน้าแดชบอร์ดเริ่มต้น (Dashboard Theme / Style 1–4)
-            </Label>
-            <span className="text-xs text-slate-500 font-semibold">
-              คลิกเพื่อเลือกสไตล์ 1, 2, 3 หรือ 4 เป็นค่า Default แล้วกดบันทึก
+            <div>
+              <Label className="text-base font-extrabold flex items-center gap-2">
+                <span>1. สไตล์หน้าจอแดชบอร์ด (Dashboard Theme)</span>
+                <Badge variant="secondary" className="text-xs">แสดงผลบน TV/แดชบอร์ด</Badge>
+              </Label>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                เลือกสไตล์ 1, 2, 3 หรือ 4 สำหรับการแสดงผลหน้าจอ Dashboard (ตั้งค่าแยกอิสระจากหน้านักเรียน)
+              </p>
+            </div>
+            <span className="text-xs text-indigo-600 dark:text-sky-400 font-bold">
+              ปัจจุบัน: แบบที่ {THEME_OPTIONS.find((t) => t.id === form.theme)?.number ?? 1}
             </span>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {DASHBOARD_THEME_OPTIONS.map((item) => {
+            {THEME_OPTIONS.map((item) => {
               const isSelected = form.theme === item.id;
               return (
                 <button
@@ -619,9 +579,9 @@ export function DashboardEditorModule({
                   type="button"
                   onClick={() => setForm((prev) => ({ ...prev, theme: item.id }))}
                   className={cn(
-                    'group relative flex flex-col justify-between rounded-2xl border p-4 text-left transition-all',
+                    'group relative flex flex-col justify-between rounded-2xl border p-4 text-left transition-all cursor-pointer',
                     isSelected
-                      ? 'border-indigo-600 bg-indigo-50/60 ring-2 ring-indigo-500/40 shadow-md dark:border-sky-400 dark:bg-sky-950/40 dark:ring-sky-400/40'
+                      ? 'border-indigo-600 bg-white ring-2 ring-indigo-500/40 shadow-md dark:border-sky-400 dark:bg-sky-950/50 dark:ring-sky-400/40'
                       : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900',
                   )}
                 >
@@ -639,7 +599,93 @@ export function DashboardEditorModule({
                       </span>
                       {isSelected ? (
                         <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-black text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-                          <Check className="h-3 w-3" /> ค่าเริ่มต้น
+                          <Check className="h-3 w-3" /> แดชบอร์ด
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-semibold text-slate-400">
+                          {item.nameEn}
+                        </span>
+                      )}
+                    </div>
+
+                    <h4 className="mt-2.5 text-sm font-extrabold text-slate-900 dark:text-white">
+                      {item.name}
+                    </h4>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                      {item.desc}
+                    </p>
+                  </div>
+
+                  {/* Card mini preview */}
+                  <div
+                    className={cn(
+                      'mt-3.5 flex w-full items-center justify-between rounded-xl border p-2 text-xs font-bold transition-all',
+                      item.cardPreviewClass,
+                    )}
+                  >
+                    <span className={cn('text-[11px] font-black', item.textColor)}>
+                      {item.badgeText}
+                    </span>
+                    <span
+                      className="h-2.5 w-2.5 rounded-full shadow-xs"
+                      style={{ backgroundColor: item.accentBg }}
+                    />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Section 2: Student Game Page Theme / Style 1–4 */}
+        <div className="space-y-3 rounded-2xl border border-indigo-200/80 bg-indigo-50/30 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/20">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <Label className="text-base font-extrabold flex items-center gap-2">
+                <span>2. สไตล์หน้าเล่นเกมของนักเรียน (Student Game Page Theme)</span>
+                <Badge variant="secondary" className="text-xs font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200">
+                  หน้าจอ /play ของนักเรียน
+                </Badge>
+              </Label>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                เลือกสไตล์ 1, 2, 3 หรือ 4 สำหรับหน้านักเรียนเข้าเล่นเกม (ตั้งค่าแยกอิสระจากหน้าแดชบอร์ด)
+              </p>
+            </div>
+            <span className="text-xs text-indigo-700 dark:text-indigo-300 font-bold">
+              ปัจจุบัน: แบบที่ {THEME_OPTIONS.find((t) => t.id === gameTheme)?.number ?? 1}
+            </span>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {THEME_OPTIONS.map((item) => {
+              const isSelected = gameTheme === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setGameTheme(item.id)}
+                  className={cn(
+                    'group relative flex flex-col justify-between rounded-2xl border p-4 text-left transition-all cursor-pointer',
+                    isSelected
+                      ? 'border-indigo-600 bg-white ring-2 ring-indigo-500/40 shadow-md dark:border-indigo-400 dark:bg-slate-900 dark:ring-indigo-400/40'
+                      : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900',
+                  )}
+                >
+                  <div className="w-full">
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={cn(
+                          'flex h-7 w-7 items-center justify-center rounded-full text-xs font-black',
+                          isSelected
+                            ? 'bg-indigo-600 text-white dark:bg-indigo-500'
+                            : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+                        )}
+                      >
+                        {item.number}
+                      </span>
+                      {isSelected ? (
+                        <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-black text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                          <Check className="h-3 w-3" /> หน้านักเรียน
                         </span>
                       ) : (
                         <span className="text-[11px] font-semibold text-slate-400">
@@ -690,14 +736,26 @@ export function DashboardEditorModule({
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Theme Dropdown</Label>
+            <Label>Dashboard Theme (แดชบอร์ด)</Label>
             <Select
               value={form.theme}
               onChange={(e) => setForm({ ...form, theme: e.target.value as DashboardSettingsRow['theme'] })}
             >
-              <option value="space">1. Cyber Futuristic (ไซไฟอวกาศ - ค่าแนะนำ)</option>
+              <option value="space">1. Cyber Futuristic (ไซไฟอวกาศ)</option>
               <option value="lab">2. Modern eSports (สังเวียนเกมเมอร์)</option>
-              <option value="light">3. Clean Tech Academy (คลีนมินิมอล พื้นขาว)</option>
+              <option value="light">3. Clean Tech Academy (คลีนมินิมอล)</option>
+              <option value="planet">4. Comic Arcade Quest (เกมตู้เรโทร)</option>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Student Game Theme (หน้านักเรียน)</Label>
+            <Select
+              value={gameTheme}
+              onChange={(e) => setGameTheme(e.target.value as GameTheme)}
+            >
+              <option value="space">1. Cyber Futuristic (ไซไฟอวกาศ)</option>
+              <option value="lab">2. Modern eSports (สังเวียนเกมเมอร์)</option>
+              <option value="light">3. Clean Tech Academy (คลีนมินิมอล)</option>
               <option value="planet">4. Comic Arcade Quest (เกมตู้เรโทร)</option>
             </Select>
           </div>
