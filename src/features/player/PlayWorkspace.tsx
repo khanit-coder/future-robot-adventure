@@ -45,6 +45,7 @@ import { SettingsMenu } from '@/components/common/SettingsMenu';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { sfx } from '@/services/audio/soundEffects';
 import { cn } from '@/utils/cn';
+import { getAssignedRobotForStudent } from '@/utils/robotAssignment';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -114,13 +115,19 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
   const heartsRemaining =
     optimisticHearts !== null ? optimisticHearts : Math.max(0, MAX_HEARTS - totalFailedAttempts);
 
+  const assignedRobot = useMemo(
+    () => getAssignedRobotForStudent(playerSession?.player_id, config.robots),
+    [playerSession?.player_id, config.robots],
+  );
+
   const robotCfg = useMemo(
     () =>
       config.robots.find((r) => r.id === level.robot_id) ??
+      assignedRobot ??
       config.robots.find((r) => r.is_default) ??
       config.robots[0] ??
       null,
-    [config.robots, level.robot_id],
+    [config.robots, level.robot_id, assignedRobot],
   );
   const sceneCfg = useMemo(
     () => config.scenes.find((s) => s.id === level.scene_id) ?? config.scenes[0] ?? null,

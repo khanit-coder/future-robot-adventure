@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
+import type { RobotConfig } from '@engine';
 import { RobotIllustration, type RobotVisualState } from '@/components/common/RobotIllustration';
 import type { DashboardPlayer } from '@/services/api/publicApi';
 import { cn } from '@/utils/cn';
@@ -18,6 +19,7 @@ interface RobotCardProps {
   overrideState?: RobotVisualState;
   dark?: boolean;
   theme?: DashboardTheme;
+  robots?: RobotConfig[];
 }
 
 /** Memoized lightweight player robot card with 4-style typography support */
@@ -32,9 +34,10 @@ export const RobotCard = React.memo(function RobotCard({
   overrideState,
   dark = true,
   theme = 'space',
+  robots,
 }: RobotCardProps) {
   const { t } = useTranslation('dashboard');
-  const avatar = avatarForPlayer(player.id);
+  const avatar = avatarForPlayer(player.id, robots);
 
   let animState: RobotVisualState = 'idle';
   if (!animationsEnabled) {
@@ -93,6 +96,7 @@ export const RobotCard = React.memo(function RobotCard({
       />
 
       <RobotIllustration
+        robot={avatar.robot}
         styleName={avatar.style}
         color={avatar.color}
         size={robotSize}

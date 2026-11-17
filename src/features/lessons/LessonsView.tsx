@@ -13,6 +13,7 @@ import { MarkdownText } from '@/components/common/MarkdownText';
 import { RobotIllustration } from '@/components/common/RobotIllustration';
 import { useGameTheme } from '@/features/player/useGameTheme';
 import { InteractiveRobotDemo } from './InteractiveRobotDemo';
+import { getAssignedRobotForStudent } from '@/utils/robotAssignment';
 import { useAppStore } from '@/stores/appStore';
 import { usePlayerStore } from '@/stores/playerStore';
 import { currentLang } from '@/i18n/config';
@@ -26,6 +27,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
   const { isCyber, isEsports, isAcademy, isArcade, isDark } = useGameTheme();
   const settings = useAppStore((s) => s.settings);
   const config = usePlayerStore((s) => s.config);
+  const playerSession = usePlayerStore((s) => s.playerSession);
   const lessonsDone = usePlayerStore((s) => s.lessonsDone);
   const isReturningPlayer = usePlayerStore((s) => s.isReturningPlayer);
   const completeLesson = usePlayerStore((s) => s.completeLesson);
@@ -50,6 +52,10 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
   const lesson = lessons[index];
   const fallback = settings?.default_language ?? 'en';
   const defaultRobot = config?.robots.find((r) => r.is_default) ?? config?.robots[0] ?? null;
+  const studentRobot = useMemo(
+    () => getAssignedRobotForStudent(playerSession?.player_id, config?.robots) ?? defaultRobot,
+    [playerSession?.player_id, config?.robots, defaultRobot],
+  );
 
   const isCurrentDone = lesson ? lessonsDone.includes(lesson.id) : false;
   const allLessonsCompleted = lessons.every((l) => lessonsDone.includes(l.id));
@@ -388,29 +394,29 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
             <CardContent
               className={cn(
                 'flex h-full flex-col justify-between',
-                isFullscreen ? 'p-3.5 sm:p-4 space-y-3 flex-1 min-h-0 overflow-hidden' : 'space-y-5 p-6',
+                isFullscreen ? 'p-3.5 sm:p-4 space-y-3 flex-1 min-h-0' : 'space-y-5 p-6',
               )}
             >
-              <div className={cn('flex flex-col', isFullscreen ? 'flex-1 min-h-0 overflow-hidden' : '')}>
+              <div className={cn('flex flex-col', isFullscreen ? 'flex-1 min-h-0 overflow-y-auto pr-1' : '')}>
                 <div className="flex items-center gap-2 text-sm sm:text-base font-black uppercase tracking-wider text-sky-300 shrink-0">
                   <Sparkles className="h-4 w-4" />
                   {t('player:lessons.demoTitle')}
                 </div>
 
                 {lesson.demo_program && lesson.demo_program.length > 0 ? (
-                  <div className={cn('mt-2', isFullscreen ? 'flex-1 min-h-0 overflow-hidden flex flex-col' : 'mt-3')}>
+                  <div className={cn('mt-2', isFullscreen ? 'flex-1 min-h-0 flex flex-col' : 'mt-3')}>
                     <InteractiveRobotDemo
                       key={lesson.id}
                       demoProgram={lesson.demo_program}
                       lang={lang}
                       fallbackLang={fallback}
-                      robotAsset={defaultRobot}
+                      robotAsset={studentRobot}
                       blocks={config?.blocks}
                     />
                   </div>
                 ) : (
                   <div className="mt-4 flex flex-col items-center justify-center rounded-2xl bg-slate-950/70 p-6 border border-slate-800">
-                    <RobotIllustration robot={defaultRobot} state="wave" size={72} />
+                    <RobotIllustration robot={studentRobot} state="wave" size={72} />
                     <p className="mt-2 text-sm text-slate-400">{t('player:lessons.noDemo')}</p>
                   </div>
                 )}

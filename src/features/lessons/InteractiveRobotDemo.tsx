@@ -441,13 +441,13 @@ export function InteractiveRobotDemo({
         </div>
 
         {/* 2D Tile Map matching MissionScene.ts */}
-        <div className={cn('relative z-10 flex items-center justify-center my-2 sm:my-3')}>
+        <div className={cn('relative z-10 flex items-center justify-center my-1.5 sm:my-2')}>
           <div
-            className="relative grid gap-1.5"
+            className="relative grid gap-1 sm:gap-1.5"
             style={{
               gridTemplateColumns: `repeat(${stage.cols}, minmax(0, 1fr))`,
               width: '100%',
-              maxWidth: `${stage.cols * (compact ? 52 : 68)}px`,
+              maxWidth: `${stage.cols * (compact ? 38 : 46)}px`,
             }}
           >
             {Array.from({ length: stage.rows }).map((_, rIdx) =>
@@ -464,7 +464,7 @@ export function InteractiveRobotDemo({
                   <div
                     key={k}
                     className={cn(
-                      'relative aspect-square w-full rounded-xl flex items-center justify-center transition-all',
+                      'relative aspect-square w-full rounded-lg sm:rounded-xl flex items-center justify-center transition-all',
                       isFloor
                         ? 'bg-[#334155] border-2 border-[#38bdf8]/50 shadow-inner'
                         : 'bg-slate-950/30 border border-slate-800/30 opacity-40',
@@ -472,14 +472,14 @@ export function InteractiveRobotDemo({
                   >
                     {/* Hurdle ('H') */}
                     {isHurdle && (
-                      <div className="h-3.5 w-4/5 rounded-md bg-[#f97316] border-2 border-[#fef08a] shadow-[0_0_12px_rgba(249,115,22,0.7)]" />
+                      <div className="h-2.5 sm:h-3 w-4/5 rounded-md bg-[#f97316] border border-[#fef08a] shadow-[0_0_8px_rgba(249,115,22,0.7)]" />
                     )}
 
                     {/* Crystal */}
                     {hasCrystal && (
-                      <div className="relative flex h-6 w-6 items-center justify-center animate-pulse">
-                        <div className="h-5 w-5 rotate-45 rounded-[3px] bg-[#fde047] border-2 border-[#fef9c3] shadow-[0_0_14px_#fde047]" />
-                        <div className="absolute h-2.5 w-2.5 rotate-45 bg-[#fef9c3]" />
+                      <div className="relative flex h-5 w-5 items-center justify-center animate-pulse">
+                        <div className="h-4 w-4 rotate-45 rounded-[2px] bg-[#fde047] border border-[#fef9c3] shadow-[0_0_10px_#fde047]" />
+                        <div className="absolute h-2 w-2 rotate-45 bg-[#fef9c3]" />
                       </div>
                     )}
 
@@ -488,16 +488,16 @@ export function InteractiveRobotDemo({
                       <div
                         className={cn(
                           'flex items-center justify-center rounded-full border-2 transition-all',
-                          compact ? 'h-6 w-6' : 'h-8 w-8',
+                          compact ? 'h-5 w-5' : 'h-6 w-6 sm:h-7 sm:w-7',
                           genActive
-                            ? 'bg-[#22c55e] border-[#fef08a] shadow-[0_0_14px_#22c55e]'
-                            : 'bg-[#1e293b] border-[#a855f7] shadow-[0_0_8px_#a855f7]',
+                            ? 'bg-[#22c55e] border-[#fef08a] shadow-[0_0_10px_#22c55e]'
+                            : 'bg-[#1e293b] border-[#a855f7] shadow-[0_0_6px_#a855f7]',
                         )}
                       >
                         <div
                           className={cn(
                             'rounded-full',
-                            compact ? 'h-2.5 w-2.5' : 'h-3.5 w-3.5',
+                            compact ? 'h-2 w-2' : 'h-2.5 w-2.5 sm:h-3 sm:w-3',
                             genActive ? 'bg-[#fef08a]' : 'bg-[#facc15]',
                           )}
                         />
@@ -509,17 +509,17 @@ export function InteractiveRobotDemo({
                       <div className="relative flex items-center justify-center">
                         <div
                           className={cn(
-                            'rounded-full border-[3px] border-[#4ade80] bg-[#22c55e]/35 transition-transform',
-                            compact ? 'h-7 w-7' : 'h-9 w-9',
+                            'rounded-full border-[2.5px] border-[#4ade80] bg-[#22c55e]/35 transition-transform',
+                            compact ? 'h-6 w-6' : 'h-7 w-7 sm:h-8 sm:w-8',
                             reachedGoal
-                              ? 'scale-125 shadow-[0_0_20px_#4ade80]'
-                              : 'animate-pulse shadow-[0_0_12px_rgba(74,222,128,0.6)]',
+                              ? 'scale-125 shadow-[0_0_16px_#4ade80]'
+                              : 'animate-pulse shadow-[0_0_10px_rgba(74,222,128,0.6)]',
                           )}
                         />
                         <div
                           className={cn(
                             'absolute rounded-full bg-[#4ade80]',
-                            compact ? 'h-3 w-3' : 'h-4 w-4',
+                            compact ? 'h-2.5 w-2.5' : 'h-3 w-3 sm:h-3.5 sm:w-3.5',
                           )}
                         />
                       </div>
@@ -546,7 +546,7 @@ export function InteractiveRobotDemo({
                     '-translate-y-3.5 scale-120 drop-shadow-[0_14px_10px_rgba(56,189,248,0.6)]',
                 )}
               >
-                <RobotIllustration robot={robotAsset} state={robotState} size={compact ? 44 : 54} />
+                <RobotIllustration robot={robotAsset} state={robotState} size={compact ? 32 : 38} />
                 <div
                   className="absolute inset-0 flex items-center justify-center transition-transform duration-300"
                   style={{ transform: `rotate(${robotPos.dir}deg)` }}
@@ -621,7 +621,7 @@ export function InteractiveRobotDemo({
         {/* Workspace Body: Left Mini Category Tray + Right Dotted Blockly Canvas */}
         <div
           className={cn(
-            'flex flex-1 min-h-[220px] sm:min-h-[260px] lg:min-h-[300px]',
+            'flex flex-1 min-h-[170px] sm:min-h-[200px]',
           )}
         >
           {/* Left Toolbox Category Strip (Matches Blockly Toolbox in index.css) */}

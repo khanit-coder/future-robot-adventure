@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { DashboardSettingsRow, GameSessionRow, GameSettingsRow, I18nOverrideRow } from '@engine';
+import type { DashboardSettingsRow, GameSessionRow, GameSettingsRow, I18nOverrideRow, RobotConfig } from '@engine';
 import { applyI18nOverrides } from '@/i18n/config';
 import i18n from '@/i18n/config';
 import { publicApi } from '@/services/api/publicApi';
@@ -13,6 +13,7 @@ interface AppState {
   dashboard: DashboardSettingsRow | null;
   activeSession: GameSessionRow | null;
   overrides: I18nOverrideRow[];
+  robots: RobotConfig[];
   realtimeStatus: ConnectionState;
   loadGlobal: () => Promise<void>;
   setRealtimeStatus: (status: ConnectionState) => void;
@@ -25,6 +26,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   dashboard: null,
   activeSession: null,
   overrides: [],
+  robots: [],
   realtimeStatus: isSupabaseConfigured ? 'connecting' : 'offline',
 
   setRealtimeStatus: (realtimeStatus) => set({ realtimeStatus }),
@@ -35,7 +37,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       return;
     }
     try {
-      const { settings, dashboard, activeSession, overrides } = await publicApi.fetchGlobalState();
+      const { settings, dashboard, activeSession, overrides, robots } = await publicApi.fetchGlobalState();
       if (settings) {
         document.documentElement.style.setProperty('--fra-primary', settings.primary_color);
         document.documentElement.style.setProperty('--fra-secondary', settings.secondary_color);
@@ -51,7 +53,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (overrides.length > 0 || get().overrides.length > 0) {
         applyI18nOverrides(overrides);
       }
-      set({ loaded: true, error: null, settings, dashboard, activeSession, overrides });
+      set({ loaded: true, error: null, settings, dashboard, activeSession, overrides, robots: robots || [] });
     } catch (e) {
       set({ loaded: true, error: e instanceof Error ? e.message : 'Failed to load settings' });
     }

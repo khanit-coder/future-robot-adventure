@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Rocket, School, Sparkles, User, GraduationCap, AlertCircle, Lock, Loader2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Rocket, School, Sparkles, User, GraduationCap, AlertCircle, Lock, Loader2, Dices } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Lang } from '@engine';
 import { Button } from '@/components/ui/button';
@@ -15,12 +15,15 @@ import { useAppStore } from '@/stores/appStore';
 import { usePlayerStore } from '@/stores/playerStore';
 import { pickLocalized } from '@/utils/localize';
 import { currentLang } from '@/i18n/config';
+import { RobotMarqueeBanner } from './RobotMarqueeBanner';
+import { assignRandomRobotForRegistration } from '@/utils/robotAssignment';
 
 export function RegistrationView() {
   const { t, i18n } = useTranslation(['player', 'common']);
   const { isFullscreen } = useFullscreen();
   const settings = useAppStore((s) => s.settings);
   const activeSession = useAppStore((s) => s.activeSession);
+  const robots = useAppStore((s) => s.robots);
   const register = usePlayerStore((s) => s.register);
 
   const lang = currentLang();
@@ -34,6 +37,21 @@ export function RegistrationView() {
   const fallback = settings?.default_language ?? 'en';
   const gameTitle = settings ? pickLocalized(settings.game_title, lang, fallback) : t('common:app.title');
   const tagline = settings ? pickLocalized(settings.tagline, lang, fallback) : t('common:app.tagline');
+
+  const previewRobots = useMemo(() => {
+    if (robots && robots.length >= 3) {
+      return [
+        { robot: robots[0], style: robots[0].builtin_style || 'bolt', color: robots[0].primary_color, name: '', state: 'wave' as const },
+        { robot: robots[1], style: robots[1].builtin_style || 'echo', color: robots[1].primary_color, name: '', state: 'walk' as const },
+        { robot: robots[2], style: robots[2].builtin_style || 'cyber', color: robots[2].primary_color, name: '', state: 'celebrate' as const },
+      ];
+    }
+    return [
+      { robot: undefined, style: 'bolt', color: '#38bdf8', name: 'โบลต์ (Bolt)', state: 'wave' as const },
+      { robot: undefined, style: 'echo', color: '#8b5cf6', name: 'เอคโค่ (Echo)', state: 'walk' as const },
+      { robot: undefined, style: 'cyber', color: '#06b6d4', name: 'ไซเบอร์ (Cyber)', state: 'celebrate' as const },
+    ];
+  }, [robots]);
   const eventTitle =
     settings && settings.event_title
       ? pickLocalized(settings.event_title, lang, fallback)
@@ -68,6 +86,7 @@ export function RegistrationView() {
     setSubmitting(true);
     setErrorMsg(null);
     try {
+      assignRandomRobotForRegistration(robots);
       await register({
         display_name: cleanName,
         school: cleanSchool,
@@ -158,23 +177,39 @@ export function RegistrationView() {
             {t('player:welcome.subtitle')}
           </p>
 
-          <div className="flex items-end gap-4 pt-2">
-            <div className="rounded-2xl border border-slate-700/80 bg-slate-900/70 p-4 text-center">
-              <RobotIllustration styleName="bolt" color="#38bdf8" state="wave" size={isFullscreen ? 116 : 88} />
-              <p className="mt-1.5 text-xs font-semibold text-sky-300">Bolt</p>
+          <div className="space-y-3 pt-2">
+            <div className="inline-flex items-center gap-2 rounded-xl border border-sky-400/40 bg-sky-950/60 px-3.5 py-1.5 text-xs font-bold text-sky-200">
+              <Dices className="h-4 w-4 text-amber-400 animate-bounce" />
+              <span>
+                {lang === 'th'
+                  ? 'ระบบสุ่มหุ่นยนต์คู่หูพิเศษให้นักเรียนแต่ละคน!'
+                  : 'Random robot companion assigned to each student!'}
+              </span>
             </div>
-            <div className="rounded-2xl border border-slate-700/80 bg-slate-900/70 p-4 text-center">
-              <RobotIllustration styleName="nova" color="#f472b6" state="idle" size={isFullscreen ? 116 : 88} />
-              <p className="mt-1.5 text-xs font-semibold text-pink-300">Nova</p>
-            </div>
-            <div className="rounded-2xl border border-slate-700/80 bg-slate-900/70 p-4 text-center">
-              <RobotIllustration
-                styleName="gizmo"
-                color="#4ade80"
-                state="celebrate"
-                size={isFullscreen ? 116 : 88}
-              />
-              <p className="mt-1.5 text-xs font-semibold text-emerald-300">Gizmo</p>
+
+            <div className="flex items-end gap-3 sm:gap-4 overflow-x-auto pb-1">
+              {previewRobots.map((item, idx) => {
+                const rName = item.robot
+                  ? pickLocalized(item.robot.name, lang, fallback)
+                  : item.name;
+                return (
+                  <div
+                    key={idx}
+                    className="rounded-2xl border border-slate-700/80 bg-slate-900/80 p-3 sm:p-4 text-center shrink-0 shadow-lg hover:border-sky-400 transition-all hover:scale-105"
+                  >
+                    <RobotIllustration
+                      robot={item.robot}
+                      styleName={item.style}
+                      color={item.color}
+                      state={item.state}
+                      size={isFullscreen ? 104 : 80}
+                    />
+                    <p className="mt-1.5 text-xs font-black text-sky-200 truncate max-w-[90px] sm:max-w-[110px]">
+                      {rName}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -300,6 +335,9 @@ export function RegistrationView() {
           </Card>
         </div>
       </main>
+
+      {/* 1 Row Infinite Robot Parade flowing from Right to Left */}
+      <RobotMarqueeBanner robots={robots} lang={lang} fallbackLang={fallback} />
     </div>
   );
 }

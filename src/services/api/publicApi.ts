@@ -6,6 +6,7 @@ import type {
   I18nOverrideRow,
   PlayerStatus,
   RewardRow,
+  RobotConfig,
 } from '@engine';
 import { getSupabase } from '@/services/supabase/client';
 
@@ -43,19 +44,22 @@ export const publicApi = {
     dashboard: DashboardSettingsRow | null;
     activeSession: GameSessionRow | null;
     overrides: I18nOverrideRow[];
+    robots: RobotConfig[];
   }> {
     const sb = getSupabase();
-    const [settingsRes, dashRes, sessionRes, i18nRes] = await Promise.all([
+    const [settingsRes, dashRes, sessionRes, i18nRes, robotsRes] = await Promise.all([
       sb.from('game_settings').select('*').limit(1).maybeSingle(),
       sb.from('dashboard_settings').select('*').limit(1).maybeSingle(),
       sb.from('game_sessions').select('*').eq('status', 'ACTIVE').maybeSingle(),
       sb.from('i18n_overrides').select('*'),
+      sb.from('robot_assets').select('*').eq('is_active', true).order('created_at', { ascending: true }),
     ]);
     return {
       settings: (settingsRes.data as GameSettingsRow | null) ?? null,
       dashboard: (dashRes.data as DashboardSettingsRow | null) ?? null,
       activeSession: (sessionRes.data as GameSessionRow | null) ?? null,
       overrides: (i18nRes.data as I18nOverrideRow[] | null) ?? [],
+      robots: (robotsRes.data as RobotConfig[] | null) ?? [],
     };
   },
 

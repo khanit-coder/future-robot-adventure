@@ -15,7 +15,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { DashboardMode, DashboardSettingsRow, GameEvent, GameSettingsRow } from '@engine';
+import type { DashboardMode, DashboardSettingsRow, GameEvent, GameSettingsRow, RobotConfig } from '@engine';
 import { FullscreenButton } from '@/components/common/FullscreenButton';
 import { SettingsMenu } from '@/components/common/SettingsMenu';
 import { useFullscreen } from '@/hooks/useFullscreen';
@@ -25,6 +25,7 @@ import type { DashboardPlayer, DashboardSnapshot } from '@/services/api/publicAp
 import type { ConnectionState } from '@/services/realtime/liveChannel';
 import { cn } from '@/utils/cn';
 import { formatDuration, pickLocalized } from '@/utils/localize';
+import { useAppStore } from '@/stores/appStore';
 import { RobotCard, type DashboardTheme } from './RobotCard';
 import { avatarForPlayer } from './avatar';
 import {
@@ -72,6 +73,7 @@ export function DashboardView({
   const lang = currentLang();
   const { isFullscreen } = useFullscreen();
   const fallbackLang = settings?.default_language ?? 'en';
+  const robots = useAppStore((s) => s.robots);
 
   const configuredMode: DashboardMode = dashSettings?.mode ?? 'GRID';
   const [manualOverride, setManualOverride] = useState<{
@@ -360,6 +362,7 @@ export function DashboardView({
             dark={dark}
             theme={activeTheme}
             isFullscreen={isFullscreen}
+            robots={robots}
           />
         ) : mode === 'GRID' ? (
           <div className="space-y-3">
@@ -382,6 +385,7 @@ export function DashboardView({
                   overrideState={robotOverrides[p.id]}
                   dark={dark}
                   theme={activeTheme}
+                  robots={robots}
                 />
               ))}
             </div>
@@ -415,6 +419,7 @@ export function DashboardView({
             dark={dark}
             theme={activeTheme}
             isFullscreen={isFullscreen}
+            robots={robots}
           />
         ) : (
           <SpotlightView
@@ -425,6 +430,7 @@ export function DashboardView({
             dark={dark}
             theme={activeTheme}
             isFullscreen={isFullscreen}
+            robots={robots}
           />
         )}
       </main>
@@ -472,7 +478,7 @@ export function DashboardView({
             {topLeaders.length > 0 && (
               <div className={cn('grid gap-2 sm:grid-cols-3', isFullscreen ? 'mb-2' : 'mb-3')}>
                 {topLeaders.slice(0, 3).map((p, idx) => {
-                  const av = avatarForPlayer(p.id);
+                  const av = avatarForPlayer(p.id, robots);
                   const medalColors = [
                     'border-amber-400/70 bg-amber-500/15',
                     'border-slate-300/60 bg-slate-400/10',
@@ -501,6 +507,7 @@ export function DashboardView({
                         {idx === 0 ? '👑' : idx + 1}
                       </span>
                       <RobotIllustration
+                        robot={av.robot}
                         styleName={av.style}
                         color={av.color}
                         size={isFullscreen ? 34 : 42}
@@ -610,6 +617,7 @@ function HallOfFameFullView({
   dark,
   theme = 'space',
   isFullscreen = false,
+  robots,
 }: {
   players: DashboardPlayer[];
   totalLevels: number;
@@ -618,6 +626,7 @@ function HallOfFameFullView({
   dark: boolean;
   theme?: string;
   isFullscreen?: boolean;
+  robots?: RobotConfig[];
 }) {
   const { t } = useTranslation('dashboard');
   const top3 = players.slice(0, 3);
@@ -631,7 +640,7 @@ function HallOfFameFullView({
         {[1, 0, 2].map((podiumIdx) => {
           const p = top3[podiumIdx];
           if (!p) return <div key={`empty-${podiumIdx}`} className="hidden md:block" />;
-          const av = avatarForPlayer(p.id);
+          const av = avatarForPlayer(p.id, robots);
           const isFirst = podiumIdx === 0;
           const isSecond = podiumIdx === 1;
           return (
@@ -669,6 +678,7 @@ function HallOfFameFullView({
               </div>
 
               <RobotIllustration
+                robot={av.robot}
                 styleName={av.style}
                 color={av.color}
                 size={isFirst ? (isFullscreen ? 96 : 120) : (isFullscreen ? 76 : 96)}
@@ -731,7 +741,7 @@ function HallOfFameFullView({
         <div className="grid gap-2.5 sm:gap-3 sm:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
           {rest.map((p, idx) => {
             const rank = idx + 4;
-            const av = avatarForPlayer(p.id);
+            const av = avatarForPlayer(p.id, robots);
             return (
               <div
                 key={p.id}
@@ -745,7 +755,13 @@ function HallOfFameFullView({
                   <span className="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[11px] sm:text-xs font-black text-sky-300">
                     #{rank}
                   </span>
-                  <RobotIllustration styleName={av.style} color={av.color} size={isFullscreen ? 34 : 40} state="idle" />
+                  <RobotIllustration
+                    robot={av.robot}
+                    styleName={av.style}
+                    color={av.color}
+                    size={isFullscreen ? 34 : 40}
+                    state="idle"
+                  />
                   <div className="min-w-0">
                     <p className="truncate text-xs sm:text-sm font-extrabold">{p.name}</p>
                     {showSchool && <p className="truncate text-[10px] sm:text-xs opacity-65">{p.school}</p>}
@@ -829,6 +845,7 @@ function PlanetMapView({
   dark,
   theme = 'space',
   isFullscreen = false,
+  robots,
 }: {
   players: DashboardPlayer[];
   totalLevels: number;
@@ -837,6 +854,7 @@ function PlanetMapView({
   dark: boolean;
   theme?: string;
   isFullscreen?: boolean;
+  robots?: RobotConfig[];
 }) {
   const isCyber = theme === 'space';
   const zones = [
@@ -879,7 +897,7 @@ function PlanetMapView({
                 </p>
               ) : (
                 group.map((p) => {
-                  const av = avatarForPlayer(p.id);
+                  const av = avatarForPlayer(p.id, robots);
                   return (
                     <div
                       key={p.id}
@@ -893,7 +911,13 @@ function PlanetMapView({
                       )}
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <RobotIllustration styleName={av.style} color={av.color} size={32} state="idle" />
+                        <RobotIllustration
+                          robot={av.robot}
+                          styleName={av.style}
+                          color={av.color}
+                          size={32}
+                          state="idle"
+                        />
                         <div className="min-w-0">
                           <p className={cn('truncate text-xs font-bold', isCyber && 'text-sky-200')}>{p.name}</p>
                           {showSchool && (
@@ -922,6 +946,7 @@ function SpotlightView({
   dark,
   theme = 'space',
   isFullscreen = false,
+  robots,
 }: {
   player: DashboardPlayer;
   players: DashboardPlayer[];
@@ -930,9 +955,10 @@ function SpotlightView({
   dark: boolean;
   theme?: string;
   isFullscreen?: boolean;
+  robots?: RobotConfig[];
 }) {
   if (!player) return null;
-  const av = avatarForPlayer(player.id);
+  const av = avatarForPlayer(player.id, robots);
   const isCyber = theme === 'space';
   return (
     <div className="grid gap-4 lg:grid-cols-12 items-start">
@@ -948,6 +974,7 @@ function SpotlightView({
         )}
       >
         <RobotIllustration
+          robot={av.robot}
           styleName={av.style}
           color={av.color}
           size={isFullscreen ? 130 : 165}
@@ -976,6 +1003,7 @@ function SpotlightView({
             animationsEnabled
             dark={dark}
             theme={theme as DashboardTheme}
+            robots={robots}
           />
         ))}
       </div>

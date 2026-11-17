@@ -231,6 +231,27 @@ html.fra-fullscreen {
   animation: fra-fail 0.75s ease-in-out infinite;
 }
 
+/* Infinite Marquee flowing from Right to Left */
+@keyframes fra-marquee-rtl {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-fra-marquee-rtl {
+  display: flex;
+  width: max-content;
+  animation: fra-marquee-rtl 45s linear infinite;
+  will-change: transform;
+}
+
+.animate-fra-marquee-rtl:hover {
+  animation-play-state: paused;
+}
+
 /* Blockly toolbox & workspace styling */
 .blocklyToolboxDiv {
   z-index: 40 !important;
