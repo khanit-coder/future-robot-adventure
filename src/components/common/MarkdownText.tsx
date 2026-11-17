@@ -1,18 +1,19 @@
 import * as React from 'react';
+import { cn } from '@/utils/cn';
 
 /** Safe, dependency-free markdown-lite renderer (headings, bullet lists, **bold**, *italic*). */
-export function MarkdownText({ text }: { text: string }) {
+export function MarkdownText({ text, className }: { text: string; className?: string }) {
   const blocks = text.split(/\n\n+/);
   return (
-    <div className="space-y-3 text-slate-700 leading-relaxed">
+    <div className={cn('space-y-3.5 text-slate-700 leading-relaxed', className)}>
       {blocks.map((block, bi) => {
         const trimmed = block.trim();
         if (!trimmed) return null;
         if (trimmed.startsWith('## ')) {
           const lines = trimmed.split('\n');
           return (
-            <div key={bi} className="space-y-2">
-              <h3 className="text-xl font-bold text-slate-900">{renderInline(lines[0].slice(3))}</h3>
+            <div key={bi} className="space-y-2 pt-1">
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900">{renderInline(lines[0].slice(3))}</h3>
               {lines.slice(1).map((line, li) => (
                 <p key={li}>{renderInline(line)}</p>
               ))}
@@ -22,7 +23,7 @@ export function MarkdownText({ text }: { text: string }) {
         const lines = trimmed.split('\n');
         if (lines.every((l) => l.trim().startsWith('- '))) {
           return (
-            <ul key={bi} className="space-y-1.5 pl-5 list-disc">
+            <ul key={bi} className="space-y-2 pl-5 list-disc">
               {lines.map((l, li) => (
                 <li key={li}>{renderInline(l.trim().slice(2))}</li>
               ))}
@@ -30,7 +31,7 @@ export function MarkdownText({ text }: { text: string }) {
           );
         }
         return (
-          <div key={bi} className="space-y-1.5">
+          <div key={bi} className="space-y-2">
             {lines.map((line, li) =>
               line.trim().startsWith('- ') ? (
                 <div key={li} className="flex gap-2 pl-2">

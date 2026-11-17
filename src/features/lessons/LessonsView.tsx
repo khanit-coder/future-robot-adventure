@@ -127,7 +127,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
         <div
           className={cn(
             'flex flex-wrap items-center justify-between gap-3',
-            isFullscreen ? 'w-full max-w-[96vw] mx-auto px-4 py-1.5' : 'mx-auto max-w-6xl px-6 py-3',
+            isFullscreen ? 'w-full max-w-[96vw] mx-auto px-4 py-2' : 'mx-auto max-w-6xl px-6 py-3',
           )}
         >
           <div className="flex items-center gap-2.5">
@@ -137,14 +137,14 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                 alt="College Logo"
                 className={cn(
                   'rounded-full object-contain overflow-hidden bg-transparent shrink-0',
-                  isFullscreen ? 'h-8 w-8' : 'h-10 w-10',
+                  isFullscreen ? 'h-9 w-9' : 'h-10 w-10',
                 )}
               />
             ) : (
               <div
                 className={cn(
                   'flex items-center justify-center rounded-xl bg-indigo-600 text-white shrink-0',
-                  isFullscreen ? 'h-8 w-8' : 'h-10 w-10',
+                  isFullscreen ? 'h-9 w-9' : 'h-10 w-10',
                 )}
               >
                 <BookOpen className={isFullscreen ? 'h-4 w-4' : 'h-5 w-5'} />
@@ -153,7 +153,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
             <div>
               <h1
                 className={cn(
-                  'font-extrabold text-sm sm:text-base',
+                  'font-black text-sm sm:text-base',
                   isCyber && 'text-sky-200 drop-shadow-[0_0_8px_rgba(56,189,248,0.4)]',
                   isEsports && 'text-white font-black',
                   isAcademy && 'text-slate-900',
@@ -164,7 +164,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
               </h1>
               <p
                 className={cn(
-                  'text-xs font-medium',
+                  'text-xs sm:text-sm font-semibold',
                   isCyber ? 'text-sky-400/80' : isEsports ? 'text-slate-400' : isArcade ? 'text-pink-300/80' : 'text-slate-500',
                 )}
               >
@@ -179,7 +179,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowLessonReview(false)}
-                className={cn('h-8 text-xs sm:text-sm px-3', isDark && 'border-slate-700 bg-slate-800 text-slate-200')}
+                className={cn('h-9 text-xs sm:text-sm px-3.5', isDark && 'border-slate-700 bg-slate-800 text-slate-200')}
               >
                 {t('common:app.back')}
               </Button>
@@ -188,9 +188,9 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                 variant="outline"
                 size="sm"
                 onClick={() => void resetToHome()}
-                className={cn('h-8 text-xs sm:text-sm px-3', isDark && 'border-slate-700 bg-slate-800 text-slate-200')}
+                className={cn('h-9 text-xs sm:text-sm px-3.5', isDark && 'border-slate-700 bg-slate-800 text-slate-200')}
               >
-                <Home className={cn('h-3.5 w-3.5', isCyber ? 'text-sky-400' : isEsports ? 'text-amber-400' : isArcade ? 'text-pink-400' : 'text-indigo-600')} />
+                <Home className={cn('h-4 w-4', isCyber ? 'text-sky-400' : isEsports ? 'text-amber-400' : isArcade ? 'text-pink-400' : 'text-indigo-600')} />
                 <span className="hidden sm:inline">{t('common:app.home')}</span>
               </Button>
             )}
@@ -201,9 +201,9 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                 disabled={busy}
                 onClick={() => void handleStartAdventure(true)}
                 data-testid="skip-lessons-btn"
-                className="font-extrabold shadow-sm h-8 text-xs sm:text-sm px-3"
+                className="font-extrabold shadow-sm h-9 text-xs sm:text-sm px-3.5"
               >
-                <Rocket className="h-3.5 w-3.5" />
+                <Rocket className="h-4 w-4" />
                 <span>{lang === 'th' ? 'ข้ามเนื้อหาไปเล่นเกมเลย' : t('player:lessons.skipAll')}</span>
               </Button>
             )}
@@ -301,7 +301,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
           className={cn(
             'grid w-full',
             isFullscreen
-              ? 'grid-cols-1 lg:grid-cols-12 gap-3 flex-1 min-h-0 overflow-hidden'
+              ? 'grid-cols-1 lg:grid-cols-12 gap-4 flex-1 min-h-0 overflow-hidden'
               : 'grid-cols-1 lg:grid-cols-12 gap-6',
           )}
         >
@@ -319,11 +319,11 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
             <CardContent
               className={cn(
                 'flex flex-col',
-                isFullscreen ? 'p-3 space-y-1.5 flex-1 min-h-0 overflow-y-auto' : 'space-y-4 p-6',
+                isFullscreen ? 'p-4 sm:p-5 space-y-3 flex-1 min-h-0 overflow-y-auto' : 'space-y-4 p-6',
               )}
             >
               <div className="flex flex-wrap items-center justify-between gap-2 shrink-0">
-                <Badge variant={isCurrentDone ? 'success' : 'default'} className="text-xs font-semibold py-0.5 px-2">
+                <Badge variant={isCurrentDone ? 'success' : 'default'} className="text-xs sm:text-sm font-bold py-1 px-3">
                   {isCurrentDone
                     ? t('player:lessons.completed')
                     : t('player:lessons.step', { current: index + 1, total: lessons.length })}
@@ -331,7 +331,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
               </div>
               <h2
                 className={cn(
-                  'shrink-0 text-xl sm:text-2xl',
+                  'shrink-0 text-2xl sm:text-3xl font-black',
                   isCyber ? 'text-sky-200 font-black drop-shadow-[0_0_8px_rgba(56,189,248,0.3)]' : isEsports ? 'text-white font-black' : isArcade ? 'text-amber-300 font-black' : 'font-extrabold text-slate-900',
                 )}
               >
@@ -339,7 +339,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
               </h2>
               <p
                 className={cn(
-                  'shrink-0 text-sm font-semibold',
+                  'shrink-0 text-base sm:text-lg font-bold',
                   isCyber ? 'text-sky-400' : isEsports ? 'text-amber-400' : isArcade ? 'text-pink-300' : 'text-indigo-700',
                 )}
               >
@@ -352,7 +352,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                   alt={pickLocalized(lesson.title, lang, fallback)}
                   className={cn(
                     'w-full rounded-xl border border-slate-200 object-cover shrink-0',
-                    isFullscreen ? 'max-h-32' : 'max-h-60',
+                    isFullscreen ? 'max-h-40' : 'max-h-60',
                   )}
                 />
               )}
@@ -362,15 +362,18 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                   href={lesson.video_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 shrink-0"
+                  className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-sm font-bold text-indigo-700 hover:bg-indigo-100 shrink-0"
                 >
-                  <Play className="h-3.5 w-3.5" />
+                  <Play className="h-4 w-4" />
                   {lesson.video_url}
                 </a>
               )}
 
-              <div className="prose prose-slate max-w-none text-slate-700 text-sm leading-relaxed">
-                <MarkdownText text={pickLocalized(lesson.body, lang, fallback)} />
+              <div className="prose prose-slate max-w-none text-slate-700 text-base sm:text-lg leading-relaxed">
+                <MarkdownText
+                  text={pickLocalized(lesson.body, lang, fallback)}
+                  className="text-base sm:text-lg font-medium text-slate-800"
+                />
               </div>
             </CardContent>
           </Card>
@@ -385,17 +388,17 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
             <CardContent
               className={cn(
                 'flex h-full flex-col justify-between',
-                isFullscreen ? 'p-2.5 space-y-1.5 flex-1 min-h-0 overflow-hidden' : 'space-y-5 p-6',
+                isFullscreen ? 'p-3.5 sm:p-4 space-y-3 flex-1 min-h-0 overflow-hidden' : 'space-y-5 p-6',
               )}
             >
               <div className={cn('flex flex-col', isFullscreen ? 'flex-1 min-h-0 overflow-hidden' : '')}>
-                <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-sky-300 shrink-0">
-                  <Sparkles className="h-3.5 w-3.5" />
+                <div className="flex items-center gap-2 text-sm sm:text-base font-black uppercase tracking-wider text-sky-300 shrink-0">
+                  <Sparkles className="h-4 w-4" />
                   {t('player:lessons.demoTitle')}
                 </div>
 
                 {lesson.demo_program && lesson.demo_program.length > 0 ? (
-                  <div className={cn('mt-1.5', isFullscreen ? 'flex-1 min-h-0 overflow-hidden flex flex-col' : 'mt-3')}>
+                  <div className={cn('mt-2', isFullscreen ? 'flex-1 min-h-0 overflow-hidden flex flex-col' : 'mt-3')}>
                     <InteractiveRobotDemo
                       key={lesson.id}
                       demoProgram={lesson.demo_program}
@@ -403,21 +406,19 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                       fallbackLang={fallback}
                       robotAsset={defaultRobot}
                       blocks={config?.blocks}
-                      compact={isFullscreen}
                     />
                   </div>
                 ) : (
                   <div className="mt-4 flex flex-col items-center justify-center rounded-2xl bg-slate-950/70 p-6 border border-slate-800">
                     <RobotIllustration robot={defaultRobot} state="wave" size={72} />
-                    <p className="mt-2 text-xs text-slate-400">{t('player:lessons.noDemo')}</p>
+                    <p className="mt-2 text-sm text-slate-400">{t('player:lessons.noDemo')}</p>
                   </div>
                 )}
               </div>
 
               <div
                 className={cn(
-                  'flex items-center justify-between gap-2 border-t border-slate-800 shrink-0',
-                  isFullscreen ? 'pt-1.5' : 'pt-4',
+                  'flex items-center justify-between gap-3 border-t border-slate-800 shrink-0 pt-3',
                 )}
               >
                 <Button
@@ -425,12 +426,9 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                   size="sm"
                   onClick={() => setIndex((i) => Math.max(0, i - 1))}
                   disabled={index === 0 || busy}
-                  className={cn(
-                    'border-slate-700 bg-slate-800 text-white hover:bg-slate-700 cursor-pointer',
-                    isFullscreen ? 'h-7 text-xs px-2.5' : '',
-                  )}
+                  className="border-slate-700 bg-slate-800 text-white hover:bg-slate-700 cursor-pointer h-9 sm:h-10 px-3.5 sm:px-4 text-xs sm:text-sm font-bold flex items-center gap-1.5"
                 >
-                  <ChevronLeft className="h-3.5 w-3.5" />
+                  <ChevronLeft className="h-4 w-4" />
                   {t('common:app.previous')}
                 </Button>
 
@@ -440,17 +438,17 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                     onClick={() => void handleNextOrDone()}
                     disabled={busy}
                     data-testid="lesson-next"
-                    className={cn('cursor-pointer font-bold', isFullscreen ? 'h-7 text-xs px-3' : '')}
+                    className="cursor-pointer font-black h-9 sm:h-10 px-4 sm:px-5 text-xs sm:text-sm flex items-center gap-1.5"
                   >
                     {t('player:lessons.markDone')}
-                    <ChevronRight className="h-3.5 w-3.5" />
+                    <ChevronRight className="h-4 w-4" />
                   </Button>
                 ) : reviewMode ? (
                   <Button
                     variant="success"
                     size="sm"
                     onClick={() => setShowLessonReview(false)}
-                    className={cn('cursor-pointer font-bold', isFullscreen ? 'h-7 text-xs px-3' : '')}
+                    className="cursor-pointer font-black h-9 sm:h-10 px-4 sm:px-5 text-xs sm:text-sm flex items-center gap-1.5"
                   >
                     {t('common:app.back')}
                   </Button>
@@ -461,9 +459,9 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                     disabled={busy}
                     onClick={() => void handleStartAdventure(false)}
                     data-testid="start-adventure"
-                    className={cn('cursor-pointer font-extrabold', isFullscreen ? 'h-7 text-xs px-3' : '')}
+                    className="cursor-pointer font-black h-9 sm:h-10 px-5 sm:px-6 text-xs sm:text-sm flex items-center gap-1.5 shadow-sm"
                   >
-                    <Rocket className="h-3.5 w-3.5" />
+                    <Rocket className="h-4 w-4" />
                     {busy ? t('player:lessons.starting') : t('player:lessons.startAdventure')}
                   </Button>
                 )}
@@ -474,7 +472,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                   variant="success"
                   disabled={busy}
                   onClick={() => void handleStartAdventure(false)}
-                  className="w-full shrink-0"
+                  className="w-full shrink-0 h-10 font-bold"
                 >
                   <Rocket className="h-4 w-4" />
                   {t('player:lessons.startAdventure')}
