@@ -307,7 +307,7 @@ function ModuleBody({
 }) {
   switch (id) {
     case 'overview':
-      return <OverviewModule data={data} />;
+      return <OverviewModule data={data} onReload={reload} />;
     case 'settings':
       return <GameSettingsModule key={data.settings.updated_at} data={data} onReload={reload} />;
     case 'branding':
@@ -331,7 +331,7 @@ function ModuleBody({
     case 'rewards':
       return <RewardManagerModule data={data} onReload={reload} />;
     case 'players':
-      return <PlayerManagerModule data={data} />;
+      return <PlayerManagerModule data={data} onReload={reload} />;
     case 'dashboard':
       return <DashboardEditorModule key={data.dashboard.updated_at} data={data} onReload={reload} />;
     case 'languages':

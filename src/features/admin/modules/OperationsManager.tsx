@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Check, Download, Plus, Save, Sliders, Trash2, X } from 'lucide-react';
+import { Check, Download, Flame, Plus, Save, Sliders, Trash2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { DashboardMode, DashboardSettingsRow, RewardRow } from '@engine';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,7 @@ import { adminApi, type AdminPlayerJoined } from '@/services/api/adminApi';
 import { getSupabase } from '@/services/supabase/client';
 import { cn } from '@/utils/cn';
 import { pickLocalized, toCsv } from '@/utils/localize';
+import { StudentSimulatorModal } from './StudentSimulatorModal';
 
 export function RewardManagerModule({
   data,
@@ -285,7 +286,13 @@ function RewardEditorCard({ reward, onReload }: { reward: RewardRow; onReload: (
   );
 }
 
-export function PlayerManagerModule({ data }: { data: AdminWorkspaceData }) {
+export function PlayerManagerModule({
+  data,
+  onReload,
+}: {
+  data: AdminWorkspaceData;
+  onReload?: () => Promise<void>;
+}) {
   const { t } = useTranslation(['admin', 'common']);
   const [sessionId, setSessionId] = useState(
     data.sessions.find((s) => s.status === 'ACTIVE')?.id ?? data.sessions[0]?.id ?? '',
@@ -296,6 +303,7 @@ export function PlayerManagerModule({ data }: { data: AdminWorkspaceData }) {
   const [adjustTarget, setAdjustTarget] = useState<AdminPlayerJoined | null>(null);
   const [pointsDelta, setPointsDelta] = useState('50');
   const [reason, setReason] = useState('Bonus points');
+  const [simModalOpen, setSimModalOpen] = useState(false);
 
   const loadPlayers = useCallback(async () => {
     if (!sessionId) return;
@@ -397,6 +405,14 @@ export function PlayerManagerModule({ data }: { data: AdminWorkspaceData }) {
           {t('admin:modules.players')} ({filtered.length})
         </CardTitle>
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            onClick={() => setSimModalOpen(true)}
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold text-xs shadow-sm flex items-center gap-1.5"
+          >
+            <Flame className="h-4 w-4 text-amber-300" />
+            จำลองนักเรียนพร้อมกัน (Stress Test)
+          </Button>
           <Select className="w-48" value={sessionId} onChange={(e) => setSessionId(e.target.value)}>
             {data.sessions.map((s) => (
               <option key={s.id} value={s.id}>
@@ -494,6 +510,16 @@ export function PlayerManagerModule({ data }: { data: AdminWorkspaceData }) {
           </div>
         </DialogContent>
       </Dialog>
+      <StudentSimulatorModal
+        open={simModalOpen}
+        onOpenChange={setSimModalOpen}
+        data={data}
+        onReload={async () => {
+          await loadPlayers();
+          if (onReload) await onReload();
+        }}
+        existingPlayers={rows}
+      />
     </Card>
   );
 }

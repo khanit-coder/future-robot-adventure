@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Check, ExternalLink, Save } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Check, ExternalLink, Flame, Play, Save } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { GameSettingsRow, GameTheme, ScoreRules } from '@engine';
 import { computeMissionScore } from '@engine';
@@ -17,18 +17,30 @@ import { LocalizedFields } from '@/features/admin/components/LocalizedFields';
 import { ImageUploader } from '@/features/admin/components/ImageUploader';
 import { cn } from '@/utils/cn';
 import { THEME_OPTIONS } from '../themeOptions';
+import { StudentSimulatorModal } from './StudentSimulatorModal';
 
-export function OverviewModule({ data }: { data: AdminWorkspaceData }) {
+export function OverviewModule({
+  data,
+  onReload,
+}: {
+  data: AdminWorkspaceData;
+  onReload?: () => Promise<void>;
+}) {
   const { t } = useTranslation(['admin', 'common']);
   const [snap, setSnap] = useState<DashboardSnapshot | null>(null);
+  const [simModalOpen, setSimModalOpen] = useState(false);
   const activeSession = data.sessions.find((s) => s.status === 'ACTIVE');
 
-  useEffect(() => {
+  const refreshSnapshot = useCallback(() => {
     void publicApi
       .fetchDashboardSnapshot(activeSession?.id)
       .then(setSnap)
       .catch(() => {});
   }, [activeSession?.id]);
+
+  useEffect(() => {
+    refreshSnapshot();
+  }, [refreshSnapshot]);
 
   const players = snap?.players ?? [];
   const playing = players.filter((p) => p.status === 'PLAYING' || p.status === 'LEARNING').length;
@@ -45,6 +57,34 @@ export function OverviewModule({ data }: { data: AdminWorkspaceData }) {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
+        <Card className="border-indigo-200 bg-gradient-to-br from-indigo-50/80 via-white to-purple-50/80 shadow-sm md:col-span-2">
+          <CardHeader className="flex-row items-center justify-between gap-3 pb-3 pt-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-200">
+                <Flame className="h-6 w-6 text-amber-300" />
+              </div>
+              <div>
+                <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  จำลองนักเรียนใช้งานพร้อมกัน (Concurrent Student Stress Test)
+                  <Badge variant="info" className="text-xs">
+                    Admin Tool
+                  </Badge>
+                </CardTitle>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  ทดสอบสมรรถนะเซิร์ฟเวอร์และการแสดงผลหน้าจอแดชบอร์ด 100 จอ กำหนดจำนวนนักเรียนพร้อมกัน ดู Metrics และล้างข้อมูลได้ในคลิกเดียว
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={() => setSimModalOpen(true)}
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold text-xs shadow-md flex items-center gap-1.5 shrink-0"
+            >
+              <Play className="h-4 w-4" />
+              เปิดระบบทดสอบ (Run Simulator)
+            </Button>
+          </CardHeader>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>{t('admin:modules.sessions')}</CardTitle>
@@ -96,6 +136,16 @@ export function OverviewModule({ data }: { data: AdminWorkspaceData }) {
           </CardContent>
         </Card>
       </div>
+
+      <StudentSimulatorModal
+        open={simModalOpen}
+        onOpenChange={setSimModalOpen}
+        data={data}
+        onReload={async () => {
+          refreshSnapshot();
+          if (onReload) await onReload();
+        }}
+      />
     </div>
   );
 }
