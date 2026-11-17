@@ -97,7 +97,20 @@ export function BlocklyEditor({
     };
     emit();
 
+    const syncFlyoutScrollbar = () => {
+      try {
+        const flyout = workspace.getFlyout?.();
+        if (flyout && !flyout.isVisible()) {
+          flyout.getWorkspace?.()?.scrollbar?.setContainerVisible(false);
+        }
+      } catch {
+        // Ignore internal Blockly state errors
+      }
+    };
+    syncFlyoutScrollbar();
+
     const listener = (ev: Blockly.Events.Abstract) => {
+      syncFlyoutScrollbar();
       if (ev.isUiEvent) return;
       if (ev.type === Blockly.Events.BLOCK_MOVE) {
         const moveEv = ev as Blockly.Events.BlockMove;
@@ -109,12 +122,22 @@ export function BlocklyEditor({
     };
     workspace.addChangeListener(listener);
 
+    const onFullscreenResize = () => {
+      const isFs = typeof document !== 'undefined' && Boolean(document.fullscreenElement);
+      workspace.setScale(isFs ? 1.15 : 1.0);
+      Blockly.svgResize(workspace);
+      syncFlyoutScrollbar();
+    };
+    document.addEventListener('fullscreenchange', onFullscreenResize);
+
     const resizeObserver = new ResizeObserver(() => {
       Blockly.svgResize(workspace);
+      syncFlyoutScrollbar();
     });
     resizeObserver.observe(container);
 
     return () => {
+      document.removeEventListener('fullscreenchange', onFullscreenResize);
       resizeObserver.disconnect();
       workspace.removeChangeListener(listener);
       workspace.dispose();

@@ -110,8 +110,8 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
       <header className="border-b border-slate-200 bg-white shrink-0">
         <div
           className={cn(
-            'flex flex-wrap items-center justify-between gap-3 px-4 py-2.5',
-            isFullscreen ? 'w-full max-w-[1400px] mx-auto' : 'mx-auto max-w-5xl',
+            'flex flex-wrap items-center justify-between gap-3 px-6 py-3',
+            isFullscreen ? 'w-full max-w-[94vw] mx-auto' : 'mx-auto max-w-6xl',
           )}
         >
           <div className="flex items-center gap-2.5">
@@ -154,8 +154,8 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
         </div>
         <div
           className={cn(
-            'px-4 pb-2.5',
-            isFullscreen ? 'w-full max-w-[1400px] mx-auto' : 'mx-auto max-w-5xl',
+            'px-6 pb-3',
+            isFullscreen ? 'w-full max-w-[94vw] mx-auto' : 'mx-auto max-w-6xl',
           )}
         >
           <Progress value={progressPct} className="h-2.5" />
@@ -164,10 +164,10 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
 
       <main
         className={cn(
-          'space-y-5 px-4 py-5',
+          'space-y-5 px-6 py-6',
           isFullscreen
-            ? 'flex-1 min-h-0 overflow-y-auto w-full max-w-[1400px] mx-auto'
-            : 'mx-auto max-w-5xl',
+            ? 'flex-1 min-h-0 overflow-y-auto w-full max-w-[94vw] mx-auto'
+            : 'mx-auto max-w-6xl',
         )}
       >
         {/* Step dots */}

@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Clock,
   Code2,
+  Compass,
   Copy,
   Flag,
   Heart,
@@ -57,6 +58,7 @@ import { playerApi } from '@/services/api/playerApi';
 import { useAppStore } from '@/stores/appStore';
 import { loadSavedWorkspace, saveWorkspaceState, usePlayerStore } from '@/stores/playerStore';
 import { formatDuration, pickLocalized } from '@/utils/localize';
+import { HowToPlayGuideModal } from './HowToPlayGuideModal';
 import { LevelMap } from './LevelMap';
 
 const MAX_HEARTS = 5;
@@ -136,6 +138,7 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
   const [hintsTotal, setHintsTotal] = useState(level.hints.length);
   const [showMap, setShowMap] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showHomeConfirm, setShowHomeConfirm] = useState(false);
   const [showGameOverModal, setShowGameOverModal] = useState(false);
@@ -520,7 +523,7 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
           <div
             className={cn(
               'relative rounded-2xl overflow-hidden shadow-md shrink-0',
-              isFullscreen ? 'h-[36vh] min-h-[220px] max-h-[380px]' : 'h-[320px] sm:h-[360px]',
+              isFullscreen ? 'h-[46vh] min-h-[280px]' : 'h-[340px] sm:h-[380px]',
             )}
           >
             <PhaserViewport
@@ -678,6 +681,15 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowHowToPlay(true)}
+                data-testid="how-to-play-btn"
+              >
+                <Compass className="h-4 w-4 text-indigo-700" />
+                {lang === 'th' ? 'วิธีเล่น 4 ขั้นตอน' : 'How to Play'}
+              </Button>
               <Button variant="outline" size="sm" onClick={() => setShowGuide(true)}>
                 <HelpCircle className="h-4 w-4" />
                 {t('game:commandGuide')}
@@ -717,6 +729,86 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
             </div>
           </div>
 
+          {/* Interactive 4-Step Gameplay Guide Strip */}
+          <div
+            className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50 via-sky-50 to-emerald-50 px-3.5 py-2 shadow-2xs shrink-0"
+            data-testid="step-by-step-guide-bar"
+          >
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs font-extrabold">
+              <button
+                type="button"
+                onClick={() => setShowHowToPlay(true)}
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 transition-all cursor-pointer',
+                  blocksUsed === 0
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'bg-white/80 text-slate-700 hover:bg-white',
+                )}
+              >
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-300 text-[10px] font-black text-slate-950">
+                  1
+                </span>
+                <span>{lang === 'th' ? 'วางแผนดูแผนที่' : 'Plan on Map'}</span>
+              </button>
+              <span className="text-slate-400">➔</span>
+              <button
+                type="button"
+                onClick={() => setShowHowToPlay(true)}
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 transition-all cursor-pointer',
+                  blocksUsed === 0
+                    ? 'bg-sky-600 text-white shadow-xs animate-pulse'
+                    : 'bg-white/80 text-slate-700 hover:bg-white',
+                )}
+              >
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-300 text-[10px] font-black text-slate-950">
+                  2
+                </span>
+                <span>{lang === 'th' ? 'เปิดถาดคำสั่งซ้ายมือ' : 'Open Block Tray'}</span>
+              </button>
+              <span className="text-slate-400">➔</span>
+              <button
+                type="button"
+                onClick={() => setShowHowToPlay(true)}
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 transition-all cursor-pointer',
+                  blocksUsed > 0 && !overBlockLimit
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'bg-white/80 text-slate-700 hover:bg-white',
+                )}
+              >
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-300 text-[10px] font-black text-slate-950">
+                  3
+                </span>
+                <span>{lang === 'th' ? 'ลากบล็อกมาเรียงต่อกัน' : 'Drag & Snap Blocks'}</span>
+              </button>
+              <span className="text-slate-400">➔</span>
+              <button
+                type="button"
+                onClick={() => setShowHowToPlay(true)}
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 transition-all cursor-pointer',
+                  blocksUsed > 0 && !overBlockLimit
+                    ? 'bg-emerald-600 text-white shadow-xs animate-pulse'
+                    : 'bg-white/80 text-slate-700 hover:bg-white',
+                )}
+              >
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-300 text-[10px] font-black text-slate-950">
+                  4
+                </span>
+                <span>{lang === 'th' ? 'กดปุ่ม COMPILE' : 'Press COMPILE'}</span>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowHowToPlay(true)}
+              className="text-xs font-extrabold text-indigo-700 underline hover:text-indigo-900 cursor-pointer shrink-0"
+            >
+              {lang === 'th' ? 'ดูภาพตัวอย่างวิธีเล่น →' : 'See Visual Guide →'}
+            </button>
+          </div>
+
           <div
             className={cn(
               'rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden',
@@ -738,6 +830,13 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
           </div>
         </div>
       </main>
+
+      {/* How to Play 4-Step Visual Guide Modal */}
+      <HowToPlayGuideModal
+        open={showHowToPlay}
+        onOpenChange={setShowHowToPlay}
+        lang={lang}
+      />
 
       {/* Level Selector Modal */}
       <LevelMap

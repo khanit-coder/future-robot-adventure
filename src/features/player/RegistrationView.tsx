@@ -80,14 +80,14 @@ export function RegistrationView() {
   return (
     <div
       className={cn(
-        'bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-900 text-white flex flex-col justify-between',
-        isFullscreen ? 'h-screen overflow-hidden' : 'min-h-screen',
+        'bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-900 text-white flex flex-col',
+        isFullscreen ? 'h-screen overflow-y-auto' : 'min-h-screen',
       )}
     >
       <header
         className={cn(
-          'flex items-center justify-between px-4 shrink-0',
-          isFullscreen ? 'w-full max-w-[1400px] mx-auto py-3' : 'mx-auto max-w-6xl py-4',
+          'flex w-full items-center justify-between shrink-0 mx-auto',
+          isFullscreen ? 'max-w-[94vw] px-8 py-5' : 'max-w-7xl px-6 py-4',
         )}
       >
         <div className="flex items-center gap-3">
@@ -115,10 +115,10 @@ export function RegistrationView() {
 
       <main
         className={cn(
-          'items-center gap-8 px-4',
+          'flex-1 content-center items-center w-full mx-auto grid lg:grid-cols-12',
           isFullscreen
-            ? 'flex-1 min-h-0 overflow-y-auto grid lg:grid-cols-12 max-w-[1400px] mx-auto py-4'
-            : 'mx-auto grid max-w-6xl pb-12 pt-4 lg:grid-cols-12',
+            ? 'max-w-[90vw] gap-12 px-8 py-6'
+            : 'max-w-7xl gap-10 px-6 pb-12 pt-4',
         )}
       >
         {/* Hero side */}
@@ -127,22 +127,38 @@ export function RegistrationView() {
             <Sparkles className="h-4 w-4 text-amber-300" />
             {t('player:welcome.badge')}
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl">{gameTitle}</h1>
-          <p className="text-lg font-medium text-sky-200">{tagline}</p>
-          <p className="max-w-xl text-base leading-relaxed text-slate-300">{t('player:welcome.subtitle')}</p>
+          <h1
+            className={cn(
+              'font-extrabold tracking-tight text-white',
+              isFullscreen ? 'text-5xl xl:text-6xl leading-tight' : 'text-4xl sm:text-5xl',
+            )}
+          >
+            {gameTitle}
+          </h1>
+          <p className={cn('font-medium text-sky-200', isFullscreen ? 'text-xl xl:text-2xl' : 'text-lg')}>
+            {tagline}
+          </p>
+          <p className={cn('max-w-2xl leading-relaxed text-slate-300', isFullscreen ? 'text-lg' : 'text-base')}>
+            {t('player:welcome.subtitle')}
+          </p>
 
           <div className="flex items-end gap-4 pt-2">
-            <div className="rounded-2xl border border-slate-700/80 bg-slate-900/70 p-3 text-center">
-              <RobotIllustration styleName="bolt" color="#38bdf8" state="wave" size={88} />
-              <p className="mt-1 text-xs font-semibold text-sky-300">Bolt</p>
+            <div className="rounded-2xl border border-slate-700/80 bg-slate-900/70 p-4 text-center">
+              <RobotIllustration styleName="bolt" color="#38bdf8" state="wave" size={isFullscreen ? 116 : 88} />
+              <p className="mt-1.5 text-xs font-semibold text-sky-300">Bolt</p>
             </div>
-            <div className="rounded-2xl border border-slate-700/80 bg-slate-900/70 p-3 text-center">
-              <RobotIllustration styleName="nova" color="#f472b6" state="idle" size={88} />
-              <p className="mt-1 text-xs font-semibold text-pink-300">Nova</p>
+            <div className="rounded-2xl border border-slate-700/80 bg-slate-900/70 p-4 text-center">
+              <RobotIllustration styleName="nova" color="#f472b6" state="idle" size={isFullscreen ? 116 : 88} />
+              <p className="mt-1.5 text-xs font-semibold text-pink-300">Nova</p>
             </div>
-            <div className="rounded-2xl border border-slate-700/80 bg-slate-900/70 p-3 text-center">
-              <RobotIllustration styleName="gizmo" color="#4ade80" state="celebrate" size={88} />
-              <p className="mt-1 text-xs font-semibold text-emerald-300">Gizmo</p>
+            <div className="rounded-2xl border border-slate-700/80 bg-slate-900/70 p-4 text-center">
+              <RobotIllustration
+                styleName="gizmo"
+                color="#4ade80"
+                state="celebrate"
+                size={isFullscreen ? 116 : 88}
+              />
+              <p className="mt-1.5 text-xs font-semibold text-emerald-300">Gizmo</p>
             </div>
           </div>
         </div>
@@ -150,7 +166,7 @@ export function RegistrationView() {
         {/* Registration card */}
         <div className="lg:col-span-6">
           <Card className="border-slate-200/90 bg-white text-slate-900 shadow-2xl">
-            <CardContent className="p-6 sm:p-8">
+            <CardContent className={cn(isFullscreen ? 'p-8 xl:p-10' : 'p-6 sm:p-8')}>
               {!activeSession ? (
                 <div className="py-8 text-center space-y-3">
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-600">

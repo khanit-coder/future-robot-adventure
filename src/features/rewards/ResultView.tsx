@@ -210,7 +210,12 @@ export function ResultView() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-900 text-white">
-      <header className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-4">
+      <header
+        className={cn(
+          'mx-auto flex flex-wrap items-center justify-between gap-3 px-6 py-4',
+          isFullscreen ? 'w-full max-w-[92vw]' : 'max-w-6xl',
+        )}
+      >
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
@@ -262,8 +267,8 @@ export function ResultView() {
 
       <main
         className={cn(
-          'mx-auto space-y-6 px-4 pb-16 pt-2',
-          isFullscreen ? 'w-full max-w-[1300px] px-6' : 'max-w-5xl',
+          'mx-auto space-y-6 px-6 pb-16 pt-2',
+          isFullscreen ? 'w-full max-w-[92vw]' : 'max-w-6xl',
         )}
       >
         <Card className="border-slate-800 bg-slate-900/90 text-white shadow-2xl">

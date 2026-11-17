@@ -20,6 +20,11 @@ body,
   margin: 0;
 }
 
+/* Proportional UI scaling in Fullscreen mode so cards, text, and controls expand to fill large screens */
+html.fra-fullscreen {
+  font-size: clamp(17px, 1.08vw, 22px);
+}
+
 /* Gentle robot animations used on the lightweight Dashboard, Lessons, and Preview cards */
 @keyframes fra-bob {
   0%,
@@ -132,6 +137,16 @@ body,
 
 .blocklyFlyout {
   z-index: 39 !important;
+}
+
+/* Prevent Blockly's flyout scrollbar from staying stuck on screen after the flyout auto-closes */
+.blocklyFlyoutScrollbar,
+.blocklyFlyout[style*='display: none'] ~ .blocklyFlyoutScrollbar,
+.blocklyFlyout[style*='display:none'] ~ .blocklyFlyoutScrollbar {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 .blocklyTreeRow {
