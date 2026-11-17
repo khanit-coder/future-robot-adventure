@@ -212,12 +212,25 @@ function requirePlaying(ctx: PlayerContext) {
 async function getState(ctx: PlayerContext, includeConfig = false) {
   const db = adminClient();
   const nowIso = new Date().toISOString();
-  const [{ data: fresh }, { data: progress }, { data: lessons }, { data: claim }, latestVer, cfg] =
+
+  let sameIdentityQuery = db
+    .from('players')
+    .select('id', { count: 'exact', head: true })
+    .ilike('display_name', ctx.player.display_name)
+    .ilike('school', ctx.player.school);
+  if (ctx.player.grade) {
+    sameIdentityQuery = sameIdentityQuery.ilike('grade', ctx.player.grade);
+  } else {
+    sameIdentityQuery = sameIdentityQuery.is('grade', null);
+  }
+
+  const [{ data: fresh }, { data: progress }, { data: lessons }, { data: claim }, { count: sameIdentityCount }, latestVer, cfg] =
     await Promise.all([
       db.from('player_sessions').update({ last_seen_at: nowIso }).eq('id', ctx.ps.id).select('*').single(),
       db.from('player_level_progress').select('*').eq('player_session_id', ctx.ps.id),
       db.from('lesson_progress').select('lesson_id').eq('player_session_id', ctx.ps.id),
       db.from('reward_claims').select('id, reward_id, claim_code, status').eq('player_id', ctx.player.id).neq('status', 'CANCELLED').maybeSingle(),
+      sameIdentityQuery,
       latestConfigVersion(),
       includeConfig ? loadConfig(ctx.ps.config_version) : Promise.resolve(null),
     ]);
@@ -230,6 +243,7 @@ async function getState(ctx: PlayerContext, includeConfig = false) {
     lessons_done: (lessons ?? []).map((l: any) => l.lesson_id),
     claim: claim ?? null,
     latest_version: latestVer,
+    is_returning_player: (sameIdentityCount ?? 0) > 1,
     ...(cfg ? { config: publicConfig(cfg) } : {}),
   };
 }

@@ -52,12 +52,29 @@ Deno.serve(
         latest_version: version,
         server_now: new Date().toISOString(),
         existing: true,
+        is_returning_player: true,
       };
     }
 
     if (!session.registration_open) throw new HttpError(403, 'REGISTRATION_CLOSED');
 
-    const version = await latestConfigVersion();
+    // Check if this student (same display_name, school, and grade/room) has registered before
+    let priorQuery = db
+      .from('players')
+      .select('id', { count: 'exact', head: true })
+      .ilike('display_name', display_name)
+      .ilike('school', school);
+    if (gradeRaw) {
+      priorQuery = priorQuery.ilike('grade', gradeRaw);
+    } else {
+      priorQuery = priorQuery.is('grade', null);
+    }
+
+    const [{ count: priorCount }, version] = await Promise.all([
+      priorQuery,
+      latestConfigVersion(),
+    ]);
+    const isReturningPlayer = (priorCount ?? 0) > 0;
     const cfg = await loadConfig(version);
     const { data: player, error } = await db
       .from('players')
@@ -116,6 +133,7 @@ Deno.serve(
       latest_version: version,
       server_now: new Date().toISOString(),
       existing: false,
+      is_returning_player: isReturningPlayer,
     };
   }),
 );

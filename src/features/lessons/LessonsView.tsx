@@ -26,6 +26,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
   const settings = useAppStore((s) => s.settings);
   const config = usePlayerStore((s) => s.config);
   const lessonsDone = usePlayerStore((s) => s.lessonsDone);
+  const isReturningPlayer = usePlayerStore((s) => s.isReturningPlayer);
   const completeLesson = usePlayerStore((s) => s.completeLesson);
   const markLessonsStarted = usePlayerStore((s) => s.markLessonsStarted);
   const startGame = usePlayerStore((s) => s.startGame);
@@ -53,7 +54,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
   const allLessonsCompleted = lessons.every((l) => lessonsDone.includes(l.id));
   const allowSkip = settings?.allow_skip_lessons ?? config?.settings.allow_skip_lessons ?? false;
   const lessonsMandatory = settings?.lessons_mandatory ?? config?.settings.lessons_mandatory ?? true;
-  const canSkip = Boolean(allowSkip || !lessonsMandatory);
+  const canSkip = Boolean(isReturningPlayer || allowSkip || !lessonsMandatory);
   const progressPct = lessons.length > 0 ? Math.round((lessonsDone.length / lessons.length) * 100) : 100;
 
   const handleNextOrDone = async () => {
@@ -141,12 +142,15 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
             )}
             {!reviewMode && canSkip && (
               <Button
-                variant="ghost"
+                variant="success"
                 size="sm"
                 disabled={busy}
                 onClick={() => void handleStartAdventure(true)}
+                data-testid="skip-lessons-btn"
+                className="font-extrabold shadow-sm"
               >
-                {t('player:lessons.skipAll')}
+                <Rocket className="h-4 w-4" />
+                {lang === 'th' ? 'ข้ามเนื้อหาไปเล่นเกมเลย' : t('player:lessons.skipAll')}
               </Button>
             )}
             <SoundToggle />
@@ -172,6 +176,38 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
             : 'mx-auto max-w-6xl',
         )}
       >
+        {/* Returning Student Quick-Skip Banner */}
+        {!reviewMode && isReturningPlayer && (
+          <div
+            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-emerald-400 bg-gradient-to-r from-emerald-50 via-teal-50 to-sky-50 px-5 py-3.5 shadow-sm"
+            data-testid="returning-player-skip-banner"
+          >
+            <div className="space-y-0.5">
+              <p className="text-sm font-extrabold text-emerald-950">
+                {lang === 'th'
+                  ? '👋 ยินดีต้อนรับกลับมาอีกครั้ง! คุณใช้ชื่อ โรงเรียน และห้องเดิม'
+                  : '👋 Welcome back! Returning student detected'}
+              </p>
+              <p className="text-xs font-medium text-emerald-800">
+                {lang === 'th'
+                  ? 'สามารถกดปุ่มด้านขวาเพื่อข้ามเนื้อหาบทเรียน และเข้าสู่การเล่นเกมได้ทันที!'
+                  : 'You can skip the lessons and jump straight into the game right now!'}
+              </p>
+            </div>
+            <Button
+              variant="success"
+              size="lg"
+              disabled={busy}
+              onClick={() => void handleStartAdventure(true)}
+              data-testid="returning-skip-btn"
+              className="font-extrabold shadow-md shrink-0"
+            >
+              <Rocket className="h-4 w-4" />
+              {lang === 'th' ? 'ข้ามเนื้อหา ไปเริ่มเล่นเกมเลย!' : 'Skip Lessons & Play Now!'}
+            </Button>
+          </div>
+        )}
+
         {/* Step dots */}
         <div className="flex flex-wrap items-center gap-2">
           {lessons.map((l, i) => {
@@ -258,6 +294,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                       lang={lang}
                       fallbackLang={fallback}
                       robotAsset={defaultRobot}
+                      blocks={config?.blocks}
                     />
                   </div>
                 ) : (

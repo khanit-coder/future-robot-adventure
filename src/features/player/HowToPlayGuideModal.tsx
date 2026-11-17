@@ -35,22 +35,23 @@ export function HowToPlayGuideModal({ open, onOpenChange, lang }: HowToPlayGuide
         : 'Look at the game stage on the left. Check which way the robot faces (yellow arrow ▸), spot walls or crystals, and count the tiles to the green goal.',
       color: 'border-sky-500/40 bg-sky-500/10 text-sky-300',
       visual: (
-        <div className="flex items-center justify-center gap-2 rounded-2xl bg-slate-950 p-4 border border-slate-800">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-800 border-2 border-sky-400 text-lg relative">
+        <div className="flex items-center justify-center gap-2 rounded-2xl bg-[#0f172a] p-4 border border-slate-800">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#334155] border-[1.5px] border-[#38bdf8]/60 text-lg relative">
             🤖
-            <span className="absolute -right-2 text-amber-400 text-xs font-black">▶</span>
+            <span className="absolute -right-1.5 text-[#facc15] text-xs font-black">▶</span>
           </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-800/80 border border-slate-700 text-xs font-extrabold text-sky-300">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#334155] border-[1.5px] border-[#38bdf8]/45 text-xs font-extrabold text-sky-300">
             1
           </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-800/80 border border-slate-700 text-xs font-extrabold text-sky-300">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#334155] border-[1.5px] border-[#38bdf8]/45 text-xs font-extrabold text-sky-300">
             2
           </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-800/80 border border-slate-700 text-xs font-extrabold text-sky-300">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#334155] border-[1.5px] border-[#38bdf8]/45 text-xs font-extrabold text-sky-300">
             3
           </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-950 border-2 border-emerald-400 text-xs font-black text-emerald-300 animate-pulse">
-            🎯 GOAL
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#334155] border-[1.5px] border-[#38bdf8]/45 relative">
+            <div className="h-8 w-8 rounded-full border-[3px] border-[#4ade80] bg-[#22c55e]/30 animate-pulse" />
+            <div className="absolute h-3.5 w-3.5 rounded-full bg-[#4ade80]" />
           </div>
         </div>
       ),
@@ -65,25 +66,26 @@ export function HowToPlayGuideModal({ open, onOpenChange, lang }: HowToPlayGuide
         : 'Click the category tabs on the left of the coding area (Movement, Actions, Logic) to slide open the block tray.',
       color: 'border-amber-500/40 bg-amber-500/10 text-amber-300',
       visual: (
-        <div className="flex items-center justify-center gap-3 rounded-2xl bg-slate-950 p-4 border border-slate-800">
+        <div className="flex items-center justify-center gap-3 rounded-2xl bg-white p-4 border border-slate-200 text-slate-900">
           <div className="space-y-1.5 text-left">
-            <div className="flex items-center gap-2 rounded-lg bg-blue-600/30 border-l-4 border-blue-500 px-3 py-1.5 text-xs font-extrabold text-white ring-2 ring-sky-400">
+            <div className="flex items-center gap-2 rounded-lg bg-blue-50 border-l-[5px] border-[#3b82f6] px-3 py-1.5 text-xs font-extrabold text-slate-900 ring-2 ring-sky-400">
               <span>👆 {isTh ? 'การเคลื่อนที่' : 'Movement'}</span>
             </div>
-            <div className="flex items-center gap-2 rounded-lg bg-slate-800 border-l-4 border-orange-500 px-3 py-1.5 text-xs font-bold text-slate-300">
+            <div className="flex items-center gap-2 rounded-lg bg-slate-50 border-l-[5px] border-[#f97316] px-3 py-1.5 text-xs font-bold text-slate-700">
               <span>{isTh ? 'การกระทำ' : 'Actions'}</span>
             </div>
-            <div className="flex items-center gap-2 rounded-lg bg-slate-800 border-l-4 border-teal-500 px-3 py-1.5 text-xs font-bold text-slate-300">
+            <div className="flex items-center gap-2 rounded-lg bg-slate-50 border-l-[5px] border-[#14b8a6] px-3 py-1.5 text-xs font-bold text-slate-700">
               <span>{isTh ? 'ตรรกะ' : 'Logic'}</span>
             </div>
           </div>
-          <ArrowRight className="h-5 w-5 text-slate-500 shrink-0" />
-          <div className="rounded-xl bg-slate-900 border border-slate-700 p-2.5 space-y-1.5">
-            <div className="rounded-md bg-blue-500 px-3 py-1 text-xs font-extrabold text-white shadow">
-              {isTh ? 'เดินหน้า [ 1 ] ก้าว' : 'Move Forward [ 1 ]'}
+          <ArrowRight className="h-5 w-5 text-slate-400 shrink-0" />
+          <div className="rounded-xl bg-slate-50 border border-slate-200 p-2.5 space-y-2">
+            <div className="inline-flex items-center gap-2 rounded-xl bg-[#3b82f6] px-3.5 py-1.5 text-xs font-extrabold text-white shadow">
+              <span>{isTh ? 'เดินหน้า' : 'Move Forward'}</span>
+              <span className="rounded-full bg-white px-2 py-0.5 text-slate-900 font-extrabold">1</span>
             </div>
-            <div className="rounded-md bg-sky-500 px-3 py-1 text-xs font-extrabold text-white shadow">
-              {isTh ? 'เลี้ยวซ้าย ↺' : 'Turn Left ↺'}
+            <div className="block rounded-xl bg-[#0ea5e9] px-3.5 py-1.5 text-xs font-extrabold text-white shadow">
+              {isTh ? 'เลี้ยวซ้าย' : 'Turn Left'}
             </div>
           </div>
         </div>
@@ -95,21 +97,28 @@ export function HowToPlayGuideModal({ open, onOpenChange, lang }: HowToPlayGuide
       badge: isTh ? 'ขั้นตอนที่ 3 • ลากมาเรียงต่อกัน' : 'STEP 3 • DRAG & SNAP BLOCKS',
       title: isTh ? 'ลากคำสั่งออกมาเรียงต่อกันจากบนลงล่าง' : 'Drag & Snap Blocks from Top to Bottom',
       desc: isTh
-        ? 'ลากบล็อกที่ต้องการมาวางในพื้นที่สีขาว แล้วต่อให้เข้าล็อกกัน (จะมีเสียงคลิก!) หุ่นยนต์จะทำงานตามลำดับจากบล็อกบนสุดลงมาล่างสุด และสามารถคลิกเปลี่ยนตัวเลขจำนวนก้าวได้'
-        : 'Drag blocks into the white workspace and snap them together! The robot runs blocks from top to bottom. Click numbers inside blocks to adjust steps.',
+        ? 'ลากบล็อกที่ต้องการมาวางในพื้นที่จุดสีขาว แล้วต่อให้เข้าล็อกกัน (จะมีเสียงคลิก!) หุ่นยนต์จะทำงานตามลำดับจากบล็อกบนสุดลงมาล่างสุด และคลิกเปลี่ยนตัวเลขในช่องสีขาวได้'
+        : 'Drag blocks into the dotted white workspace and snap them together! The robot runs blocks from top to bottom. Click the white number pill to change steps.',
       color: 'border-indigo-500/40 bg-indigo-500/10 text-indigo-300',
       visual: (
-        <div className="flex flex-col items-center justify-center rounded-2xl bg-slate-950 p-4 border border-slate-800 space-y-1">
-          <div className="rounded-lg bg-blue-500 px-4 py-1.5 text-xs font-extrabold text-white shadow-md border-2 border-amber-300">
-            {isTh ? 'เดินหน้า' : 'Move Forward'}{' '}
-            <span className="ml-1 rounded bg-white px-1.5 py-0.5 text-slate-900 font-black">3</span>
+        <div
+          className="flex flex-col items-center justify-center rounded-2xl p-4 border border-slate-200"
+          style={{
+            backgroundImage: 'radial-gradient(#cbd5e1 1.25px, transparent 1.25px)',
+            backgroundSize: '18px 18px',
+            backgroundColor: '#ffffff',
+          }}
+        >
+          <div className="inline-flex items-center gap-2 rounded-xl bg-[#3b82f6] px-4 py-2 text-xs font-extrabold text-white shadow-md ring-3 ring-[#facc15]">
+            <span>{isTh ? 'เดินหน้า' : 'Move Forward'}</span>
+            <span className="rounded-full bg-white px-2.5 py-0.5 text-slate-900 font-extrabold">3</span>
           </div>
-          <div className="rounded-lg bg-orange-500 px-4 py-1.5 text-xs font-extrabold text-white shadow-md -mt-1">
-            {isTh ? 'กระโดด ⏫' : 'Jump ⏫'}
+          <div className="inline-flex items-center gap-2 rounded-xl bg-[#f97316] px-4 py-2 text-xs font-extrabold text-white shadow-md -mt-0.5">
+            <span>{isTh ? 'กระโดด' : 'Jump'}</span>
           </div>
-          <div className="rounded-lg bg-blue-500 px-4 py-1.5 text-xs font-extrabold text-white shadow-md -mt-1">
-            {isTh ? 'เดินหน้า' : 'Move Forward'}{' '}
-            <span className="ml-1 rounded bg-white px-1.5 py-0.5 text-slate-900 font-black">2</span>
+          <div className="inline-flex items-center gap-2 rounded-xl bg-[#3b82f6] px-4 py-2 text-xs font-extrabold text-white shadow-md -mt-0.5">
+            <span>{isTh ? 'เดินหน้า' : 'Move Forward'}</span>
+            <span className="rounded-full bg-white px-2.5 py-0.5 text-slate-900 font-extrabold">2</span>
           </div>
         </div>
       ),

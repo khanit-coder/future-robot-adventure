@@ -28,6 +28,7 @@ export interface PlayerStateResponse {
   } | null;
   latest_version: number;
   config?: PublishedConfig;
+  is_returning_player?: boolean;
 }
 
 export interface SubmitSolutionResponse {
@@ -67,6 +68,7 @@ export const playerApi = {
       latest_version?: number;
       server_now?: string;
       existing: boolean;
+      is_returning_player?: boolean;
     }>('register-player', input, { allowAnonymous: true });
   },
 

@@ -13,6 +13,36 @@ import { getSupabase, isSupabaseConfigured } from '@/services/supabase/client';
 import i18n from '@/i18n/config';
 
 const WORKSPACE_STORAGE_PREFIX = 'fra_ws_v1';
+const KNOWN_IDENTITIES_STORAGE_KEY = 'fra_known_identities_v1';
+
+function buildIdentityKey(name: string, school: string, grade?: string | null): string {
+  return `${name.trim().toLowerCase()}|${school.trim().toLowerCase()}|${(grade ?? '').trim().toLowerCase()}`;
+}
+
+function hasKnownLocalIdentity(name: string, school: string, grade?: string | null): boolean {
+  try {
+    const raw = localStorage.getItem(KNOWN_IDENTITIES_STORAGE_KEY);
+    if (!raw) return false;
+    const list = JSON.parse(raw) as string[];
+    return Array.isArray(list) && list.includes(buildIdentityKey(name, school, grade));
+  } catch {
+    return false;
+  }
+}
+
+function recordKnownLocalIdentity(name: string, school: string, grade?: string | null): void {
+  try {
+    const key = buildIdentityKey(name, school, grade);
+    const raw = localStorage.getItem(KNOWN_IDENTITIES_STORAGE_KEY);
+    const list: string[] = raw ? (JSON.parse(raw) as string[]) : [];
+    if (!list.includes(key)) {
+      list.push(key);
+      localStorage.setItem(KNOWN_IDENTITIES_STORAGE_KEY, JSON.stringify(list.slice(-50)));
+    }
+  } catch {
+    // Ignore storage errors
+  }
+}
 
 export function loadSavedWorkspace(playerSessionId: string, levelId: string): Record<string, unknown> | null {
   try {
@@ -52,6 +82,7 @@ interface PlayerStore {
   serverOffsetMs: number;
   selectedLevelId: string | null;
   showLessonReview: boolean;
+  isReturningPlayer: boolean;
 
   bootstrap: () => Promise<void>;
   register: (input: { display_name: string; school: string; grade?: string; lang: Lang }) => Promise<void>;
@@ -82,6 +113,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   serverOffsetMs: 0,
   selectedLevelId: null,
   showLessonReview: false,
+  isReturningPlayer: false,
 
   applyServerTime: (serverNowIso) => {
     if (!serverNowIso) return;
@@ -124,6 +156,10 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
         void i18n.changeLanguage(state.player.lang);
       }
       const nextLevel = pickActiveLevelId(config, state.progress, state.player_session.current_level_id);
+      const isReturning =
+        Boolean(state.is_returning_player) ||
+        hasKnownLocalIdentity(state.player.display_name, state.player.school, state.player.grade);
+      recordKnownLocalIdentity(state.player.display_name, state.player.school, state.player.grade);
       set({
         bootstrapped: true,
         loading: false,
@@ -136,6 +172,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
         lessonsDone: state.lessons_done,
         claim: state.claim,
         selectedLevelId: nextLevel,
+        isReturningPlayer: isReturning,
       });
     } catch (e) {
       if (e instanceof ApiError && e.code === 'NOT_REGISTERED') {
@@ -153,7 +190,10 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   register: async (input) => {
     set({ loading: true, error: null });
     try {
+      const seenLocallyBefore = hasKnownLocalIdentity(input.display_name, input.school, input.grade);
       const res = await playerApi.register(input);
+      recordKnownLocalIdentity(input.display_name, input.school, input.grade);
+      const isReturning = Boolean(res.is_returning_player || res.existing || seenLocallyBefore);
       if (res.config && res.session && !res.existing) {
         get().applyServerTime(res.server_now);
         const nextLevel = pickActiveLevelId(res.config, [], res.player_session.current_level_id);
@@ -169,10 +209,14 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
           lessonsDone: [],
           claim: null,
           selectedLevelId: nextLevel,
+          isReturningPlayer: isReturning,
         });
         return;
       }
       await get().bootstrap();
+      if (isReturning) {
+        set({ isReturningPlayer: true });
+      }
     } catch (e) {
       set({ loading: false });
       throw e;
@@ -287,6 +331,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       claim: null,
       selectedLevelId: null,
       showLessonReview: false,
+      isReturningPlayer: false,
     });
   },
 
