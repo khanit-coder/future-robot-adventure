@@ -340,7 +340,8 @@ export class MissionScene extends Phaser.Scene {
     if (!texKey) {
       const color = this.robotCfg?.primary_color || '#38bdf8';
       const style = this.robotCfg?.builtin_style || 'bolt';
-      texKey = `builtin_robot_${style}_${color.replace('#', '')}`;
+      const cleanColorKey = color.replace(/[^a-zA-Z0-9]/g, '_');
+      texKey = `builtin_robot_${style}_${cleanColorKey}`;
       ensureBuiltinRobotSheet(this, texKey, color, style);
     }
 

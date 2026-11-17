@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import type { RobotAnimationRange, RobotConfig } from '@engine';
 import { BUILTIN_ANIMATIONS } from '@/game-engine/animations/animationConstants';
+import { isGradient, parseGradientStops } from '@/game-engine/animations/robotStyles';
 import { cn } from '@/utils/cn';
 
 export type RobotVisualState = 'idle' | 'walk' | 'run' | 'jump' | 'turn' | 'wave' | 'celebrate' | 'fail';
@@ -17,7 +18,7 @@ interface RobotIllustrationProps {
 /**
  * Lightweight, original SVG robot component used across Registration, Lessons,
  * Level Map, Admin previews, and the 100-player TV Dashboard (zero Phaser overhead).
- * Supports 10 distinct builtin robot styles and spritesheet slicing.
+ * Supports 10 distinct builtin robot styles, multi-color gradients, and spritesheet slicing.
  */
 export function RobotIllustration({
   styleName,
@@ -27,6 +28,7 @@ export function RobotIllustration({
   robot,
   className,
 }: RobotIllustrationProps) {
+  const reactId = useId();
   const accent = robot?.primary_color || color || '#38bdf8';
   const variant = robot?.builtin_style || styleName || 'bolt';
   const animClass = `animate-robot-${state}`;
@@ -48,6 +50,11 @@ export function RobotIllustration({
   const isCelebrated = state === 'celebrate';
   const isFailed = state === 'fail';
 
+  const isGrad = isGradient(accent);
+  const stops = parseGradientStops(accent);
+  const gradId = `robot-grad-${reactId.replace(/[^a-zA-Z0-9]/g, '')}`;
+  const fill = isGrad ? `url(#${gradId})` : accent;
+
   return (
     <svg
       width={size}
@@ -57,6 +64,20 @@ export function RobotIllustration({
       className={cn('select-none shrink-0', animClass, className)}
       aria-hidden="true"
     >
+      <defs>
+        {isGrad && (
+          <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+            {stops.map((c, i) => (
+              <stop
+                key={i}
+                offset={`${stops.length > 1 ? Math.round((i / (stops.length - 1)) * 100) : 0}%`}
+                stopColor={c}
+              />
+            ))}
+          </linearGradient>
+        )}
+      </defs>
+
       {/* Ground Shadow */}
       <ellipse cx="40" cy="74" rx="18" ry="3.5" fill="rgba(15, 23, 42, 0.2)" />
 
@@ -90,28 +111,28 @@ export function RobotIllustration({
       {/* Arms */}
       {variant === 'titan' ? (
         <>
-          <rect x="8" y="40" width="11" height="18" rx="3" fill={accent} stroke="#1e293b" strokeWidth="2" />
-          <rect x="61" y={isCelebrated ? 26 : 40} width="11" height="18" rx="3" fill={accent} stroke="#1e293b" strokeWidth="2" />
+          <rect x="8" y="40" width="11" height="18" rx="3" fill={fill} stroke="#1e293b" strokeWidth="2" />
+          <rect x="61" y={isCelebrated ? 26 : 40} width="11" height="18" rx="3" fill={fill} stroke="#1e293b" strokeWidth="2" />
         </>
       ) : variant === 'echo' ? (
         <>
-          <rect x="14" y="44" width="6" height="12" rx="3" fill={accent} stroke="#1e293b" strokeWidth="2" />
-          <rect x="60" y={isCelebrated ? 30 : 44} width="6" height="12" rx="3" fill={accent} stroke="#1e293b" strokeWidth="2" />
+          <rect x="14" y="44" width="6" height="12" rx="3" fill={fill} stroke="#1e293b" strokeWidth="2" />
+          <rect x="60" y={isCelebrated ? 30 : 44} width="6" height="12" rx="3" fill={fill} stroke="#1e293b" strokeWidth="2" />
         </>
       ) : (
         <>
-          <rect x="11" y="42" width="7" height="16" rx="3.5" fill={accent} stroke="#1e293b" strokeWidth="2" />
-          <rect x="62" y={isCelebrated ? 28 : 42} width="7" height="16" rx="3.5" fill={accent} stroke="#1e293b" strokeWidth="2" />
+          <rect x="11" y="42" width="7" height="16" rx="3.5" fill={fill} stroke="#1e293b" strokeWidth="2" />
+          <rect x="62" y={isCelebrated ? 28 : 42} width="7" height="16" rx="3.5" fill={fill} stroke="#1e293b" strokeWidth="2" />
         </>
       )}
 
       {/* Body */}
       {variant === 'echo' ? (
-        <rect x="23" y="41" width="34" height="22" rx="11" fill={accent} stroke="#1e293b" strokeWidth="2.2" />
+        <rect x="23" y="41" width="34" height="22" rx="11" fill={fill} stroke="#1e293b" strokeWidth="2.2" />
       ) : variant === 'titan' ? (
-        <rect x="18" y="39" width="44" height="23" rx="4" fill={accent} stroke="#1e293b" strokeWidth="2.4" />
+        <rect x="18" y="39" width="44" height="23" rx="4" fill={fill} stroke="#1e293b" strokeWidth="2.4" />
       ) : (
-        <rect x="22" y="42" width="36" height="22" rx="8" fill={accent} stroke="#1e293b" strokeWidth="2.2" />
+        <rect x="22" y="42" width="36" height="22" rx="8" fill={fill} stroke="#1e293b" strokeWidth="2.2" />
       )}
 
       {/* Chest Accent / Core */}
@@ -169,8 +190,8 @@ export function RobotIllustration({
         </>
       ) : variant === 'echo' ? (
         <>
-          <rect x="15" y="23" width="6" height="12" rx="3" fill={accent} stroke="#1e293b" strokeWidth="2" />
-          <rect x="59" y="23" width="6" height="12" rx="3" fill={accent} stroke="#1e293b" strokeWidth="2" />
+          <rect x="15" y="23" width="6" height="12" rx="3" fill={fill} stroke="#1e293b" strokeWidth="2" />
+          <rect x="59" y="23" width="6" height="12" rx="3" fill={fill} stroke="#1e293b" strokeWidth="2" />
         </>
       ) : variant === 'retro' ? (
         <>
@@ -202,7 +223,7 @@ export function RobotIllustration({
         width={variant === 'echo' ? 42 : variant === 'titan' ? 46 : 44}
         height={30}
         rx={variant === 'echo' ? 15 : variant === 'nova' ? 14 : variant === 'titan' ? 5 : variant === 'retro' ? 3 : 10}
-        fill={accent}
+        fill={fill}
         stroke="#1e293b"
         strokeWidth="2.4"
       />

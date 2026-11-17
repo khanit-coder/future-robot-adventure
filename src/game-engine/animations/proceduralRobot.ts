@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import type { RobotAnimationRange } from '@engine';
 import { BUILTIN_FRAME_SIZE, BUILTIN_ANIMATIONS } from './animationConstants';
+import { isGradient, parseGradientStops } from './robotStyles';
 
 export { BUILTIN_FRAME_SIZE, BUILTIN_ANIMATIONS };
 
@@ -94,6 +95,17 @@ export function drawRobotFrame(
   ctx.translate(cx, s * 0.56 + bob);
   ctx.rotate(tilt);
 
+  // Gradient support
+  let fillStyle: string | CanvasGradient = color;
+  if (isGradient(color)) {
+    const stops = parseGradientStops(color);
+    const grad = ctx.createLinearGradient(-25, -35, 25, 25);
+    stops.forEach((c, idx) => {
+      grad.addColorStop(idx / Math.max(1, stops.length - 1), c);
+    });
+    fillStyle = grad;
+  }
+
   // 1. Movement Base / Legs
   ctx.fillStyle = '#475569';
   ctx.strokeStyle = '#0f172a';
@@ -145,7 +157,7 @@ export function drawRobotFrame(
   }
 
   // 2. Left Arm
-  ctx.fillStyle = color;
+  ctx.fillStyle = fillStyle;
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 2.5;
   if (style === 'titan') {
@@ -184,7 +196,7 @@ export function drawRobotFrame(
   }
 
   // 4. Body
-  ctx.fillStyle = color;
+  ctx.fillStyle = fillStyle;
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 2.5;
 
@@ -318,7 +330,7 @@ export function drawRobotFrame(
     ctx.fill();
   } else if (style === 'echo') {
     // Cute droplet ears
-    ctx.fillStyle = color;
+    ctx.fillStyle = fillStyle;
     ctx.strokeStyle = '#0f172a';
     ctx.lineWidth = 2;
     roundRect(ctx, -26, -26, 6, 12, 3, true, true);
@@ -359,7 +371,7 @@ export function drawRobotFrame(
   }
 
   // 6. Head
-  ctx.fillStyle = color;
+  ctx.fillStyle = fillStyle;
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 2.5;
 

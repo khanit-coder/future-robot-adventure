@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Save, Star, Trash2 } from 'lucide-react';
+import { Dices, Plus, Save, Star, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { RobotAssetRow, SceneAssetRow, ThemeKey } from '@engine';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,12 @@ import { ImageUploader } from '@/features/admin/components/ImageUploader';
 import { LocalizedFields } from '@/features/admin/components/LocalizedFields';
 import { SpritesheetTemplateGuide } from './SpritesheetTemplateGuide';
 import { SpritesheetAligner } from './SpritesheetAligner';
-import { BUILTIN_ROBOT_STYLES, SPECIAL_ROBOT_COLORS } from '@/game-engine/animations/robotStyles';
+import {
+  BUILTIN_ROBOT_STYLES,
+  SPECIAL_ROBOT_COLORS,
+  SPECIAL_ROBOT_GRADIENTS,
+  generateUniqueRandomRobot,
+} from '@/game-engine/animations/robotStyles';
 import { BUILTIN_ANIMATIONS } from '@/game-engine/animations/animationConstants';
 import { getSupabase } from '@/services/supabase/client';
 import { pickLocalized } from '@/utils/localize';
@@ -34,6 +39,7 @@ export function RobotManagerModule({
   const lang = currentLang();
   const [selectedId, setSelectedId] = useState<string>(data.robots[0]?.id ?? '');
   const [previewState, setPreviewState] = useState<RobotVisualState>('idle');
+  const [colorTab, setColorTab] = useState<'gradient' | 'solid'>('gradient');
 
   const current = data.robots.find((r) => r.id === selectedId) ?? data.robots[0] ?? null;
   const [draft, setDraft] = useState<RobotAssetRow | null>(current);
@@ -41,6 +47,46 @@ export function RobotManagerModule({
   const pick = (r: RobotAssetRow) => {
     setSelectedId(r.id);
     setDraft(structuredClone(r));
+  };
+
+  const randomCreateRobot = async () => {
+    const newRobot = generateUniqueRandomRobot(data.robots);
+    const sb = getSupabase();
+    const { data: created, error } = await sb
+      .from('robot_assets')
+      .insert(newRobot)
+      .select('*')
+      .single();
+    if (error) {
+      toast('error', t('admin:common.saveFailed'), error.message);
+      return;
+    }
+    await onReload();
+    pick(created as RobotAssetRow);
+    toast('success', `สุ่มสร้างหุ่นยนต์ "${pickLocalized(created.name, lang, 'en')}" สำเร็จ!`);
+  };
+
+  const deleteAllRobots = async () => {
+    if (
+      !window.confirm(
+        'คุณแน่ใจหรือไม่ว่าต้องการลบหุ่นยนต์ทั้งหมด? (การกระทำนี้จะลบหุ่นยนต์ทุกตัวในระบบและไม่สามารถย้อนกลับได้)',
+      )
+    ) {
+      return;
+    }
+    const sb = getSupabase();
+    const { error } = await sb
+      .from('robot_assets')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000');
+    if (error) {
+      toast('error', t('admin:common.saveFailed'), error.message);
+      return;
+    }
+    await onReload();
+    setDraft(null);
+    setSelectedId('');
+    toast('success', 'ลบหุ่นยนต์ทั้งหมดเรียบร้อยแล้ว');
   };
 
   const handleApplyTemplate = async (
@@ -142,37 +188,78 @@ export function RobotManagerModule({
   return (
     <div className="grid gap-6 lg:grid-cols-12">
       <Card className="lg:col-span-4">
-        <CardHeader className="flex-row items-center justify-between space-y-0">
-          <CardTitle>{t('admin:modules.robots')}</CardTitle>
-          <Button size="sm" onClick={() => void createRobot()}>
-            <Plus className="h-4 w-4" />
-            {t('common:app.add')}
-          </Button>
+        <CardHeader className="flex-col sm:flex-row sm:items-center justify-between gap-2 space-y-0">
+          <div>
+            <CardTitle>{t('admin:modules.robots')}</CardTitle>
+            <p className="text-xs text-slate-500">
+              {data.robots.length} ตัวในระบบ
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Button
+              size="sm"
+              onClick={() => void randomCreateRobot()}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs"
+              title="สุ่มสร้างหุ่นยนต์ที่ไม่ซ้ำกับตัวที่มีอยู่"
+            >
+              <Dices className="h-3.5 w-3.5 mr-1" />
+              สุ่มสร้าง
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => void createRobot()} title="เพิ่มหุ่นยนต์">
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+            {data.robots.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => void deleteAllRobots()}
+                className="text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200 dark:border-red-900/50 dark:hover:bg-red-950/40 text-xs"
+                title="ลบหุ่นยนต์ทั้งหมด"
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1" />
+                ลบทั้งหมด
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-2">
-          {data.robots.map((r) => (
-            <button
-              key={r.id}
-              type="button"
-              onClick={() => pick(r)}
-              className={`flex w-full items-center justify-between rounded-xl border p-3 text-left cursor-pointer ${
-                draft?.id === r.id ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <RobotIllustration robot={r} size={42} state="idle" />
-                <div>
-                  <p className="font-bold text-sm text-slate-900">{pickLocalized(r.name, lang, 'en')}</p>
-                  <p className="text-xs text-slate-500">{r.kind}</p>
+          {data.robots.length === 0 ? (
+            <div className="py-8 text-center space-y-3">
+              <p className="text-xs text-slate-500">ยังไม่มีหุ่นยนต์ในระบบ</p>
+              <Button
+                size="sm"
+                onClick={() => void randomCreateRobot()}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs"
+              >
+                <Dices className="h-4 w-4 mr-1" />
+                สุ่มสร้างหุ่นยนต์ใหม่ทันที
+              </Button>
+            </div>
+          ) : (
+            data.robots.map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => pick(r)}
+                className={`flex w-full items-center justify-between rounded-xl border p-3 text-left cursor-pointer transition-colors ${
+                  draft?.id === r.id ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/40' : 'border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <RobotIllustration robot={r} size={42} state="idle" />
+                  <div className="min-w-0">
+                    <p className="font-bold text-sm text-slate-900 dark:text-slate-100 truncate">{pickLocalized(r.name, lang, 'en')}</p>
+                    <p className="text-xs text-slate-500 truncate">{r.kind === 'builtin' ? r.builtin_style : 'spritesheet'}</p>
+                  </div>
                 </div>
-              </div>
-              {r.is_default && (
-                <Badge variant="warning">
-                  <Star className="h-3 w-3" /> Default
-                </Badge>
-              )}
-            </button>
-          ))}
+                {r.is_default && (
+                  <Badge variant="warning">
+                    <Star className="h-3 w-3" /> Default
+                  </Badge>
+                )}
+              </button>
+            ))
+          )}
         </CardContent>
       </Card>
 
@@ -320,52 +407,115 @@ export function RobotManagerModule({
                 </div>
               )}
 
-              {/* Primary Color & Special Editions */}
+              {/* Primary Color & Multi-Color Gradients / Special Editions */}
               <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/60">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <Label className="font-bold text-sm">
-                    ชุดสีพิเศษ (Special Edition Colors) & สีหลัก
-                  </Label>
+                  <div>
+                    <Label className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                      ชุดสีพิเศษ & ไล่ระดับสี (Special Colors & Gradients)
+                    </Label>
+                    <p className="text-xs text-slate-500">
+                      เลือกสีหลายๆ สีในตัวเดียวแบบไล่เฉดสี (Multi-Color Gradient) หรือสีเดี่ยว
+                    </p>
+                  </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-500">กำหนดเอง:</span>
+                    <span className="text-xs text-slate-500">กำหนดสีเดี่ยวเอง:</span>
                     <Input
                       type="color"
-                      value={draft.primary_color}
+                      value={draft.primary_color?.startsWith('linear-gradient') ? '#38bdf8' : draft.primary_color}
                       onChange={(e) => setDraft({ ...draft, primary_color: e.target.value })}
                       className="h-8 w-14 p-0.5 cursor-pointer border-slate-300"
                     />
                   </div>
                 </div>
 
-                {/* Special color chips */}
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                  {SPECIAL_ROBOT_COLORS.map((col) => {
-                    const isSelected = draft.primary_color?.toLowerCase() === col.hex.toLowerCase();
-                    return (
-                      <button
-                        key={col.id}
-                        type="button"
-                        onClick={() => setDraft({ ...draft, primary_color: col.hex })}
-                        className={`flex items-center gap-2 rounded-xl border p-2 text-left transition-all cursor-pointer ${
-                          isSelected
-                            ? 'border-indigo-600 bg-white ring-2 ring-indigo-500 shadow-sm dark:bg-slate-800'
-                            : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900'
-                        }`}
-                      >
-                        <span
-                          className="h-5 w-5 shrink-0 rounded-full border border-black/20 shadow-xs"
-                          style={{ backgroundColor: col.hex }}
-                        />
-                        <div className="min-w-0">
-                          <p className="truncate text-xs font-bold text-slate-800 dark:text-slate-200">
-                            {col.badge} {lang === 'th' ? col.name.th : col.name.en}
-                          </p>
-                          <p className="text-[10px] font-mono text-slate-400 uppercase">{col.hex}</p>
-                        </div>
-                      </button>
-                    );
-                  })}
+                {/* Switch between Gradients and Solid Special Colors */}
+                <div className="flex rounded-lg bg-slate-200/80 p-1 dark:bg-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setColorTab('gradient')}
+                    className={`flex-1 rounded-md py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                      colorTab === 'gradient'
+                        ? 'bg-white text-indigo-700 shadow-xs dark:bg-slate-900 dark:text-indigo-400'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                    }`}
+                  >
+                    🌈 สีพิเศษแบบหลายสีไล่เฉด ({SPECIAL_ROBOT_GRADIENTS.length} สไตล์)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setColorTab('solid')}
+                    className={`flex-1 rounded-md py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                      colorTab === 'solid'
+                        ? 'bg-white text-indigo-700 shadow-xs dark:bg-slate-900 dark:text-indigo-400'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                    }`}
+                  >
+                    🎨 สีพิเศษแบบสีเดี่ยว ({SPECIAL_ROBOT_COLORS.length} สไตล์)
+                  </button>
                 </div>
+
+                {colorTab === 'gradient' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {SPECIAL_ROBOT_GRADIENTS.map((col) => {
+                      const isSelected = draft.primary_color === col.gradient;
+                      return (
+                        <button
+                          key={col.id}
+                          type="button"
+                          onClick={() => setDraft({ ...draft, primary_color: col.gradient })}
+                          className={`flex items-center gap-2.5 rounded-xl border p-2.5 text-left transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-indigo-600 bg-white ring-2 ring-indigo-500 shadow-sm dark:bg-slate-800'
+                              : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900'
+                          }`}
+                        >
+                          <span
+                            className="h-7 w-7 shrink-0 rounded-lg border border-black/20 shadow-xs"
+                            style={{ background: col.gradient }}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs font-bold text-slate-800 dark:text-slate-200">
+                              {col.badge} {lang === 'th' ? col.name.th : col.name.en}
+                            </p>
+                            <p className="truncate text-[10px] text-slate-400">
+                              {lang === 'th' ? col.desc.th : col.desc.en}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    {SPECIAL_ROBOT_COLORS.map((col) => {
+                      const isSelected = draft.primary_color?.toLowerCase() === col.hex.toLowerCase();
+                      return (
+                        <button
+                          key={col.id}
+                          type="button"
+                          onClick={() => setDraft({ ...draft, primary_color: col.hex })}
+                          className={`flex items-center gap-2 rounded-xl border p-2 text-left transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-indigo-600 bg-white ring-2 ring-indigo-500 shadow-sm dark:bg-slate-800'
+                              : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900'
+                          }`}
+                        >
+                          <span
+                            className="h-5 w-5 shrink-0 rounded-full border border-black/20 shadow-xs"
+                            style={{ backgroundColor: col.hex }}
+                          />
+                          <div className="min-w-0">
+                            <p className="truncate text-xs font-bold text-slate-800 dark:text-slate-200">
+                              {col.badge} {lang === 'th' ? col.name.th : col.name.en}
+                            </p>
+                            <p className="text-[10px] font-mono text-slate-400 uppercase">{col.hex}</p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
