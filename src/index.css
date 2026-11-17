@@ -20,9 +20,22 @@ body,
   margin: 0;
 }
 
-/* Proportional UI scaling in Fullscreen mode so cards, text, and controls expand to fill large screens */
-html.fra-fullscreen {
-  font-size: clamp(17px, 1.08vw, 22px);
+/* Strictly lock viewport to 100vh without page scrollbars in Fullscreen mode */
+html.fra-fullscreen,
+html.fra-fullscreen body,
+html.fra-fullscreen #root {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+}
+
+/* Proportional UI scaling in Fullscreen mode for general landing/dashboard pages; keep crisp compact size in coding workspace */
+html.fra-fullscreen:not(:has(.fra-play-workspace)) {
+  font-size: clamp(15px, 0.95vw, 18px);
+}
+
+html.fra-fullscreen .fra-play-workspace {
+  font-size: 14.5px;
 }
 
 /* Gentle robot animations used on the lightweight Dashboard, Lessons, and Preview cards */
@@ -139,8 +152,9 @@ html.fra-fullscreen {
   z-index: 39 !important;
 }
 
-/* Prevent Blockly's flyout scrollbar from staying stuck on screen after the flyout auto-closes */
+/* Prevent Blockly's flyout scrollbar from showing an awkward grey bar over blocks */
 .blocklyFlyoutScrollbar,
+.blocklyFlyoutScrollbar *,
 .blocklyFlyout[style*='display: none'] ~ .blocklyFlyoutScrollbar,
 .blocklyFlyout[style*='display:none'] ~ .blocklyFlyoutScrollbar {
   display: none !important;

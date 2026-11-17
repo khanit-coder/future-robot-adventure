@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { MissionSpec, RobotConfig, SceneConfig } from '@engine';
 import { RobotGameEngine } from '@/game-engine/RobotGameEngine';
+import { cn } from '@/utils/cn';
 
 interface PhaserViewportProps {
   mission: MissionSpec;
@@ -55,7 +56,10 @@ export function PhaserViewport({
     <div
       ref={hostRef}
       data-testid="phaser-viewport"
-      className={`relative h-full w-full min-h-[280px] overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 ${className}`}
+      className={cn(
+        'relative h-full w-full overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 min-h-[170px]',
+        className,
+      )}
     />
   );
 }

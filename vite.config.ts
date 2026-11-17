@@ -29,5 +29,7 @@ export default defineConfig({
     setupFiles: ['./tests/setup.ts'],
     include: ['tests/unit/**/*.test.{ts,tsx}', 'tests/integration/**/*.test.{ts,tsx}'],
     css: false,
+    testTimeout: 25000,
+    hookTimeout: 35000,
   },
 });

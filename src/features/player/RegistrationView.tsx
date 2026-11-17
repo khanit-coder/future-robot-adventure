@@ -35,8 +35,18 @@ export function RegistrationView() {
   const fallback = settings?.default_language ?? 'en';
   const gameTitle = settings ? pickLocalized(settings.game_title, lang, fallback) : t('common:app.title');
   const tagline = settings ? pickLocalized(settings.tagline, lang, fallback) : t('common:app.tagline');
-  const eventTitle = settings ? pickLocalized(settings.event_title, lang, fallback) : '';
-  const collegeName = settings ? pickLocalized(settings.college_name, lang, fallback) : '';
+  const eventTitle =
+    settings && settings.event_title
+      ? pickLocalized(settings.event_title, lang, fallback)
+      : lang === 'th'
+        ? 'คณะเทคโนโลยีสารสนเทศ'
+        : 'Faculty of Information Technology';
+  const collegeName =
+    settings && settings.college_name
+      ? pickLocalized(settings.college_name, lang, fallback)
+      : lang === 'th'
+        ? 'วิทยาลัยเทคโนโลยีขอนแก่น P-TECH'
+        : 'Khon Kaen Technological College P-TECH';
 
   const handleLanguagePick = (next: Lang) => {
     setPreferredLang(next);
