@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Award,
   CheckCircle2,
@@ -7,6 +7,8 @@ import {
   Home,
   LayoutGrid,
   Medal,
+  Pause,
+  Play,
   Radio,
   Sparkles,
   Trophy,
@@ -25,8 +27,11 @@ import { cn } from '@/utils/cn';
 import { formatDuration, pickLocalized } from '@/utils/localize';
 import { RobotCard, type DashboardTheme } from './RobotCard';
 import { avatarForPlayer } from './avatar';
-
-type ExtendedDashboardMode = DashboardMode | 'HALL_OF_FAME';
+import {
+  deduplicatePlayersBestScore,
+  useAutoScrollLoop,
+  type ExtendedDashboardMode,
+} from './dashboardHelpers';
 
 interface DashboardViewProps {
   snapshot: DashboardSnapshot;
@@ -88,19 +93,41 @@ export function DashboardView({
   const showOnlineCount = dashSettings?.show_online_count ?? true;
   const animationsEnabled = dashSettings?.animations_enabled ?? true;
 
-  const players = snapshot.players;
+  const rawPlayers = snapshot.players;
+  const players = useMemo(() => deduplicatePlayersBestScore(rawPlayers), [rawPlayers]);
   const totalPages = Math.max(1, Math.ceil(players.length / pageSize));
   const [pageState, setPage] = useState(0);
   const page = pageState >= totalPages ? 0 : pageState;
   const [spotlightIndex, setSpotlightIndex] = useState(0);
+  const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
+  const mainScrollRef = useRef<HTMLElement | null>(null);
 
+  const handleNextPage = useCallback(() => {
+    setPage((p) => (p + 1) % totalPages);
+  }, [setPage, totalPages]);
+
+  const { setIsHovered } = useAutoScrollLoop({
+    containerRef: mainScrollRef,
+    enabled: autoScrollEnabled,
+    page,
+    totalPages,
+    onNextPage: handleNextPage,
+    mode,
+    isFullscreen,
+    speed: 26,
+    pauseAtBottomMs: 3500,
+    pauseAtTopMs: 2500,
+    idlePageRotateMs: rotateSeconds * 1000,
+  });
+
+  // Fallback pagination interval if auto-scroll is disabled
   useEffect(() => {
-    if (mode !== 'GRID' || totalPages <= 1) return;
+    if (autoScrollEnabled || mode !== 'GRID' || totalPages <= 1) return;
     const id = window.setInterval(() => {
       setPage((p) => (p + 1) % totalPages);
     }, rotateSeconds * 1000);
     return () => window.clearInterval(id);
-  }, [mode, totalPages, rotateSeconds]);
+  }, [autoScrollEnabled, mode, totalPages, rotateSeconds]);
 
   useEffect(() => {
     if (mode !== 'SPOTLIGHT' || players.length <= 1) return;
@@ -262,13 +289,63 @@ export function DashboardView({
                 : t('dashboard:offline')}
           </div>
 
+          {/* Auto-scroll toggle */}
+          <button
+            type="button"
+            onClick={() => setAutoScrollEnabled((prev) => !prev)}
+            title={
+              autoScrollEnabled
+                ? lang === 'th'
+                  ? 'พักการเลื่อนอัตโนมัติ'
+                  : 'Pause Auto-scroll'
+                : lang === 'th'
+                  ? 'เปิดการเลื่อนอัตโนมัติ'
+                  : 'Resume Auto-scroll'
+            }
+            data-testid="dashboard-autoscroll-toggle"
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-bold transition-all cursor-pointer',
+              autoScrollEnabled
+                ? dark
+                  ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
+                  : 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                : dark
+                  ? 'border-slate-700 bg-slate-800 text-slate-400 hover:bg-slate-700'
+                  : 'border-slate-200 bg-slate-100 text-slate-500 hover:bg-slate-200',
+            )}
+          >
+            {autoScrollEnabled ? (
+              <>
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+                <span className="hidden xl:inline">{lang === 'th' ? 'เลื่อนอัตโนมัติ' : 'Auto Scroll'}</span>
+                <Pause className="h-3 w-3 text-emerald-400 opacity-80" />
+              </>
+            ) : (
+              <>
+                <Play className="h-3 w-3 text-amber-400 fill-amber-400" />
+                <span className="hidden xl:inline">{lang === 'th' ? 'พักการเลื่อน' : 'Paused'}</span>
+              </>
+            )}
+          </button>
+
           <FullscreenButton dark={dark} />
           <SettingsMenu dark={dark} />
         </div>
       </header>
 
       {/* Main Display Area */}
-      <main className={cn('my-3 flex-1', isFullscreen && 'min-h-0 overflow-y-auto')}>
+      <main
+        ref={mainScrollRef}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={cn(
+          'my-2.5 sm:my-3 flex-1 min-h-0 overflow-y-auto scroll-smooth focus:outline-hidden',
+          isFullscreen ? 'pr-1' : 'pr-1 sm:pr-2',
+        )}
+      >
         {players.length === 0 ? (
           <div className="flex h-72 flex-col items-center justify-center rounded-3xl border border-dashed border-slate-700/60 p-8 text-center">
             <RobotIllustration state="wave" size={110} />
@@ -282,6 +359,7 @@ export function DashboardView({
             showScores={showScores}
             dark={dark}
             theme={activeTheme}
+            isFullscreen={isFullscreen}
           />
         ) : mode === 'GRID' ? (
           <div className="space-y-3">
@@ -336,6 +414,7 @@ export function DashboardView({
             showScores={showScores}
             dark={dark}
             theme={activeTheme}
+            isFullscreen={isFullscreen}
           />
         ) : (
           <SpotlightView
@@ -345,35 +424,43 @@ export function DashboardView({
             overrideState={robotOverrides[players[spotlightIndex % players.length]?.id]}
             dark={dark}
             theme={activeTheme}
+            isFullscreen={isFullscreen}
           />
         )}
       </main>
 
       {/* Bottom Section: Real-Time Hall of Fame & Recent Achievements */}
-      <footer className="grid gap-4 lg:grid-cols-12 shrink-0" data-testid="dashboard-hall-of-fame">
+      <footer
+        className={cn(
+          'grid gap-3 sm:gap-4 lg:grid-cols-12 shrink-0',
+          isFullscreen && 'gap-2',
+        )}
+        data-testid="dashboard-hall-of-fame"
+      >
         {showLeaderboard && mode !== 'HALL_OF_FAME' && (
           <section
             className={cn(
-              'rounded-2xl border p-4 lg:col-span-7',
+              'rounded-2xl border lg:col-span-7',
+              isFullscreen ? 'p-2.5 sm:p-3' : 'p-4',
               dark
                 ? 'border-amber-500/30 bg-gradient-to-br from-slate-900/95 via-slate-900/90 to-indigo-950/90'
                 : 'border-amber-300 bg-white shadow-sm',
             )}
           >
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div className={cn('flex flex-wrap items-center justify-between gap-2', isFullscreen ? 'mb-2' : 'mb-3')}>
               <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-400/20 text-amber-400">
-                  <Crown className="h-5 w-5" />
+                <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-xl bg-amber-400/20 text-amber-400">
+                  <Crown className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
                 <div>
-                  <h2 className="flex items-center gap-2 text-base font-extrabold">
+                  <h2 className="flex items-center gap-2 text-sm sm:text-base font-extrabold">
                     {t('dashboard:hallOfFame')}
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-black uppercase text-emerald-400">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
                       LIVE
                     </span>
                   </h2>
-                  <p className="text-[11px] opacity-70">{t('dashboard:hallOfFameSub')}</p>
+                  <p className="text-[10px] sm:text-[11px] opacity-70">{t('dashboard:hallOfFameSub')}</p>
                 </div>
               </div>
               <span className="text-xs font-bold text-sky-400">
@@ -383,7 +470,7 @@ export function DashboardView({
 
             {/* Top 3 Podium Mini-Cards */}
             {topLeaders.length > 0 && (
-              <div className="mb-3 grid gap-2.5 sm:grid-cols-3">
+              <div className={cn('grid gap-2 sm:grid-cols-3', isFullscreen ? 'mb-2' : 'mb-3')}>
                 {topLeaders.slice(0, 3).map((p, idx) => {
                   const av = avatarForPlayer(p.id);
                   const medalColors = [
@@ -400,13 +487,14 @@ export function DashboardView({
                     <div
                       key={p.id}
                       className={cn(
-                        'relative flex items-center gap-2.5 rounded-2xl border p-2.5',
+                        'relative flex items-center gap-2 rounded-2xl border',
+                        isFullscreen ? 'p-2' : 'p-2.5',
                         medalColors[idx] ?? 'border-slate-700 bg-slate-800',
                       )}
                     >
                       <span
                         className={cn(
-                          'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black shadow-sm',
+                          'flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-full text-xs font-black shadow-sm',
                           badgeColors[idx],
                         )}
                       >
@@ -415,13 +503,13 @@ export function DashboardView({
                       <RobotIllustration
                         styleName={av.style}
                         color={av.color}
-                        size={42}
+                        size={isFullscreen ? 34 : 42}
                         state="celebrate"
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-extrabold">{p.name}</p>
-                        {showSchool && <p className="truncate text-[11px] opacity-75">{p.school}</p>}
-                        <div className="mt-0.5 flex items-center gap-2 text-xs font-extrabold">
+                        <p className="truncate text-xs sm:text-sm font-extrabold">{p.name}</p>
+                        {showSchool && <p className="truncate text-[10px] sm:text-[11px] opacity-75">{p.school}</p>}
+                        <div className="mt-0.5 flex items-center gap-2 text-[11px] sm:text-xs font-extrabold">
                           {showScores && (
                             <span className="text-amber-400">
                               {p.score} {t('dashboard:pts')}
@@ -443,28 +531,29 @@ export function DashboardView({
 
             {/* Ranks 4 - 9 */}
             {topLeaders.length > 3 && (
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-1.5 sm:gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {topLeaders.slice(3, 9).map((p, idx) => {
                   const rank = idx + 4;
                   return (
                     <div
                       key={p.id}
                       className={cn(
-                        'flex items-center justify-between rounded-xl px-3 py-1.5 text-xs',
+                        'flex items-center justify-between rounded-xl text-xs',
+                        isFullscreen ? 'px-2.5 py-1' : 'px-3 py-1.5',
                         dark ? 'bg-slate-800/70' : 'bg-slate-50',
                       )}
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-700 text-[11px] font-extrabold text-slate-200">
+                        <span className="flex h-4.5 w-4.5 sm:h-5 sm:w-5 shrink-0 items-center justify-center rounded-full bg-slate-700 text-[10px] sm:text-[11px] font-extrabold text-slate-200">
                           {rank}
                         </span>
                         <div className="min-w-0">
-                          <p className="truncate font-bold">{p.name}</p>
-                          {showSchool && <p className="truncate text-[10px] opacity-65">{p.school}</p>}
+                          <p className="truncate font-bold text-xs">{p.name}</p>
+                          {showSchool && <p className="truncate text-[9px] sm:text-[10px] opacity-65">{p.school}</p>}
                         </div>
                       </div>
                       {showScores && (
-                        <span className="ml-2 shrink-0 font-extrabold text-amber-400">
+                        <span className="ml-2 shrink-0 font-extrabold text-amber-400 text-xs">
                           {p.score} {t('dashboard:pts')}
                         </span>
                       )}
@@ -478,28 +567,30 @@ export function DashboardView({
 
         <section
           className={cn(
-            'rounded-2xl border p-4',
+            'rounded-2xl border',
+            isFullscreen ? 'p-2.5 sm:p-3' : 'p-4',
             showLeaderboard && mode !== 'HALL_OF_FAME' ? 'lg:col-span-5' : 'lg:col-span-12',
             dark ? 'border-slate-800 bg-slate-900/90' : 'border-slate-200 bg-white',
           )}
         >
-          <h2 className="mb-3 flex items-center gap-2 text-base font-extrabold">
-            <Sparkles className="h-5 w-5 text-sky-400" />
+          <h2 className={cn('flex items-center gap-2 font-extrabold', isFullscreen ? 'mb-2 text-sm sm:text-base' : 'mb-3 text-base')}>
+            <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-sky-400" />
             {t('dashboard:recentAchievements')}
           </h2>
           {recentEvents.length === 0 ? (
-            <p className="text-sm opacity-60">{t('dashboard:noEvents')}</p>
+            <p className="text-xs sm:text-sm opacity-60">{t('dashboard:noEvents')}</p>
           ) : (
-            <div className="grid gap-2 sm:grid-cols-2">
-              {recentEvents.slice(0, 8).map((ev) => (
+            <div className={cn('grid gap-1.5 sm:gap-2', mode === 'HALL_OF_FAME' ? 'sm:grid-cols-2 md:grid-cols-4' : 'sm:grid-cols-2')}>
+              {recentEvents.slice(0, isFullscreen && mode !== 'HALL_OF_FAME' ? 6 : 8).map((ev) => (
                 <div
                   key={ev.event_id}
                   className={cn(
-                    'flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold',
+                    'flex items-center gap-2 rounded-xl text-xs font-semibold',
+                    isFullscreen ? 'px-2.5 py-1 text-[11px] sm:text-xs' : 'px-3 py-2',
                     dark ? 'bg-slate-800/70 text-slate-200' : 'bg-slate-50 text-slate-800',
                   )}
                 >
-                  <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
+                  <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 shrink-0 rounded-full bg-emerald-400" />
                   <EventRow ev={ev} />
                 </div>
               ))}
@@ -518,6 +609,7 @@ function HallOfFameFullView({
   showScores,
   dark,
   theme = 'space',
+  isFullscreen = false,
 }: {
   players: DashboardPlayer[];
   totalLevels: number;
@@ -525,16 +617,17 @@ function HallOfFameFullView({
   showScores: boolean;
   dark: boolean;
   theme?: string;
+  isFullscreen?: boolean;
 }) {
   const { t } = useTranslation('dashboard');
   const top3 = players.slice(0, 3);
-  const rest = players.slice(3, 15);
+  const rest = players.slice(3, 40);
   const isCyber = theme === 'space';
 
   return (
-    <div className="space-y-6">
+    <div className={cn('space-y-4 sm:space-y-6', isFullscreen && 'space-y-3.5')}>
       {/* Podium for Top 3 */}
-      <div className="grid items-end gap-4 md:grid-cols-3 max-w-5xl mx-auto pt-2">
+      <div className="grid items-end gap-3 sm:gap-4 md:grid-cols-3 max-w-5xl mx-auto pt-1 sm:pt-2">
         {[1, 0, 2].map((podiumIdx) => {
           const p = top3[podiumIdx];
           if (!p) return <div key={`empty-${podiumIdx}`} className="hidden md:block" />;
@@ -545,11 +638,12 @@ function HallOfFameFullView({
             <div
               key={p.id}
               className={cn(
-                'flex flex-col items-center rounded-3xl border p-6 text-center transition-all shadow-xl',
+                'flex flex-col items-center rounded-3xl border text-center transition-all shadow-xl',
+                isFullscreen ? 'p-3.5 sm:p-4' : 'p-5 sm:p-6',
                 isFirst
                   ? isCyber
-                    ? 'border-2 border-amber-400 bg-gradient-to-b from-amber-500/25 via-slate-900/95 to-slate-950 shadow-[0_0_35px_rgba(251,191,36,0.4)] md:-translate-y-3'
-                    : 'border-2 border-amber-400 bg-gradient-to-b from-amber-500/20 via-slate-900/95 to-slate-900 md:-translate-y-3'
+                    ? 'border-2 border-amber-400 bg-gradient-to-b from-amber-500/25 via-slate-900/95 to-slate-950 shadow-[0_0_35px_rgba(251,191,36,0.4)] md:-translate-y-2'
+                    : 'border-2 border-amber-400 bg-gradient-to-b from-amber-500/20 via-slate-900/95 to-slate-900 md:-translate-y-2'
                   : isSecond
                     ? isCyber
                       ? 'border-2 border-cyan-400/80 bg-slate-900/90 shadow-[0_0_20px_rgba(34,211,238,0.25)]'
@@ -562,7 +656,7 @@ function HallOfFameFullView({
             >
               <div
                 className={cn(
-                  'mb-2 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-black',
+                  'mb-1.5 sm:mb-2 inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 sm:px-3.5 sm:py-1 text-xs font-black',
                   isFirst
                     ? 'bg-amber-400 text-slate-950 shadow-[0_0_12px_rgba(251,191,36,0.5)]'
                     : isSecond
@@ -570,21 +664,21 @@ function HallOfFameFullView({
                       : 'bg-amber-700 text-white',
                 )}
               >
-                {isFirst ? <Crown className="h-4 w-4" /> : <Medal className="h-4 w-4" />}
+                {isFirst ? <Crown className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Medal className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
                 RANK #{podiumIdx + 1}
               </div>
 
               <RobotIllustration
                 styleName={av.style}
                 color={av.color}
-                size={isFirst ? 128 : 100}
+                size={isFirst ? (isFullscreen ? 96 : 120) : (isFullscreen ? 76 : 96)}
                 state="celebrate"
               />
 
               <h3
                 className={cn(
-                  'mt-3 font-black truncate max-w-full',
-                  isFirst ? 'text-2xl' : 'text-xl',
+                  'mt-2 sm:mt-3 font-black truncate max-w-full',
+                  isFirst ? 'text-xl sm:text-2xl' : 'text-lg sm:text-xl',
                   isCyber && isFirst && 'text-amber-300 drop-shadow-[0_0_12px_rgba(251,191,36,0.6)]',
                   isCyber && !isFirst && 'text-sky-200 drop-shadow-[0_0_8px_rgba(56,189,248,0.4)]',
                 )}
@@ -604,25 +698,25 @@ function HallOfFameFullView({
                 </p>
               )}
 
-              <div className="mt-3 flex flex-wrap items-center justify-center gap-3 text-sm font-extrabold">
+              <div className="mt-2.5 sm:mt-3 flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs sm:text-sm font-extrabold">
                 {showScores && (
                   <span
                     className={cn(
-                      'rounded-xl px-3 py-1 font-mono',
+                      'rounded-xl px-2.5 py-0.5 sm:px-3 sm:py-1 font-mono',
                       isCyber
                         ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40 shadow-[0_0_10px_rgba(245,158,11,0.3)]'
                         : 'bg-amber-400/20 text-amber-300',
                     )}
                   >
-                    <Trophy className="mr-1 inline h-4 w-4" />
+                    <Trophy className="mr-1 inline h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     {p.score} {t('pts')}
                   </span>
                 )}
-                <span className="rounded-xl bg-sky-500/20 px-3 py-1 text-sky-300">
+                <span className="rounded-xl bg-sky-500/20 px-2.5 py-0.5 sm:px-3 sm:py-1 text-sky-300">
                   {t('lvlProgress', { done: p.levels_completed, total: totalLevels })}
                 </span>
                 {p.best_level_ms != null && (
-                  <span className="rounded-xl bg-emerald-500/20 px-2.5 py-1 text-xs text-emerald-300">
+                  <span className="rounded-xl bg-emerald-500/20 px-2 sm:px-2.5 py-0.5 sm:py-1 text-[11px] sm:text-xs text-emerald-300">
                     ⚡ {formatDuration(Math.round(p.best_level_ms / 1000))}
                   </span>
                 )}
@@ -632,9 +726,9 @@ function HallOfFameFullView({
         })}
       </div>
 
-      {/* Honor Roll Ranks 4 - 15 */}
+      {/* Honor Roll Ranks 4 - 40 */}
       {rest.length > 0 && (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
+        <div className="grid gap-2.5 sm:gap-3 sm:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
           {rest.map((p, idx) => {
             const rank = idx + 4;
             const av = avatarForPlayer(p.id);
@@ -642,27 +736,28 @@ function HallOfFameFullView({
               <div
                 key={p.id}
                 className={cn(
-                  'flex items-center justify-between rounded-2xl border p-3',
+                  'flex items-center justify-between rounded-2xl border',
+                  isFullscreen ? 'p-2 sm:p-2.5' : 'p-3',
                   dark ? 'border-slate-800 bg-slate-900/85' : 'border-slate-200 bg-white',
                 )}
               >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-black text-sky-300">
+                <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                  <span className="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[11px] sm:text-xs font-black text-sky-300">
                     #{rank}
                   </span>
-                  <RobotIllustration styleName={av.style} color={av.color} size={40} state="idle" />
+                  <RobotIllustration styleName={av.style} color={av.color} size={isFullscreen ? 34 : 40} state="idle" />
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-extrabold">{p.name}</p>
-                    {showSchool && <p className="truncate text-xs opacity-65">{p.school}</p>}
+                    <p className="truncate text-xs sm:text-sm font-extrabold">{p.name}</p>
+                    {showSchool && <p className="truncate text-[10px] sm:text-xs opacity-65">{p.school}</p>}
                   </div>
                 </div>
                 <div className="text-right shrink-0 ml-2">
                   {showScores && (
-                    <p className="text-sm font-black text-amber-400">
+                    <p className="text-xs sm:text-sm font-black text-amber-400">
                       {p.score} {t('pts')}
                     </p>
                   )}
-                  <p className="text-[11px] font-bold text-sky-400">
+                  <p className="text-[10px] sm:text-[11px] font-bold text-sky-400">
                     {t('lvlProgress', { done: p.levels_completed, total: totalLevels })}
                   </p>
                 </div>
@@ -733,6 +828,7 @@ function PlanetMapView({
   showScores,
   dark,
   theme = 'space',
+  isFullscreen = false,
 }: {
   players: DashboardPlayer[];
   totalLevels: number;
@@ -740,6 +836,7 @@ function PlanetMapView({
   showScores: boolean;
   dark: boolean;
   theme?: string;
+  isFullscreen?: boolean;
 }) {
   const isCyber = theme === 'space';
   const zones = [
@@ -750,14 +847,15 @@ function PlanetMapView({
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-4">
+    <div className="grid gap-3 sm:gap-4 md:grid-cols-4 items-start">
       {zones.map((z) => {
         const group = players.filter((p) => p.levels_completed >= z.min && p.levels_completed <= z.max);
         return (
           <div
             key={z.key}
             className={cn(
-              'rounded-3xl border p-4 space-y-3',
+              'rounded-3xl border space-y-3 transition-all',
+              isFullscreen ? 'p-3 sm:p-3.5' : 'p-4',
               isCyber
                 ? 'border-sky-500/35 bg-slate-900/85 shadow-[0_0_15px_rgba(56,189,248,0.12)]'
                 : dark
@@ -767,41 +865,47 @@ function PlanetMapView({
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="h-4 w-4 rounded-full" style={{ backgroundColor: z.color }} />
-                <h3 className={cn('font-extrabold text-sm', isCyber && 'text-sky-200')}>{z.label}</h3>
+                <span className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-full" style={{ backgroundColor: z.color }} />
+                <h3 className={cn('font-extrabold text-xs sm:text-sm', isCyber && 'text-sky-200')}>{z.label}</h3>
               </div>
               <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-xs font-bold text-white">
                 {group.length}
               </span>
             </div>
-            <div className="flex flex-col gap-2 max-h-[46vh] overflow-y-auto pr-1">
-              {group.map((p) => {
-                const av = avatarForPlayer(p.id);
-                return (
-                  <div
-                    key={p.id}
-                    className={cn(
-                      'flex items-center justify-between gap-2 rounded-xl border px-2.5 py-1.5 transition-transform hover:scale-[1.01]',
-                      isCyber
-                        ? 'border-sky-500/25 bg-slate-800/80'
-                        : dark
-                          ? 'border-slate-700 bg-slate-800/70'
-                          : 'border-slate-200 bg-slate-50',
-                    )}
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <RobotIllustration styleName={av.style} color={av.color} size={34} state="idle" />
-                      <div className="min-w-0">
-                        <p className={cn('truncate text-xs font-bold', isCyber && 'text-sky-200')}>{p.name}</p>
-                        {showSchool && (
-                          <p className="truncate text-[10px] opacity-65">{p.school}</p>
-                        )}
+            <div className="flex flex-col gap-2">
+              {group.length === 0 ? (
+                <p className="py-6 text-center text-xs opacity-45 italic">
+                  No players in orbit
+                </p>
+              ) : (
+                group.map((p) => {
+                  const av = avatarForPlayer(p.id);
+                  return (
+                    <div
+                      key={p.id}
+                      className={cn(
+                        'flex items-center justify-between gap-2 rounded-xl border px-2.5 py-1.5 transition-transform hover:scale-[1.01]',
+                        isCyber
+                          ? 'border-sky-500/25 bg-slate-800/80'
+                          : dark
+                            ? 'border-slate-700 bg-slate-800/70'
+                            : 'border-slate-200 bg-slate-50',
+                      )}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <RobotIllustration styleName={av.style} color={av.color} size={32} state="idle" />
+                        <div className="min-w-0">
+                          <p className={cn('truncate text-xs font-bold', isCyber && 'text-sky-200')}>{p.name}</p>
+                          {showSchool && (
+                            <p className="truncate text-[10px] opacity-65">{p.school}</p>
+                          )}
+                        </div>
                       </div>
+                      {showScores && <span className={cn('text-xs font-extrabold text-amber-400 shrink-0', isCyber && 'font-mono')}>{p.score}</span>}
                     </div>
-                    {showScores && <span className={cn('text-xs font-extrabold text-amber-400 shrink-0', isCyber && 'font-mono')}>{p.score}</span>}
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
         );
@@ -817,6 +921,7 @@ function SpotlightView({
   overrideState,
   dark,
   theme = 'space',
+  isFullscreen = false,
 }: {
   player: DashboardPlayer;
   players: DashboardPlayer[];
@@ -824,15 +929,17 @@ function SpotlightView({
   overrideState?: RobotVisualState;
   dark: boolean;
   theme?: string;
+  isFullscreen?: boolean;
 }) {
   if (!player) return null;
   const av = avatarForPlayer(player.id);
   const isCyber = theme === 'space';
   return (
-    <div className="grid gap-4 lg:grid-cols-12 items-center">
+    <div className="grid gap-4 lg:grid-cols-12 items-start">
       <div
         className={cn(
-          'flex flex-col items-center rounded-3xl border p-8 text-center lg:col-span-5',
+          'flex flex-col items-center rounded-3xl border text-center lg:col-span-5 lg:sticky lg:top-2',
+          isFullscreen ? 'p-5 sm:p-6' : 'p-6 sm:p-8',
           isCyber
             ? 'border-sky-500/40 bg-slate-900/90 shadow-[0_0_25px_rgba(56,189,248,0.2)]'
             : dark
@@ -843,12 +950,12 @@ function SpotlightView({
         <RobotIllustration
           styleName={av.style}
           color={av.color}
-          size={180}
+          size={isFullscreen ? 130 : 165}
           state={overrideState ?? (player.status === 'FINISHED' ? 'celebrate' : 'wave')}
         />
-        <h2 className={cn('mt-4 text-3xl font-extrabold', isCyber && 'text-sky-200 drop-shadow-[0_0_12px_rgba(56,189,248,0.5)] font-black')}>{player.name}</h2>
-        <p className="text-base opacity-75">{player.school}</p>
-        <div className="mt-4 flex gap-4 text-lg font-extrabold">
+        <h2 className={cn('mt-3 sm:mt-4 text-2xl sm:text-3xl font-extrabold', isCyber && 'text-sky-200 drop-shadow-[0_0_12px_rgba(56,189,248,0.5)] font-black')}>{player.name}</h2>
+        <p className="text-sm sm:text-base opacity-75">{player.school}</p>
+        <div className="mt-3 sm:mt-4 flex gap-4 text-base sm:text-lg font-extrabold">
           <span className={cn('text-amber-400', isCyber && 'font-mono')}>{player.score} pts</span>
           <span className="text-sky-400">
             {player.levels_completed} / {totalLevels}
@@ -856,14 +963,14 @@ function SpotlightView({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 lg:col-span-7 max-h-[46vh] overflow-y-auto pr-1">
-        {players.slice(0, 16).map((p) => (
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 lg:col-span-7">
+        {players.map((p) => (
           <RobotCard
             key={p.id}
             player={p}
             totalLevels={totalLevels}
             online
-            robotSize={56}
+            robotSize={isFullscreen ? 48 : 56}
             showSchool={false}
             showScore
             animationsEnabled

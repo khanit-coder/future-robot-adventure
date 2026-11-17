@@ -83,5 +83,62 @@ describe('DashboardView with 100 simultaneous players', () => {
     expect(screen.getByText('RANK #1')).toBeInTheDocument();
     expect(screen.getByText('RANK #2')).toBeInTheDocument();
     expect(screen.getByText('RANK #3')).toBeInTheDocument();
+
+    // Verify auto-scroll toggle button exists and can be clicked
+    const autoScrollBtn = screen.getByTestId('dashboard-autoscroll-toggle');
+    expect(autoScrollBtn).toBeInTheDocument();
+    fireEvent.click(autoScrollBtn);
+    expect(screen.getByText(/Paused|พักการเลื่อน/)).toBeInTheDocument();
+    fireEvent.click(autoScrollBtn);
+    expect(screen.getByText(/Auto Scroll|เลื่อนอัตโนมัติ/)).toBeInTheDocument();
+  });
+
+  it('deduplicates multiple entries of the same student, keeping only their single best score', () => {
+    const baseSnap = make100PlayersSnapshot();
+    // Insert duplicate records for AlphaTester with different scores
+    const duplicatedPlayers = [
+      {
+        ...baseSnap.players[0]!,
+        id: 'dup-low-score',
+        name: 'AlphaTester',
+        school: 'TechSchool',
+        score: 50,
+        levels_completed: 1,
+      },
+      {
+        ...baseSnap.players[0]!,
+        id: 'dup-high-score',
+        name: 'AlphaTester',
+        school: 'TechSchool',
+        score: 9999,
+        levels_completed: 10,
+      },
+      {
+        ...baseSnap.players[0]!,
+        id: 'dup-mid-score',
+        name: ' alphatester ', // case & space variation
+        school: ' TechSchool ',
+        score: 500,
+        levels_completed: 5,
+      },
+    ];
+
+    render(
+      <DashboardView
+        snapshot={{ ...baseSnap, players: duplicatedPlayers }}
+        settings={null}
+        dashSettings={dashSettings}
+        onlineIds={new Set()}
+        connectionState="connected"
+        robotOverrides={{}}
+        recentEvents={[]}
+      />,
+    );
+
+    // Only 1 card for AlphaTester should be rendered in the grid, displaying their best score (9999)
+    const gridCards = screen.getAllByTestId('dashboard-robot-card');
+    const alphaCards = gridCards.filter((card) => card.textContent?.includes('AlphaTester'));
+    expect(alphaCards).toHaveLength(1);
+    expect(alphaCards[0]?.textContent).toContain('9999');
   });
 });
