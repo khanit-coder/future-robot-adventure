@@ -99,26 +99,26 @@ export function RegistrationView() {
           isFullscreen ? 'max-w-[94vw] px-8 py-5' : 'max-w-7xl px-6 py-4',
         )}
       >
-        <div className="flex items-center gap-3.5 sm:gap-4">
+        <div className="flex items-center gap-3 sm:gap-3.5">
           {settings?.college_logo_url && (
             <img
               src={settings.college_logo_url}
               alt="College Logo"
-              className="h-16 w-16 sm:h-20 sm:w-20 md:h-22 md:w-22 rounded-full object-contain overflow-hidden bg-transparent shrink-0 drop-shadow-[0_4px_16px_rgba(56,189,248,0.35)] transition-transform hover:scale-105"
+              className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-full object-contain overflow-hidden bg-transparent shrink-0 drop-shadow-[0_2px_10px_rgba(56,189,248,0.25)] transition-transform hover:scale-105"
             />
           )}
           {settings?.game_logo_url && (
             <img
               src={settings.game_logo_url}
               alt=""
-              className="h-14 w-14 sm:h-16 sm:w-16 md:h-18 md:w-18 rounded-2xl object-contain shrink-0 drop-shadow-md"
+              className="h-11 w-11 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-xl object-contain shrink-0 drop-shadow-md"
             />
           )}
           <div className="flex flex-col justify-center">
-            <p className="text-sm sm:text-base md:text-lg font-black uppercase tracking-wide text-sky-300 drop-shadow-sm leading-tight">
+            <p className="text-xs sm:text-sm md:text-base font-extrabold uppercase tracking-wide text-sky-300 drop-shadow-sm leading-tight">
               {collegeName}
             </p>
-            <p className="text-base sm:text-lg md:text-xl font-extrabold text-white drop-shadow-sm leading-snug mt-0.5">
+            <p className="text-sm sm:text-base md:text-lg font-bold text-white drop-shadow-sm leading-snug mt-0.5">
               {eventTitle}
             </p>
           </div>
