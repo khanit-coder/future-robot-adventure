@@ -95,11 +95,17 @@ function AdminShell({ adminEmail, onSignOut }: { adminEmail: string; onSignOut: 
   const [publishing, setPublishing] = useState(false);
   const [publishErrors, setPublishErrors] = useState<string[]>([]);
 
-  const reload = useCallback(async () => {
-    const ws = await adminApi.loadWorkspace();
-    setData(ws);
-    await loadGlobal();
-  }, [loadGlobal]);
+  const reload = useCallback(
+    async (skipAutoPublish = false) => {
+      if (!skipAutoPublish) {
+        await adminApi.publish(false, 'Auto-published on admin save').catch(() => {});
+      }
+      const ws = await adminApi.loadWorkspace();
+      setData(ws);
+      await loadGlobal();
+    },
+    [loadGlobal],
+  );
 
   useEffect(() => {
     let active = true;
@@ -143,7 +149,7 @@ function AdminShell({ adminEmail, onSignOut }: { adminEmail: string; onSignOut: 
       const res = await adminApi.publish(false, publishNote.trim() || undefined);
       setPublishOpen(false);
       setPublishNote('');
-      await reload();
+      await reload(true);
       toast('success', t('admin:topbar.publishSuccess', { version: res.version }));
     } catch (e) {
       if (e instanceof ApiError && Array.isArray(e.details.errors)) {

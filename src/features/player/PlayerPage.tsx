@@ -1,13 +1,20 @@
-import { useEffect } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FullPageLoading } from '@/components/common/LoadingSpinner';
 import { subscribeLiveChannel } from '@/services/realtime/liveChannel';
 import { useAppStore } from '@/stores/appStore';
 import { usePlayerStore } from '@/stores/playerStore';
-import { LessonsView } from '@/features/lessons/LessonsView';
-import { PlayWorkspace } from './PlayWorkspace';
 import { RegistrationView } from './RegistrationView';
-import { ResultView } from '@/features/rewards/ResultView';
+
+const LessonsView = lazy(() =>
+  import('@/features/lessons/LessonsView').then((m) => ({ default: m.LessonsView })),
+);
+const PlayWorkspace = lazy(() =>
+  import('./PlayWorkspace').then((m) => ({ default: m.PlayWorkspace })),
+);
+const ResultView = lazy(() =>
+  import('@/features/rewards/ResultView').then((m) => ({ default: m.ResultView })),
+);
 
 export function PlayerPage() {
   const { t } = useTranslation('common');
@@ -22,12 +29,21 @@ export function PlayerPage() {
 
   useEffect(() => {
     void bootstrap();
+    // Preload heavy game chunks (Phaser + Blockly) in the background after initial paint
+    const timer = window.setTimeout(() => {
+      void import('@/features/lessons/LessonsView');
+      void import('./PlayWorkspace');
+    }, 1500);
+    return () => window.clearTimeout(timer);
   }, [bootstrap]);
 
   useEffect(() => {
     const unsub = subscribeLiveChannel({
       presenceMeta: player ? { role: 'player', player_id: player.id } : { role: 'player' },
-      onConfigTableChanged: () => void loadGlobal(),
+      onConfigTableChanged: () => {
+        void loadGlobal();
+        void refreshState();
+      },
       onGameEvent: (ev) => {
         if (ev.type === 'GAME_SESSION_UPDATED' || ev.type === 'CONFIG_PUBLISHED') {
           void loadGlobal();
@@ -50,17 +66,17 @@ export function PlayerPage() {
     return <RegistrationView />;
   }
 
-  if (playerSession.status === 'FINISHED' || playerSession.status === 'TIME_EXPIRED') {
-    return <ResultView />;
-  }
-
-  if (showLessonReview) {
-    return <LessonsView reviewMode />;
-  }
-
-  if (playerSession.status === 'REGISTERED' || playerSession.status === 'LEARNING') {
-    return <LessonsView />;
-  }
-
-  return <PlayWorkspace />;
+  return (
+    <Suspense fallback={<FullPageLoading message={t('app.loading')} />}>
+      {playerSession.status === 'FINISHED' || playerSession.status === 'TIME_EXPIRED' ? (
+        <ResultView />
+      ) : showLessonReview ? (
+        <LessonsView reviewMode />
+      ) : playerSession.status === 'REGISTERED' || playerSession.status === 'LEARNING' ? (
+        <LessonsView />
+      ) : (
+        <PlayWorkspace />
+      )}
+    </Suspense>
+  );
 }

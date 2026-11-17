@@ -251,9 +251,13 @@ function LessonEditorPanel({
       <div className="grid gap-4 sm:grid-cols-2">
         <ImageUploader
           folder="lessons"
-          label="Lesson Image"
+          label="Lesson Image (อัปโหลดแล้วบันทึกอัตโนมัติ)"
           value={draft.image_url}
-          onChange={(url) => setDraft({ ...draft, image_url: url })}
+          onChange={(url) => setDraft((d) => ({ ...d, image_url: url }))}
+          onPersist={async (url) => {
+            await getSupabase().from('lessons').update({ image_url: url }).eq('id', draft.id);
+            await onReload();
+          }}
         />
         <div className="space-y-1.5">
           <Label>Video URL (optional)</Label>

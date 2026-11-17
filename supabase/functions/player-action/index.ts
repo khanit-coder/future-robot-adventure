@@ -31,7 +31,7 @@ Deno.serve(
 
     switch (action) {
       case 'get_state':
-        return await getState(ctx);
+        return await getState(ctx, Boolean(body.include_config));
 
       case 'get_config': {
         const cfg = await loadConfig(ctx.ps.config_version);
@@ -77,29 +77,41 @@ Deno.serve(
       case 'start_game': {
         requireOpen(ctx);
         if (ctx.ps.status === 'PLAYING' || ctx.ps.status === 'FINISHED' || ctx.ps.status === 'TIME_EXPIRED') {
-          return await getState(ctx);
+          return await getState(ctx, true);
         }
         const cfg = await loadConfig(ctx.ps.config_version);
         const s = cfg.settings;
-        if (s.lessons_mandatory && cfg.lessons.length > 0 && !(body.skip === true && s.allow_skip_lessons)) {
+        if (s.lessons_mandatory && cfg.lessons.length > 0 && !(body.skip === true || s.allow_skip_lessons)) {
           const { data: done } = await db.from('lesson_progress').select('lesson_id').eq('player_session_id', ctx.ps.id);
           const doneIds = new Set((done ?? []).map((d: any) => d.lesson_id));
           if (!cfg.lessons.every((l) => doneIds.has(l.id))) throw new HttpError(409, 'LESSONS_REQUIRED');
         }
         const now = new Date();
         const expires = s.timer_enabled ? new Date(now.getTime() + s.total_duration_seconds * 1000).toISOString() : null;
+        const firstLevel = cfg.levels[0] ?? null;
         const { data: started } = await db
           .from('player_sessions')
-          .update({ status: 'PLAYING', started_at: now.toISOString(), expires_at: expires, last_seen_at: now.toISOString() })
+          .update({
+            status: 'PLAYING',
+            started_at: now.toISOString(),
+            expires_at: expires,
+            current_level_id: firstLevel?.id ?? ctx.ps.current_level_id,
+            last_seen_at: now.toISOString(),
+          })
           .eq('id', ctx.ps.id)
           .in('status', ['REGISTERED', 'LEARNING'])
           .select('*')
           .maybeSingle();
         if (started) {
+          if (firstLevel) {
+            await db
+              .from('player_level_progress')
+              .upsert({ player_session_id: ctx.ps.id, level_id: firstLevel.id }, { onConflict: 'player_session_id,level_id', ignoreDuplicates: true });
+          }
           await emitEvents([{ type: 'PLAYER_STARTED', player_id: ctx.player.id, session_id: ctx.player.game_session_id, payload: { name: ctx.player.display_name } }]);
         }
         const fresh = await loadPlayerContext(user.id);
-        return await getState(fresh);
+        return await getState(fresh, true);
       }
 
       case 'start_level': {
@@ -197,23 +209,27 @@ function requirePlaying(ctx: PlayerContext) {
   if (ctx.ps.status !== 'PLAYING') throw new HttpError(409, 'NOT_PLAYING');
 }
 
-async function getState(ctx: PlayerContext) {
+async function getState(ctx: PlayerContext, includeConfig = false) {
   const db = adminClient();
-  await db.from('player_sessions').update({ last_seen_at: new Date().toISOString() }).eq('id', ctx.ps.id);
-  const [{ data: progress }, { data: lessons }, { data: claim }] = await Promise.all([
-    db.from('player_level_progress').select('*').eq('player_session_id', ctx.ps.id),
-    db.from('lesson_progress').select('lesson_id').eq('player_session_id', ctx.ps.id),
-    db.from('reward_claims').select('id, reward_id, claim_code, status').eq('player_id', ctx.player.id).neq('status', 'CANCELLED').maybeSingle(),
-  ]);
-  const { data: fresh } = await db.from('player_sessions').select('*').eq('id', ctx.ps.id).single();
+  const nowIso = new Date().toISOString();
+  const [{ data: fresh }, { data: progress }, { data: lessons }, { data: claim }, latestVer, cfg] =
+    await Promise.all([
+      db.from('player_sessions').update({ last_seen_at: nowIso }).eq('id', ctx.ps.id).select('*').single(),
+      db.from('player_level_progress').select('*').eq('player_session_id', ctx.ps.id),
+      db.from('lesson_progress').select('lesson_id').eq('player_session_id', ctx.ps.id),
+      db.from('reward_claims').select('id, reward_id, claim_code, status').eq('player_id', ctx.player.id).neq('status', 'CANCELLED').maybeSingle(),
+      latestConfigVersion(),
+      includeConfig ? loadConfig(ctx.ps.config_version) : Promise.resolve(null),
+    ]);
   return {
-    server_now: new Date().toISOString(),
+    server_now: nowIso,
     player: ctx.player,
     player_session: fresh ?? ctx.ps,
     session: ctx.session,
     progress: progress ?? [],
     lessons_done: (lessons ?? []).map((l: any) => l.lesson_id),
     claim: claim ?? null,
-    latest_version: await latestConfigVersion(),
+    latest_version: latestVer,
+    ...(cfg ? { config: publicConfig(cfg) } : {}),
   };
 }

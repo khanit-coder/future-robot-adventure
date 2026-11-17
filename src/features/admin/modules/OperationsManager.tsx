@@ -240,9 +240,13 @@ function RewardEditorCard({ reward, onReload }: { reward: RewardRow; onReload: (
 
         <ImageUploader
           folder="rewards"
-          label="Reward Image"
+          label="Reward Image (อัปโหลดแล้วบันทึกอัตโนมัติ)"
           value={draft.image_url}
-          onChange={(url) => setDraft({ ...draft, image_url: url })}
+          onChange={(url) => setDraft((d) => ({ ...d, image_url: url }))}
+          onPersist={async (url) => {
+            await getSupabase().from('rewards').update({ image_url: url }).eq('id', draft.id);
+            await onReload();
+          }}
         />
 
         <div className="grid grid-cols-2 gap-3">
@@ -605,9 +609,13 @@ export function DashboardEditorModule({
 
         <ImageUploader
           folder="dashboard"
-          label="Custom Background Image (optional)"
+          label="Custom Background Image (อัปโหลดแล้วบันทึกอัตโนมัติ)"
           value={form.background_url}
-          onChange={(url) => setForm({ ...form, background_url: url })}
+          onChange={(url) => setForm((f) => ({ ...f, background_url: url }))}
+          onPersist={async (url) => {
+            await adminApi.updateDashboardSettings(form.id, { background_url: url });
+            await onReload();
+          }}
         />
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

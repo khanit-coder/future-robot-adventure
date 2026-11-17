@@ -7,10 +7,12 @@ import {
   Gift,
   Heart,
   Home,
+  Palette,
   QrCode,
   Smartphone,
   Sparkles,
   Trophy,
+  Type,
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +20,7 @@ import type { RewardRow } from '@engine';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { FullscreenButton } from '@/components/common/FullscreenButton';
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
 import { SoundToggle } from '@/components/common/SoundToggle';
@@ -33,10 +36,14 @@ import { useAppStore } from '@/stores/appStore';
 import { usePlayerStore } from '@/stores/playerStore';
 import { formatDuration, pickLocalized } from '@/utils/localize';
 import {
+  CARD_FONTS,
+  CARD_THEMES,
   COLLEGE_NAME_TH,
   FACULTY_NAME_TH,
   buildCardDownloadUrl,
   renderShareCardToDataUrl,
+  type CardFontId,
+  type CardThemeId,
   type ShareCardData,
 } from './cardCanvas';
 
@@ -97,6 +104,11 @@ export function ResultView() {
     }
   }, [isOutOfHearts]);
 
+  const [cardTheme, setCardTheme] = useState<CardThemeId>('cyber');
+  const [cardFont, setCardFont] = useState<CardFontId>('modern');
+  const [customBadge, setCustomBadge] = useState<string>('');
+  const [customMessage, setCustomMessage] = useState<string>('');
+
   const shareCardData: ShareCardData = useMemo(
     () => ({
       name: player.display_name,
@@ -113,6 +125,10 @@ export function ResultView() {
       collegeNameEn: settings?.college_name ? pickLocalized(settings.college_name, 'en', 'en') : undefined,
       facultyNameTh: settings?.event_title ? pickLocalized(settings.event_title, 'th', 'th') : undefined,
       facultyNameEn: settings?.event_title ? pickLocalized(settings.event_title, 'en', 'en') : undefined,
+      theme: cardTheme,
+      fontStyle: cardFont,
+      customBadge: customBadge.trim() || undefined,
+      customMessage: customMessage.trim() || undefined,
     }),
     [
       player.display_name,
@@ -124,6 +140,10 @@ export function ResultView() {
       lang,
       settings,
       fallbackLang,
+      cardTheme,
+      cardFont,
+      customBadge,
+      customMessage,
     ],
   );
 
@@ -357,10 +377,10 @@ export function ResultView() {
           className="border-sky-500/40 bg-slate-900/95 text-white shadow-2xl"
           data-testid="qr-share-card-section"
         >
-          <CardContent className="p-6 sm:p-8">
-            <div className="grid items-center gap-8 lg:grid-cols-12">
-              {/* Left: Card Preview */}
-              <div className="flex flex-col items-center lg:col-span-6">
+          <CardContent className="p-6 sm:p-8 space-y-6">
+            <div className="grid items-start gap-8 lg:grid-cols-12">
+              {/* Left: Card Preview + Customizer */}
+              <div className="flex flex-col items-center lg:col-span-6 space-y-4">
                 <div className="w-full max-w-sm overflow-hidden rounded-2xl border-2 border-sky-400/60 shadow-2xl">
                   {cardImageUrl && (
                     <img
@@ -373,12 +393,94 @@ export function ResultView() {
                 </div>
                 <Button
                   variant="success"
-                  className="mt-4 w-full max-w-sm font-extrabold"
+                  className="w-full max-w-sm font-extrabold"
                   onClick={handleDownloadCard}
                 >
                   <Download className="h-4 w-4" />
                   {t('player:results.shareCard.downloadBtn')}
                 </Button>
+
+                {/* Card Theme, Font & Text Customizer Studio */}
+                <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950/80 p-4 space-y-4 text-left">
+                  <div className="space-y-2">
+                    <p className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-sky-300">
+                      <Palette className="h-3.5 w-3.5" />
+                      {lang === 'th' ? 'เลือกดีไซน์การ์ด (Card Theme)' : 'Choose Card Theme'}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {CARD_THEMES.map((thm) => (
+                        <button
+                          key={thm.id}
+                          type="button"
+                          onClick={() => setCardTheme(thm.id)}
+                          className={cn(
+                            'flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-extrabold transition-all cursor-pointer',
+                            cardTheme === thm.id
+                              ? 'border-sky-400 bg-sky-500/20 text-white ring-2 ring-sky-400/50'
+                              : 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800',
+                          )}
+                        >
+                          <span className={cn('h-3.5 w-3.5 rounded-full bg-gradient-to-br shrink-0', thm.swatch)} />
+                          <span className="truncate">{lang === 'th' ? thm.labelTh : thm.labelEn}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-amber-300">
+                      <Type className="h-3.5 w-3.5" />
+                      {lang === 'th' ? 'เลือกฟอนต์ตัวอักษร (Typography)' : 'Choose Font Style'}
+                    </p>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {CARD_FONTS.map((fnt) => (
+                        <button
+                          key={fnt.id}
+                          type="button"
+                          onClick={() => setCardFont(fnt.id)}
+                          className={cn(
+                            'rounded-xl border px-2.5 py-2 text-[11px] font-extrabold transition-all cursor-pointer text-center',
+                            cardFont === fnt.id
+                              ? 'border-amber-400 bg-amber-500/20 text-amber-200 ring-2 ring-amber-400/40'
+                              : 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800',
+                          )}
+                        >
+                          {lang === 'th' ? fnt.labelTh : fnt.labelEn}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-1 border-t border-slate-800">
+                    <p className="text-xs font-extrabold text-indigo-300">
+                      {lang === 'th'
+                        ? '✏️ ปรับแต่งข้อความบนการ์ด (เว้นว่างเพื่อใช้ค่าเริ่มต้น)'
+                        : '✏️ Customize Card Text (Optional)'}
+                    </p>
+                    <Input
+                      value={customBadge}
+                      onChange={(e) => setCustomBadge(e.target.value)}
+                      maxLength={50}
+                      placeholder={
+                        lang === 'th'
+                          ? 'เช่น 🏅 เกียรติบัตรสุดยอดนักโค้ดดิ้งหุ่นยนต์ 🏅'
+                          : 'Custom badge title...'
+                      }
+                      className="h-8 bg-slate-900 border-slate-700 text-xs text-white placeholder:text-slate-500"
+                    />
+                    <Input
+                      value={customMessage}
+                      onChange={(e) => setCustomMessage(e.target.value)}
+                      maxLength={70}
+                      placeholder={
+                        lang === 'th'
+                          ? 'เช่น ✨ ขอแสดงความยินดีกับยอดนักเขียนโค้ดแห่งอนาคต! ✨'
+                          : 'Custom footer message...'
+                      }
+                      className="h-8 bg-slate-900 border-slate-700 text-xs text-white placeholder:text-slate-500"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Right: QR Code for Mobile Scan */}

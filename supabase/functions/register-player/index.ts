@@ -1,5 +1,5 @@
 // deno-lint-ignore-file no-explicit-any
-import { HttpError, adminClient, clientIp, emitEvents, latestConfigVersion, rateLimit, requireUser, sanitizeText, serve } from '../_shared/util.ts';
+import { HttpError, adminClient, clientIp, emitEvents, latestConfigVersion, loadConfig, publicConfig, rateLimit, requireUser, sanitizeText, serve } from '../_shared/util.ts';
 
 /**
  * register-player
@@ -42,12 +42,23 @@ Deno.serve(
     if (existing) {
       const { player_sessions, ...player } = existing as any;
       const ps = Array.isArray(player_sessions) ? player_sessions[0] : player_sessions;
-      return { player, player_session: ps, existing: true };
+      const version = await latestConfigVersion();
+      const cfg = await loadConfig(ps?.config_version ?? version);
+      return {
+        player,
+        player_session: ps,
+        session,
+        config: publicConfig(cfg),
+        latest_version: version,
+        server_now: new Date().toISOString(),
+        existing: true,
+      };
     }
 
     if (!session.registration_open) throw new HttpError(403, 'REGISTRATION_CLOSED');
 
     const version = await latestConfigVersion();
+    const cfg = await loadConfig(version);
     const { data: player, error } = await db
       .from('players')
       .insert({ game_session_id: session.id, auth_user_id: user.id, display_name, school, grade: gradeRaw || null, lang })
@@ -63,7 +74,15 @@ Deno.serve(
           .eq('auth_user_id', user.id)
           .single();
         const { player_sessions, ...p } = again as any;
-        return { player: p, player_session: Array.isArray(player_sessions) ? player_sessions[0] : player_sessions, existing: true };
+        return {
+          player: p,
+          player_session: Array.isArray(player_sessions) ? player_sessions[0] : player_sessions,
+          session,
+          config: publicConfig(cfg),
+          latest_version: version,
+          server_now: new Date().toISOString(),
+          existing: true,
+        };
       }
       console.error(error);
       throw new HttpError(500, 'REGISTER_FAILED');
@@ -89,6 +108,14 @@ Deno.serve(
       },
     ]);
 
-    return { player, player_session: ps, existing: false };
+    return {
+      player,
+      player_session: ps,
+      session,
+      config: publicConfig(cfg),
+      latest_version: version,
+      server_now: new Date().toISOString(),
+      existing: false,
+    };
   }),
 );

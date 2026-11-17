@@ -27,10 +27,31 @@ function RouteFallback() {
 
 export default function App() {
   const loadGlobal = useAppStore((s) => s.loadGlobal);
+  const settings = useAppStore((s) => s.settings);
 
   useEffect(() => {
     void loadGlobal();
   }, [loadGlobal]);
+
+  useEffect(() => {
+    if (!settings || typeof document === 'undefined') return;
+    if (settings.primary_color) {
+      document.documentElement.style.setProperty('--fra-primary', settings.primary_color);
+    }
+    if (settings.secondary_color) {
+      document.documentElement.style.setProperty('--fra-secondary', settings.secondary_color);
+    }
+    const logoUrl = settings.game_logo_url || settings.college_logo_url;
+    if (logoUrl) {
+      let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+      }
+      link.href = logoUrl;
+    }
+  }, [settings]);
 
   return (
     <ErrorBoundary>

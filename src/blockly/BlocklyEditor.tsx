@@ -63,7 +63,7 @@ export function BlocklyEditor({
 
     const workspace = Blockly.inject(container, {
       toolbox: buildBlocklyToolbox(snap.blocks, snap.allowedCommands, snap.lang),
-      readOnly,
+      readOnly: false,
       trashcan: true,
       scrollbars: true,
       sounds: false,
@@ -143,7 +143,7 @@ export function BlocklyEditor({
       workspace.dispose();
       wsRef.current = null;
     };
-  }, [workspaceKey, readOnly]);
+  }, [workspaceKey]);
 
   // Language or block label update in-place: preserves all workspace blocks & connections!
   useEffect(() => {
@@ -171,10 +171,18 @@ export function BlocklyEditor({
   }, [resetSignal]);
 
   return (
-    <div
-      ref={hostRef}
-      data-testid="blockly-editor"
-      className="h-full w-full min-h-[340px] rounded-2xl overflow-hidden border border-slate-200 bg-white"
-    />
+    <div className="relative h-full w-full min-h-[340px]">
+      <div
+        ref={hostRef}
+        data-testid="blockly-editor"
+        className="h-full w-full min-h-[340px] rounded-2xl overflow-hidden border border-slate-200 bg-white"
+      />
+      {readOnly && (
+        <div
+          className="absolute inset-0 z-30 cursor-wait bg-transparent"
+          aria-hidden="true"
+        />
+      )}
+    </div>
   );
 }

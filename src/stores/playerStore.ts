@@ -96,11 +96,29 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       set({ bootstrapped: true });
       return;
     }
+    // Fast-path for new visitors: if there is no existing Supabase session in localStorage,
+    // skip anonymous sign-in and Edge Function calls until they submit the registration form!
+    try {
+      const { data: sessionData } = await getSupabase().auth.getSession();
+      if (!sessionData.session?.access_token) {
+        set({ bootstrapped: true, loading: false, player: null, playerSession: null });
+        return;
+      }
+    } catch {
+      set({ bootstrapped: true, loading: false, player: null, playerSession: null });
+      return;
+    }
+
     set({ loading: true, error: null });
     try {
-      await playerApi.ensureSession();
-      const state = await playerApi.getState();
-      const { config, latest_version } = await playerApi.getConfig();
+      const state = await playerApi.getState(true);
+      let config = state.config ?? null;
+      let latestVersion = state.latest_version;
+      if (!config) {
+        const res = await playerApi.getConfig();
+        config = res.config;
+        latestVersion = res.latest_version;
+      }
       get().applyServerTime(state.server_now);
       if (state.player.lang && !localStorage.getItem('fra_lang')) {
         void i18n.changeLanguage(state.player.lang);
@@ -113,7 +131,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
         playerSession: state.player_session,
         session: state.session,
         config,
-        latestVersion: latest_version,
+        latestVersion,
         progress: state.progress,
         lessonsDone: state.lessons_done,
         claim: state.claim,
@@ -135,7 +153,25 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   register: async (input) => {
     set({ loading: true, error: null });
     try {
-      await playerApi.register(input);
+      const res = await playerApi.register(input);
+      if (res.config && res.session && !res.existing) {
+        get().applyServerTime(res.server_now);
+        const nextLevel = pickActiveLevelId(res.config, [], res.player_session.current_level_id);
+        set({
+          bootstrapped: true,
+          loading: false,
+          player: res.player,
+          playerSession: res.player_session,
+          session: res.session,
+          config: res.config,
+          latestVersion: res.latest_version ?? res.player_session.config_version,
+          progress: [],
+          lessonsDone: [],
+          claim: null,
+          selectedLevelId: nextLevel,
+        });
+        return;
+      }
       await get().bootstrap();
     } catch (e) {
       set({ loading: false });
@@ -146,9 +182,9 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   refreshState: async () => {
     if (!get().player) return;
     try {
-      const state = await playerApi.getState();
+      const state = await playerApi.getState(true);
       get().applyServerTime(state.server_now);
-      const config = get().config;
+      const config = state.config ?? get().config;
       const currentSelected = get().selectedLevelId;
       const nextLevel =
         currentSelected && config?.levels.some((l) => l.id === currentSelected)
@@ -160,6 +196,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
         player: state.player,
         playerSession: state.player_session,
         session: state.session,
+        config,
         progress: state.progress,
         lessonsDone: state.lessons_done,
         claim: state.claim,
@@ -188,18 +225,15 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     try {
       const state = await playerApi.startGame(skip);
       get().applyServerTime(state.server_now);
-      const cfg = get().config;
+      const cfg = state.config ?? get().config;
       const levelId = cfg
         ? pickActiveLevelId(cfg, state.progress, state.player_session.current_level_id)
         : null;
-      if (levelId) {
-        await playerApi.startLevel(levelId).catch(() => {});
-      }
-      const fresh = await playerApi.getState();
       set({
         loading: false,
-        playerSession: fresh.player_session,
-        progress: fresh.progress,
+        playerSession: state.player_session,
+        config: cfg,
+        progress: state.progress,
         selectedLevelId: levelId,
         showLessonReview: false,
       });

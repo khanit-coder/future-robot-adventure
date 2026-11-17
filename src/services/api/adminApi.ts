@@ -89,12 +89,30 @@ export const adminApi = {
     const path = `${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
     const { error } = await sb.storage.from('game-assets').upload(path, file, {
       cacheControl: '3600',
-      upsert: false,
+      upsert: true,
       contentType: file.type,
     });
-    if (error) throw error;
-    const { data } = sb.storage.from('game-assets').getPublicUrl(path);
-    return data.publicUrl;
+    if (!error) {
+      const { data } = sb.storage.from('game-assets').getPublicUrl(path);
+      return data.publicUrl;
+    }
+
+    // Fallback to service-role Edge Function upload if client-side storage policy/bucket failed
+    const buf = await file.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
+    const res = await invokeEdge<{ ok: boolean; url: string }>('admin-action', {
+      action: 'upload_asset',
+      folder,
+      ext,
+      content_type: file.type,
+      base64,
+    });
+    return res.url;
   },
 
   async publish(dry_run: boolean, note?: string) {
@@ -201,6 +219,7 @@ export const adminApi = {
   async updateSettings(id: string, patch: Partial<GameSettingsRow>) {
     const { error } = await getSupabase().from('game_settings').update(patch).eq('id', id);
     if (error) throw error;
+    void this.publish(false, 'Auto-publish settings').catch(() => {});
   },
 
   async updateDashboardSettings(id: string, patch: Partial<DashboardSettingsRow>) {

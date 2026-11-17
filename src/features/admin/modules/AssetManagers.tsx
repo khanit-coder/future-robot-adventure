@@ -209,9 +209,13 @@ export function RobotManagerModule({
                 ) : (
                   <ImageUploader
                     folder="robots"
-                    label="Spritesheet PNG"
+                    label="Spritesheet PNG (อัปโหลดแล้วบันทึกอัตโนมัติ)"
                     value={draft.sprite_url}
-                    onChange={(url) => setDraft({ ...draft, sprite_url: url })}
+                    onChange={(url) => setDraft((d) => (d ? { ...d, sprite_url: url } : d))}
+                    onPersist={async (url) => {
+                      await getSupabase().from('robot_assets').update({ sprite_url: url }).eq('id', draft.id);
+                      await onReload();
+                    }}
                   />
                 )}
               </div>
@@ -466,9 +470,13 @@ export function SceneManagerModule({
               {draft.kind === 'image' && (
                 <ImageUploader
                   folder="scenes"
-                  label="Background Image"
+                  label="Background Image (อัปโหลดแล้วบันทึกอัตโนมัติ)"
                   value={draft.image_url}
-                  onChange={(url) => setDraft({ ...draft, image_url: url })}
+                  onChange={(url) => setDraft((d) => (d ? { ...d, image_url: url } : d))}
+                  onPersist={async (url) => {
+                    await getSupabase().from('scene_assets').update({ image_url: url }).eq('id', draft.id);
+                    await onReload();
+                  }}
                 />
               )}
 

@@ -150,6 +150,74 @@ Deno.serve(
         return { ok: true, total_score: nextTotal, player_session: updated };
       }
 
+      case 'set_claim_status': {
+        if (!isUuid(body.claim_id)) throw new HttpError(422, 'BAD_CLAIM_ID');
+        const nextStatus = body.status === 'CLAIMED' ? 'CLAIMED' : body.status === 'CANCELLED' ? 'CANCELLED' : null;
+        if (!nextStatus) throw new HttpError(422, 'BAD_STATUS');
+
+        const { data: claim } = await db.from('reward_claims').select('*').eq('id', body.claim_id).maybeSingle();
+        if (!claim) throw new HttpError(404, 'CLAIM_NOT_FOUND');
+        if (claim.status !== 'RESERVED') throw new HttpError(409, 'CLAIM_ALREADY_PROCESSED');
+
+        const now = new Date().toISOString();
+        const patch: any = { status: nextStatus };
+        if (nextStatus === 'CLAIMED') {
+          patch.claimed_at = now;
+          patch.claimed_by = admin.user.id;
+        } else {
+          patch.cancelled_at = now;
+        }
+
+        const { error: uErr } = await db.from('reward_claims').update(patch).eq('id', claim.id).eq('status', 'RESERVED');
+        if (uErr) throw new HttpError(500, 'CLAIM_UPDATE_FAILED', uErr.message);
+
+        const { data: rw } = await db.from('rewards').select('reserved_count, claimed_count').eq('id', claim.reward_id).maybeSingle();
+        if (rw) {
+          const nextReserved = Math.max(0, Number(rw.reserved_count ?? 1) - 1);
+          const nextClaimed = nextStatus === 'CLAIMED' ? Number(rw.claimed_count ?? 0) + 1 : Number(rw.claimed_count ?? 0);
+          await db.from('rewards').update({ reserved_count: nextReserved, claimed_count: nextClaimed }).eq('id', claim.reward_id);
+        }
+
+        await audit(admin, 'SET_CLAIM_STATUS', 'reward_claims', claim.id, { status: nextStatus, claim_code: claim.claim_code });
+        return { ok: true };
+      }
+
+      case 'upload_asset': {
+        const folder = sanitizeText(body.folder, 40) || 'misc';
+        const ext = sanitizeText(body.ext, 10).replace(/[^a-z0-9]/gi, '').toLowerCase() || 'png';
+        const contentType = sanitizeText(body.content_type, 60) || 'image/png';
+        const base64 = typeof body.base64 === 'string' ? body.base64 : '';
+        if (!base64) throw new HttpError(422, 'EMPTY_FILE');
+
+        const binaryStr = atob(base64);
+        const bytes = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; i++) {
+          bytes[i] = binaryStr.charCodeAt(i);
+        }
+        if (bytes.byteLength > 5 * 1024 * 1024) {
+          throw new HttpError(413, 'FILE_TOO_LARGE');
+        }
+
+        // Ensure bucket exists and is public
+        await db.storage.createBucket('game-assets', {
+          public: true,
+          fileSizeLimit: 5242880,
+          allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp', 'image/gif'],
+        }).catch(() => {});
+
+        const path = `${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+        const { error: upErr } = await db.storage.from('game-assets').upload(path, bytes, {
+          contentType,
+          cacheControl: '3600',
+          upsert: true,
+        });
+        if (upErr) throw new HttpError(500, 'UPLOAD_FAILED', upErr.message);
+
+        const { data: pubUrl } = db.storage.from('game-assets').getPublicUrl(path);
+        await audit(admin, 'UPLOAD_ASSET', 'storage', path, { folder, contentType, size: bytes.byteLength });
+        return { ok: true, url: pubUrl.publicUrl, path };
+      }
+
       case 'system_health': {
         const t0 = performance.now();
         const [{ count: playersCount, error: dbErr }, { data: pub }, { data: session }, { data: buckets }] = await Promise.all([

@@ -56,8 +56,21 @@ export function InteractiveRobotDemo({
     setReachedGoal(false);
   };
 
+  const [prevDemoProgram, setPrevDemoProgram] = useState<Command[]>(demoProgram);
+  if (prevDemoProgram !== demoProgram) {
+    setPrevDemoProgram(demoProgram);
+    setRunning(false);
+    setActiveStepIndex(-1);
+    setRobotPos({ x: 0, y: 0, dir: 0 });
+    setRobotState('idle');
+    setIsJumping(false);
+    setCrystalCollected(false);
+    setGeneratorActive(false);
+    setReachedGoal(false);
+  }
+
   useEffect(() => {
-    resetArena();
+    isCancelledRef.current = true;
   }, [demoProgram]);
 
   // Check what special tiles exist in this demo
@@ -484,9 +497,9 @@ function BlocklyVisualCard({
   }
 
   // Determine Category, Color & Icon
-  let bgClass = 'bg-sky-600 border-sky-400 text-white';
+  let bgClass: string;
   let Icon = ArrowRight;
-  let title = 'เดินหน้า';
+  let title: string;
   let paramText = '';
 
   switch (cmd.type) {
@@ -523,7 +536,7 @@ function BlocklyVisualCard({
     case 'PICK_UP':
       bgClass = 'bg-emerald-600 border-emerald-400 text-white';
       Icon = Gem;
-      title = isTh ? 'เก็บคริสตัล' : 'pick up';
+      title = isTh ? 'เก็บ/ช่วย' : 'Pick Up / Rescue';
       break;
     case 'ACTIVATE':
       bgClass = 'bg-emerald-600 border-emerald-400 text-white';

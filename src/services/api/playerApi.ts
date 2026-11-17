@@ -27,6 +27,7 @@ export interface PlayerStateResponse {
     status: 'RESERVED' | 'CLAIMED' | 'CANCELLED';
   } | null;
   latest_version: number;
+  config?: PublishedConfig;
 }
 
 export interface SubmitSolutionResponse {
@@ -58,15 +59,22 @@ export const playerApi = {
 
   async register(input: { display_name: string; school: string; grade?: string; lang: Lang }) {
     await ensureAuthSession();
-    return invokeEdge<{ player: PlayerRow; player_session: PlayerSessionRow; existing: boolean }>(
-      'register-player',
-      input,
-      { allowAnonymous: true },
-    );
+    return invokeEdge<{
+      player: PlayerRow;
+      player_session: PlayerSessionRow;
+      session?: GameSessionRow;
+      config?: PublishedConfig;
+      latest_version?: number;
+      server_now?: string;
+      existing: boolean;
+    }>('register-player', input, { allowAnonymous: true });
   },
 
-  async getState() {
-    return invokeEdge<PlayerStateResponse>('player-action', { action: 'get_state' });
+  async getState(includeConfig = false) {
+    return invokeEdge<PlayerStateResponse>('player-action', {
+      action: 'get_state',
+      include_config: includeConfig,
+    });
   },
 
   async getConfig() {

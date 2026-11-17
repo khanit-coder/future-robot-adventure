@@ -129,6 +129,10 @@ export function GameSettingsModule({
         event_title: form.event_title,
         college_name: form.college_name,
         default_language: form.default_language,
+        lessons_mandatory: form.lessons_mandatory,
+        allow_skip_lessons: form.allow_skip_lessons,
+        rewards_enabled: form.rewards_enabled,
+        timer_enabled: form.timer_enabled,
       });
       await onReload();
       toast('success', t('admin:common.saved'));
@@ -177,6 +181,37 @@ export function GameSettingsModule({
           </Select>
         </div>
 
+        <div className="grid gap-3 pt-2 sm:grid-cols-2">
+          <label className="flex items-center justify-between rounded-xl border border-slate-200 p-3 text-sm font-semibold">
+            <span>บังคับเรียนบทเรียนก่อนเล่น (Mandatory Lessons)</span>
+            <Switch
+              checked={form.lessons_mandatory}
+              onCheckedChange={(v) => setForm({ ...form, lessons_mandatory: v })}
+            />
+          </label>
+          <label className="flex items-center justify-between rounded-xl border border-slate-200 p-3 text-sm font-semibold">
+            <span>อนุญาตให้กดข้ามบทเรียน (Allow Skip Lessons)</span>
+            <Switch
+              checked={form.allow_skip_lessons}
+              onCheckedChange={(v) => setForm({ ...form, allow_skip_lessons: v })}
+            />
+          </label>
+          <label className="flex items-center justify-between rounded-xl border border-slate-200 p-3 text-sm font-semibold">
+            <span>เปิดระบบแลกของรางวัล (Enable Rewards)</span>
+            <Switch
+              checked={form.rewards_enabled}
+              onCheckedChange={(v) => setForm({ ...form, rewards_enabled: v })}
+            />
+          </label>
+          <label className="flex items-center justify-between rounded-xl border border-slate-200 p-3 text-sm font-semibold">
+            <span>เปิดระบบจับเวลา (Enable Timer)</span>
+            <Switch
+              checked={form.timer_enabled}
+              onCheckedChange={(v) => setForm({ ...form, timer_enabled: v })}
+            />
+          </label>
+        </div>
+
         <Button onClick={() => void save()} disabled={saving}>
           <Save className="h-4 w-4" />
           {saving ? t('common:app.saving') : t('common:app.save')}
@@ -196,6 +231,11 @@ export function BrandingModule({
   const { t } = useTranslation(['admin', 'common']);
   const [form, setForm] = useState<GameSettingsRow>(data.settings);
   const [saving, setSaving] = useState(false);
+
+  const persistField = async (patch: Partial<GameSettingsRow>) => {
+    await adminApi.updateSettings(form.id, patch);
+    await onReload();
+  };
 
   const save = async () => {
     setSaving(true);
@@ -224,15 +264,17 @@ export function BrandingModule({
         <div className="grid gap-6 sm:grid-cols-2">
           <ImageUploader
             folder="logos"
-            label="College Logo"
+            label="College Logo (อัปโหลดแล้วบันทึกอัตโนมัติ)"
             value={form.college_logo_url}
-            onChange={(url) => setForm({ ...form, college_logo_url: url })}
+            onChange={(url) => setForm((f) => ({ ...f, college_logo_url: url }))}
+            onPersist={(url) => persistField({ college_logo_url: url })}
           />
           <ImageUploader
             folder="logos"
-            label="Game Logo"
+            label="Game Logo (อัปโหลดแล้วบันทึกอัตโนมัติ)"
             value={form.game_logo_url}
-            onChange={(url) => setForm({ ...form, game_logo_url: url })}
+            onChange={(url) => setForm((f) => ({ ...f, game_logo_url: url }))}
+            onPersist={(url) => persistField({ game_logo_url: url })}
           />
         </div>
 

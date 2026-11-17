@@ -1,8 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { buildSnapshot } from '../_shared/engine/snapshot.ts';
 import type { DraftData } from '../_shared/engine/rows.ts';
-import { HttpError, adminClient, audit, broadcast, requireAdmin, serve } from '../_shared/util.ts';
-import { emitEvents } from '../_shared/util.ts';
+import { HttpError, adminClient, audit, broadcast, clearConfigCache, emitEvents, requireAdmin, serve } from '../_shared/util.ts';
 
 async function loadDraft(): Promise<DraftData> {
   const db = adminClient();
@@ -64,6 +63,21 @@ Deno.serve(
     if (error || !data) {
       console.error(error);
       throw new HttpError(500, 'PUBLISH_FAILED');
+    }
+
+    clearConfigCache();
+
+    // Upgrade active in-progress player sessions to the newly published version so Admin edits apply immediately
+    await db
+      .from('player_sessions')
+      .update({ config_version: data.version })
+      .in('status', ['REGISTERED', 'LEARNING', 'PLAYING']);
+
+    if (!built.snapshot.settings.timer_enabled) {
+      await db
+        .from('player_sessions')
+        .update({ expires_at: null })
+        .eq('status', 'PLAYING');
     }
 
     await audit(admin, 'PUBLISH', 'published_configs', data.id as string, { version: data.version, note, summary });

@@ -51,7 +51,9 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
 
   const isCurrentDone = lesson ? lessonsDone.includes(lesson.id) : false;
   const allLessonsCompleted = lessons.every((l) => lessonsDone.includes(l.id));
-  const canSkip = Boolean(config?.settings.allow_skip_lessons || !config?.settings.lessons_mandatory);
+  const allowSkip = settings?.allow_skip_lessons ?? config?.settings.allow_skip_lessons ?? false;
+  const lessonsMandatory = settings?.lessons_mandatory ?? config?.settings.lessons_mandatory ?? true;
+  const canSkip = Boolean(allowSkip || !lessonsMandatory);
   const progressPct = lessons.length > 0 ? Math.round((lessonsDone.length / lessons.length) * 100) : 100;
 
   const handleNextOrDone = async () => {

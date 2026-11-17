@@ -76,7 +76,7 @@ export const DEFAULT_BLOCKS: BlockDefinition[] = [
   def('TURN_RIGHT', 'movement', 'เลี้ยวขวา', 'Turn Right', 'หมุนตัวไปทางขวา 90 องศา', 'Rotate 90 degrees to the right.', '#0891b2', 'corner-up-right', [], 4),
   def('JUMP', 'actions', 'กระโดด', 'Jump', 'กระโดดข้ามช่องข้างหน้า 1 ช่อง', 'Leap over the cell in front of you.', '#f97316', 'chevrons-up', [], 5),
   def('WAVE', 'actions', 'โบกมือ', 'Wave', 'โบกมือทักทาย', 'Wave hello.', '#ec4899', 'hand', [], 6),
-  def('PICK_UP', 'actions', 'เก็บ', 'Pick Up', 'เก็บคริสตัลหรือช่วยหุ่นยนต์ในช่องที่ยืนอยู่', 'Collect a crystal or rescue a robot on your cell.', '#eab308', 'gem', [], 7),
+  def('PICK_UP', 'actions', 'เก็บ/ช่วย', 'Pick Up / Rescue', 'เก็บคริสตัลหรือช่วยหุ่นยนต์ในช่องที่ยืนอยู่', 'Collect a crystal or rescue a robot on your cell.', '#eab308', 'gem', [], 7),
   def('ACTIVATE', 'actions', 'เปิดใช้งาน', 'Activate', 'เปิดเครื่องกำเนิดพลังงานในช่องที่ยืนอยู่', 'Switch on the generator on your cell.', '#22c55e', 'zap', [], 8),
   def('CELEBRATE', 'actions', 'ฉลอง', 'Celebrate', 'ฉลองความสำเร็จ!', 'Celebrate your success!', '#a855f7', 'party-popper', [], 9),
   def('REPEAT', 'logic', 'ทำซ้ำ', 'Repeat', 'ทำคำสั่งข้างในซ้ำตามจำนวนครั้ง', 'Run the commands inside several times.', '#14b8a6', 'repeat', [{ name: 'times', min: 2, max: 20, default: 2 }], 10),

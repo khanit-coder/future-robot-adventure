@@ -48,7 +48,7 @@ export function serve(handler: (req: Request, body: any) => Promise<unknown>): (
     try {
       let body: any = {};
       const text = await req.text();
-      if (text.length > 64 * 1024) throw new HttpError(413, 'PAYLOAD_TOO_LARGE');
+      if (text.length > 8 * 1024 * 1024) throw new HttpError(413, 'PAYLOAD_TOO_LARGE');
       if (text) {
         try {
           body = JSON.parse(text);
@@ -203,18 +203,67 @@ export async function audit(
 
 /* ---------------- config snapshots ---------------- */
 
-const configCache = new Map<number, PublishedConfig>();
+const configCache = new Map<number, { snap: PublishedConfig; expiresAt: number }>();
 
-/** Published snapshots are immutable, so caching per version in the isolate is always safe. */
+/**
+ * Load the published snapshot and overlay live game_settings & block_definitions
+ * so Admin setting changes take effect immediately for all players.
+ */
 export async function loadConfig(version: number): Promise<PublishedConfig> {
+  const now = Date.now();
   const hit = configCache.get(version);
-  if (hit) return hit;
-  const { data, error } = await adminClient().from('published_configs').select('snapshot').eq('version', version).maybeSingle();
-  if (error || !data) throw new HttpError(500, 'CONFIG_NOT_FOUND');
-  const snap = data.snapshot as PublishedConfig;
+  if (hit && hit.expiresAt > now) return hit.snap;
+
+  const db = adminClient();
+  const [{ data: pubRow }, { data: latestPub }, { data: liveSettings }, { data: liveBlocks }] =
+    await Promise.all([
+      db.from('published_configs').select('snapshot').eq('version', version).maybeSingle(),
+      db.from('published_configs').select('snapshot').order('version', { ascending: false }).limit(1).maybeSingle(),
+      db.from('game_settings').select('*').limit(1).maybeSingle(),
+      db.from('block_definitions').select('*').order('position', { ascending: true }),
+    ]);
+
+  const baseSnap = (latestPub?.snapshot ?? pubRow?.snapshot) as PublishedConfig | undefined;
+  if (!baseSnap) throw new HttpError(500, 'CONFIG_NOT_FOUND');
+
+  const merged: PublishedConfig = {
+    ...baseSnap,
+    settings: liveSettings
+      ? {
+          score_rules: liveSettings.score_rules ?? baseSnap.settings.score_rules,
+          timer_enabled: Boolean(liveSettings.timer_enabled),
+          total_duration_seconds: Number(liveSettings.total_duration_seconds ?? baseSnap.settings.total_duration_seconds),
+          lesson_timer_seconds: liveSettings.lesson_timer_seconds ?? baseSnap.settings.lesson_timer_seconds,
+          level_timer_seconds: liveSettings.level_timer_seconds ?? baseSnap.settings.level_timer_seconds,
+          bonus_seconds_per_level: Number(liveSettings.bonus_seconds_per_level ?? 0),
+          lessons_mandatory: Boolean(liveSettings.lessons_mandatory),
+          allow_skip_lessons: Boolean(liveSettings.allow_skip_lessons),
+          rewards_enabled: Boolean(liveSettings.rewards_enabled),
+        }
+      : baseSnap.settings,
+    blocks:
+      liveBlocks && liveBlocks.length > 0
+        ? liveBlocks.map((b: any) => ({
+            command_type: b.command_type,
+            category: b.category,
+            label: b.label,
+            description: b.description,
+            color: b.color,
+            icon: b.icon,
+            params: b.params ?? [],
+            enabled: Boolean(b.enabled),
+            position: Number(b.position ?? 1),
+          }))
+        : baseSnap.blocks,
+  };
+
   if (configCache.size > 20) configCache.clear();
-  configCache.set(version, snap);
-  return snap;
+  configCache.set(version, { snap: merged, expiresAt: now + 2000 });
+  return merged;
+}
+
+export function clearConfigCache(): void {
+  configCache.clear();
 }
 
 export async function latestConfigVersion(): Promise<number> {

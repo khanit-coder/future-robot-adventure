@@ -92,7 +92,9 @@ class SoundEffectsEngine {
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.05);
-    } catch {}
+    } catch {
+      // Ignore AudioContext errors
+    }
   }
 
   /** Robot walking servo step */
@@ -112,7 +114,9 @@ class SoundEffectsEngine {
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.07);
-    } catch {}
+    } catch {
+      // Ignore AudioContext errors
+    }
   }
 
   /** Robot jump whoosh */
@@ -132,7 +136,9 @@ class SoundEffectsEngine {
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.15);
-    } catch {}
+    } catch {
+      // Ignore AudioContext errors
+    }
   }
 
   /** Crystal / gem pickup chime */
@@ -155,7 +161,9 @@ class SoundEffectsEngine {
         osc.start(start);
         osc.stop(start + 0.18);
       });
-    } catch {}
+    } catch {
+      // Ignore AudioContext errors
+    }
   }
 
   /** Power generator activated */
@@ -178,7 +186,9 @@ class SoundEffectsEngine {
         osc.start(start);
         osc.stop(start + 0.22);
       });
-    } catch {}
+    } catch {
+      // Ignore AudioContext errors
+    }
   }
 
   /** Mission victory fanfare */
@@ -207,7 +217,9 @@ class SoundEffectsEngine {
         osc.start(start);
         osc.stop(start + item.d);
       });
-    } catch {}
+    } catch {
+      // Ignore AudioContext errors
+    }
   }
 
   /** Collision, void, or mission failure bonk */
@@ -227,7 +239,9 @@ class SoundEffectsEngine {
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.25);
-    } catch {}
+    } catch {
+      // Ignore AudioContext errors
+    }
   }
 
   /** Heart lost sound */
@@ -250,7 +264,9 @@ class SoundEffectsEngine {
         osc.start(start);
         osc.stop(start + 0.16);
       });
-    } catch {}
+    } catch {
+      // Ignore AudioContext errors
+    }
   }
 }
 

@@ -1,27 +1,42 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { Download, Share2, Sparkles, Home, CheckCircle2 } from 'lucide-react';
+import { Download, Share2, Sparkles, Home, CheckCircle2, Palette, Type } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { currentLang } from '@/i18n/config';
+import { cn } from '@/utils/cn';
 import {
+  CARD_FONTS,
+  CARD_THEMES,
   COLLEGE_NAME_TH,
   COLLEGE_NAME_EN,
   FACULTY_NAME_TH,
   FACULTY_NAME_EN,
   parseCardParams,
   renderShareCardToDataUrl,
+  type CardFontId,
+  type CardThemeId,
 } from './cardCanvas';
 
 export function CardDownloadPage() {
   const location = useLocation();
   const uiLang = currentLang();
-  const cardData = useMemo(() => {
-    const parsed = parseCardParams(location.search);
-    return { ...parsed, lang: uiLang };
-  }, [location.search, uiLang]);
+  const baseParsed = useMemo(() => parseCardParams(location.search), [location.search]);
+
+  const [selectedTheme, setSelectedTheme] = useState<CardThemeId>(baseParsed.theme ?? 'cyber');
+  const [selectedFont, setSelectedFont] = useState<CardFontId>(baseParsed.fontStyle ?? 'modern');
+
+  const cardData = useMemo(
+    () => ({
+      ...baseParsed,
+      lang: uiLang,
+      theme: selectedTheme,
+      fontStyle: selectedFont,
+    }),
+    [baseParsed, uiLang, selectedTheme, selectedFont],
+  );
 
   const [dataUrl, setDataUrl] = useState<string>('');
   const [downloaded, setDownloaded] = useState(false);
@@ -123,6 +138,58 @@ export function CardDownloadPage() {
                 />
               </div>
             )}
+
+            {/* Mobile Theme & Font Switcher */}
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-3.5 space-y-3 text-left">
+              <div className="space-y-1.5">
+                <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-sky-300">
+                  <Palette className="h-3.5 w-3.5" />
+                  {isTh ? 'เปลี่ยนธีมการ์ด' : 'Card Theme'}
+                </p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {CARD_THEMES.map((thm) => (
+                    <button
+                      key={thm.id}
+                      type="button"
+                      onClick={() => setSelectedTheme(thm.id)}
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-extrabold transition-all cursor-pointer',
+                        selectedTheme === thm.id
+                          ? 'border-sky-400 bg-sky-500/20 text-white'
+                          : 'border-slate-800 bg-slate-900 text-slate-300',
+                      )}
+                    >
+                      <span className={cn('h-3 w-3 rounded-full bg-gradient-to-br shrink-0', thm.swatch)} />
+                      <span className="truncate">{isTh ? thm.labelTh : thm.labelEn}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-amber-300">
+                  <Type className="h-3.5 w-3.5" />
+                  {isTh ? 'เปลี่ยนฟอนต์ตัวอักษร' : 'Font Style'}
+                </p>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {CARD_FONTS.map((fnt) => (
+                    <button
+                      key={fnt.id}
+                      type="button"
+                      onClick={() => setSelectedFont(fnt.id)}
+                      className={cn(
+                        'rounded-xl border px-2 py-1.5 text-[11px] font-extrabold transition-all cursor-pointer text-center',
+                        selectedFont === fnt.id
+                          ? 'border-amber-400 bg-amber-500/20 text-amber-200'
+                          : 'border-slate-800 bg-slate-900 text-slate-300',
+                      )}
+                    >
+                      {isTh ? fnt.labelTh : fnt.labelEn}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
 
             <div className="space-y-2.5 pt-1">
               <Button
