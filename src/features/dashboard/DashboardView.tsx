@@ -342,8 +342,8 @@ export function DashboardView({
       </main>
 
       {/* Bottom Section: Real-Time Hall of Fame & Recent Achievements */}
-      <footer className="grid gap-4 lg:grid-cols-12" data-testid="dashboard-hall-of-fame">
-        {showLeaderboard && (
+      <footer className="grid gap-4 lg:grid-cols-12 shrink-0" data-testid="dashboard-hall-of-fame">
+        {showLeaderboard && mode !== 'HALL_OF_FAME' && (
           <section
             className={cn(
               'rounded-2xl border p-4 lg:col-span-7',
@@ -471,7 +471,7 @@ export function DashboardView({
         <section
           className={cn(
             'rounded-2xl border p-4',
-            showLeaderboard ? 'lg:col-span-5' : 'lg:col-span-12',
+            showLeaderboard && mode !== 'HALL_OF_FAME' ? 'lg:col-span-5' : 'lg:col-span-12',
             dark ? 'border-slate-800 bg-slate-900/90' : 'border-slate-200 bg-white',
           )}
         >
@@ -718,25 +718,27 @@ function PlanetMapView({
                 {group.length}
               </span>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {group.slice(0, 24).map((p) => {
+            <div className="flex flex-col gap-2 max-h-[46vh] overflow-y-auto pr-1">
+              {group.map((p) => {
                 const av = avatarForPlayer(p.id);
                 return (
                   <div
                     key={p.id}
                     className={cn(
-                      'flex items-center gap-2 rounded-xl border px-2.5 py-1.5',
+                      'flex items-center justify-between gap-2 rounded-xl border px-2.5 py-1.5 transition-transform hover:scale-[1.01]',
                       dark ? 'border-slate-700 bg-slate-800/70' : 'border-slate-200 bg-slate-50',
                     )}
                   >
-                    <RobotIllustration styleName={av.style} color={av.color} size={36} state="idle" />
-                    <div className="min-w-0">
-                      <p className="truncate max-w-[110px] text-xs font-bold">{p.name}</p>
-                      {showSchool && (
-                        <p className="truncate max-w-[110px] text-[10px] opacity-65">{p.school}</p>
-                      )}
+                    <div className="flex items-center gap-2 min-w-0">
+                      <RobotIllustration styleName={av.style} color={av.color} size={34} state="idle" />
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-bold">{p.name}</p>
+                        {showSchool && (
+                          <p className="truncate text-[10px] opacity-65">{p.school}</p>
+                        )}
+                      </div>
                     </div>
-                    {showScores && <span className="text-xs font-extrabold text-amber-400">{p.score}</span>}
+                    {showScores && <span className="text-xs font-extrabold text-amber-400 shrink-0">{p.score}</span>}
                   </div>
                 );
               })}
@@ -787,7 +789,7 @@ function SpotlightView({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 lg:col-span-7">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 lg:col-span-7 max-h-[46vh] overflow-y-auto pr-1">
         {players.slice(0, 16).map((p) => (
           <RobotCard
             key={p.id}
