@@ -1,4 +1,6 @@
-import type { RobotConfig } from '@engine';
+import { useEffect, useState } from 'react';
+import type { RobotAnimationRange, RobotConfig } from '@engine';
+import { BUILTIN_ANIMATIONS } from '@/game-engine/animations/animationConstants';
 import { cn } from '@/utils/cn';
 
 export type RobotVisualState = 'idle' | 'walk' | 'run' | 'jump' | 'turn' | 'wave' | 'celebrate' | 'fail';
@@ -30,16 +32,15 @@ export function RobotIllustration({
 
   if (robot?.kind === 'spritesheet' && robot.sprite_url) {
     return (
-      <div
-        className={cn(
-          'relative inline-flex items-center justify-center overflow-hidden rounded-2xl',
-          animClass,
-          className,
-        )}
-        style={{ width: size, height: size }}
-      >
-        <img src={robot.sprite_url} alt="Robot" className="h-full w-full object-contain" loading="lazy" />
-      </div>
+      <SpritesheetRobotIllustration
+        spriteUrl={robot.sprite_url}
+        frameWidth={robot.frame_width ?? undefined}
+        frameHeight={robot.frame_height ?? undefined}
+        size={size}
+        state={state}
+        animations={robot.animations}
+        className={className}
+      />
     );
   }
 
@@ -147,5 +148,94 @@ export function RobotIllustration({
         </>
       )}
     </svg>
+  );
+}
+
+function SpritesheetRobotIllustration({
+  spriteUrl,
+  frameWidth = 96,
+  frameHeight = 96,
+  size = 84,
+  state = 'idle',
+  animations,
+  className,
+}: {
+  spriteUrl: string;
+  frameWidth?: number;
+  frameHeight?: number;
+  size?: number;
+  state?: RobotVisualState;
+  animations?: Record<string, RobotAnimationRange> | null;
+  className?: string;
+}) {
+  const [imgDimensions, setImgDimensions] = useState<{ w: number; h: number } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const img = new Image();
+    img.src = spriteUrl;
+    img.onload = () => {
+      if (active) {
+        setImgDimensions({ w: img.naturalWidth, h: img.naturalHeight });
+      }
+    };
+    return () => {
+      active = false;
+    };
+  }, [spriteUrl]);
+
+  const anim = animations?.[state] ?? BUILTIN_ANIMATIONS[state] ?? { start: 0, end: 0, frame_rate: 6 };
+  const [frameOffset, setFrameOffset] = useState(0);
+
+  useEffect(() => {
+    const count = Math.max(1, anim.end - anim.start + 1);
+    if (count <= 1) return;
+    const fps = Math.max(1, anim.frame_rate || 6);
+    const intervalMs = Math.round(1000 / fps);
+    const id = window.setInterval(() => {
+      setFrameOffset((prev) => (prev + 1) % count);
+    }, intervalMs);
+    return () => window.clearInterval(id);
+  }, [anim.start, anim.end, anim.frame_rate]);
+
+  const currentFrame = anim.start + (anim.end > anim.start ? frameOffset % (anim.end - anim.start + 1) : 0);
+
+  if (!imgDimensions || imgDimensions.w === 0 || imgDimensions.h === 0) {
+    return (
+      <div
+        className={cn('relative inline-flex items-center justify-center overflow-hidden rounded-2xl bg-slate-900/30', className)}
+        style={{ width: size, height: size }}
+      >
+        <img src={spriteUrl} alt="Robot Spritesheet" className="h-full w-full object-contain" />
+      </div>
+    );
+  }
+
+  const fw = frameWidth || 96;
+  const fh = frameHeight || 96;
+  const cols = Math.max(1, Math.floor(imgDimensions.w / fw));
+  const col = currentFrame % cols;
+  const row = Math.floor(currentFrame / cols);
+
+  const scale = size / Math.max(fw, fh);
+  const bgW = imgDimensions.w * scale;
+  const bgH = imgDimensions.h * scale;
+  const posX = -col * fw * scale;
+  const posY = -row * fh * scale;
+
+  return (
+    <div
+      className={cn('relative inline-block overflow-hidden shrink-0 select-none rounded-xl', className)}
+      style={{
+        width: size,
+        height: size,
+        backgroundImage: `url(${spriteUrl})`,
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: `${posX}px ${posY}px`,
+        backgroundSize: `${bgW}px ${bgH}px`,
+        imageRendering: 'pixelated',
+      }}
+      aria-label={`Robot frame ${currentFrame}`}
+    />
   );
 }

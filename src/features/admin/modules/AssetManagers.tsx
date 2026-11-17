@@ -13,6 +13,8 @@ import { RobotIllustration, type RobotVisualState } from '@/components/common/Ro
 import type { AdminWorkspaceData } from '@/features/admin/adminTypes';
 import { ImageUploader } from '@/features/admin/components/ImageUploader';
 import { LocalizedFields } from '@/features/admin/components/LocalizedFields';
+import { SpritesheetTemplateGuide } from './SpritesheetTemplateGuide';
+import { BUILTIN_ANIMATIONS } from '@/game-engine/animations/animationConstants';
 import { getSupabase } from '@/services/supabase/client';
 import { pickLocalized } from '@/utils/localize';
 import { currentLang } from '@/i18n/config';
@@ -37,6 +39,39 @@ export function RobotManagerModule({
   const pick = (r: RobotAssetRow) => {
     setSelectedId(r.id);
     setDraft(structuredClone(r));
+  };
+
+  const handleApplyTemplate = async (
+    url: string,
+    frameWidth: number,
+    frameHeight: number,
+    anims: typeof BUILTIN_ANIMATIONS,
+  ) => {
+    if (!draft) return;
+    const updated = {
+      ...draft,
+      sprite_url: url,
+      frame_width: frameWidth,
+      frame_height: frameHeight,
+      animations: anims,
+    };
+    setDraft(updated);
+    const sb = getSupabase();
+    const { error } = await sb
+      .from('robot_assets')
+      .update({
+        sprite_url: url,
+        frame_width: frameWidth,
+        frame_height: frameHeight,
+        animations: anims,
+      })
+      .eq('id', draft.id);
+    if (error) {
+      toast('error', t('admin:common.saveFailed'), error.message);
+      return;
+    }
+    await onReload();
+    toast('success', 'นำตัวอย่างต้นแบบ Spritesheet ไปใช้เรียบร้อยแล้ว');
   };
 
   const createRobot = async () => {
@@ -221,38 +256,45 @@ export function RobotManagerModule({
               </div>
 
               {draft.kind === 'spritesheet' && (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <Label>Frame Width (px)</Label>
-                    <Input
-                      type="number"
-                      min={16}
-                      value={draft.frame_width ?? 64}
-                      onChange={(e) => setDraft({ ...draft, frame_width: Number(e.target.value) || 64 })}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Frame Height (px)</Label>
-                    <Input
-                      type="number"
-                      min={16}
-                      value={draft.frame_height ?? 64}
-                      onChange={(e) => setDraft({ ...draft, frame_height: Number(e.target.value) || 64 })}
-                    />
-                  </div>
-                  <div className="sm:col-span-2 space-y-1.5">
-                    <Label>Animation Frame Ranges (JSON)</Label>
-                    <Textarea
-                      className="font-mono text-xs"
-                      value={JSON.stringify(draft.animations, null, 2)}
-                      onChange={(e) => {
-                        try {
-                          setDraft({ ...draft, animations: JSON.parse(e.target.value) });
-                        } catch {
-                          // wait until valid JSON
-                        }
-                      }}
-                    />
+                <div className="space-y-4">
+                  <SpritesheetTemplateGuide
+                    currentRobot={draft}
+                    onApplyTemplate={handleApplyTemplate}
+                  />
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label>Frame Width (px)</Label>
+                      <Input
+                        type="number"
+                        min={16}
+                        value={draft.frame_width ?? 96}
+                        onChange={(e) => setDraft({ ...draft, frame_width: Number(e.target.value) || 96 })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Frame Height (px)</Label>
+                      <Input
+                        type="number"
+                        min={16}
+                        value={draft.frame_height ?? 96}
+                        onChange={(e) => setDraft({ ...draft, frame_height: Number(e.target.value) || 96 })}
+                      />
+                    </div>
+                    <div className="sm:col-span-2 space-y-1.5">
+                      <Label>Animation Frame Ranges (JSON)</Label>
+                      <Textarea
+                        className="font-mono text-xs"
+                        value={JSON.stringify(draft.animations, null, 2)}
+                        onChange={(e) => {
+                          try {
+                            setDraft({ ...draft, animations: JSON.parse(e.target.value) });
+                          } catch {
+                            // wait until valid JSON
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               )}
