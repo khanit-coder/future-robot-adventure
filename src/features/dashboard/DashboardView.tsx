@@ -23,7 +23,7 @@ import type { DashboardPlayer, DashboardSnapshot } from '@/services/api/publicAp
 import type { ConnectionState } from '@/services/realtime/liveChannel';
 import { cn } from '@/utils/cn';
 import { formatDuration, pickLocalized } from '@/utils/localize';
-import { RobotCard } from './RobotCard';
+import { RobotCard, type DashboardTheme } from './RobotCard';
 import { avatarForPlayer } from './avatar';
 
 type ExtendedDashboardMode = DashboardMode | 'HALL_OF_FAME';
@@ -130,7 +130,8 @@ export function DashboardView({
   const eventTitle = settings ? pickLocalized(settings.event_title, lang, fallbackLang) : '';
   const collegeName = settings ? pickLocalized(settings.college_name, lang, fallbackLang) : '';
 
-  const themeClass = THEME_CLASSES[dashSettings?.theme ?? 'space'] ?? THEME_CLASSES.space;
+  const activeTheme = dashSettings?.theme ?? 'space';
+  const themeClass = THEME_CLASSES[activeTheme] ?? THEME_CLASSES.space;
 
   return (
     <div
@@ -178,10 +179,10 @@ export function DashboardView({
           )}
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-sky-400">{collegeName}</span>
+              <span className={cn('text-xs font-bold uppercase tracking-wider', activeTheme === 'space' ? 'text-sky-300 drop-shadow-[0_0_8px_rgba(56,189,248,0.4)]' : 'text-sky-400')}>{collegeName}</span>
               {eventTitle && <span className="text-xs text-slate-400">• {eventTitle}</span>}
             </div>
-            <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">{gameTitle}</h1>
+            <h1 className={cn('text-xl font-extrabold tracking-tight sm:text-2xl', activeTheme === 'space' && 'text-sky-200 drop-shadow-[0_0_12px_rgba(56,189,248,0.5)] font-black')}>{gameTitle}</h1>
           </div>
         </div>
 
@@ -192,6 +193,7 @@ export function DashboardView({
               label={t('dashboard:onlinePlayers')}
               value={onlineIds.size || players.length}
               dark={dark}
+              theme={activeTheme}
             />
           )}
           <StatPill
@@ -199,12 +201,14 @@ export function DashboardView({
             label={t('dashboard:activePlayers')}
             value={activeCount}
             dark={dark}
+            theme={activeTheme}
           />
           <StatPill
             icon={<CheckCircle2 className="h-4 w-4 text-amber-400" />}
             label={t('dashboard:finishedPlayers')}
             value={finishedCount}
             dark={dark}
+            theme={activeTheme}
           />
 
           {/* Mode tabs */}
@@ -277,6 +281,7 @@ export function DashboardView({
             showSchool={showSchool}
             showScores={showScores}
             dark={dark}
+            theme={activeTheme}
           />
         ) : mode === 'GRID' ? (
           <div className="space-y-3">
@@ -298,6 +303,7 @@ export function DashboardView({
                   animationsEnabled={animationsEnabled}
                   overrideState={robotOverrides[p.id]}
                   dark={dark}
+                  theme={activeTheme}
                 />
               ))}
             </div>
@@ -329,6 +335,7 @@ export function DashboardView({
             showSchool={showSchool}
             showScores={showScores}
             dark={dark}
+            theme={activeTheme}
           />
         ) : (
           <SpotlightView
@@ -337,6 +344,7 @@ export function DashboardView({
             totalLevels={snapshot.total_levels}
             overrideState={robotOverrides[players[spotlightIndex % players.length]?.id]}
             dark={dark}
+            theme={activeTheme}
           />
         )}
       </main>
@@ -509,16 +517,19 @@ function HallOfFameFullView({
   showSchool,
   showScores,
   dark,
+  theme = 'space',
 }: {
   players: DashboardPlayer[];
   totalLevels: number;
   showSchool: boolean;
   showScores: boolean;
   dark: boolean;
+  theme?: string;
 }) {
   const { t } = useTranslation('dashboard');
   const top3 = players.slice(0, 3);
   const rest = players.slice(3, 15);
+  const isCyber = theme === 'space';
 
   return (
     <div className="space-y-6">
@@ -536,10 +547,16 @@ function HallOfFameFullView({
               className={cn(
                 'flex flex-col items-center rounded-3xl border p-6 text-center transition-all shadow-xl',
                 isFirst
-                  ? 'border-2 border-amber-400 bg-gradient-to-b from-amber-500/20 via-slate-900/95 to-slate-900 md:-translate-y-3'
+                  ? isCyber
+                    ? 'border-2 border-amber-400 bg-gradient-to-b from-amber-500/25 via-slate-900/95 to-slate-950 shadow-[0_0_35px_rgba(251,191,36,0.4)] md:-translate-y-3'
+                    : 'border-2 border-amber-400 bg-gradient-to-b from-amber-500/20 via-slate-900/95 to-slate-900 md:-translate-y-3'
                   : isSecond
-                    ? 'border-slate-300/60 bg-slate-900/90'
-                    : 'border-amber-700/60 bg-slate-900/90',
+                    ? isCyber
+                      ? 'border-2 border-cyan-400/80 bg-slate-900/90 shadow-[0_0_20px_rgba(34,211,238,0.25)]'
+                      : 'border-slate-300/60 bg-slate-900/90'
+                    : isCyber
+                      ? 'border-2 border-amber-600/80 bg-slate-900/90 shadow-[0_0_20px_rgba(217,119,6,0.25)]'
+                      : 'border-amber-700/60 bg-slate-900/90',
                 !dark && !isFirst && 'bg-white text-slate-900',
               )}
             >
@@ -547,7 +564,7 @@ function HallOfFameFullView({
                 className={cn(
                   'mb-2 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-black',
                   isFirst
-                    ? 'bg-amber-400 text-slate-950'
+                    ? 'bg-amber-400 text-slate-950 shadow-[0_0_12px_rgba(251,191,36,0.5)]'
                     : isSecond
                       ? 'bg-slate-300 text-slate-950'
                       : 'bg-amber-700 text-white',
@@ -564,14 +581,39 @@ function HallOfFameFullView({
                 state="celebrate"
               />
 
-              <h3 className={cn('mt-3 font-black truncate max-w-full', isFirst ? 'text-2xl' : 'text-xl')}>
+              <h3
+                className={cn(
+                  'mt-3 font-black truncate max-w-full',
+                  isFirst ? 'text-2xl' : 'text-xl',
+                  isCyber && isFirst && 'text-amber-300 drop-shadow-[0_0_12px_rgba(251,191,36,0.6)]',
+                  isCyber && !isFirst && 'text-sky-200 drop-shadow-[0_0_8px_rgba(56,189,248,0.4)]',
+                )}
+              >
                 {p.name}
               </h3>
-              {showSchool && <p className="text-xs opacity-75 truncate max-w-full">{p.school}</p>}
+              {showSchool && (
+                <p
+                  className={cn(
+                    'text-xs truncate max-w-full mt-0.5',
+                    isCyber
+                      ? 'border border-sky-400/30 bg-sky-500/10 text-sky-200/90 rounded-md px-2 py-0.5 font-medium'
+                      : 'opacity-75',
+                  )}
+                >
+                  {p.school}
+                </p>
+              )}
 
               <div className="mt-3 flex flex-wrap items-center justify-center gap-3 text-sm font-extrabold">
                 {showScores && (
-                  <span className="rounded-xl bg-amber-400/20 px-3 py-1 text-amber-300">
+                  <span
+                    className={cn(
+                      'rounded-xl px-3 py-1 font-mono',
+                      isCyber
+                        ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40 shadow-[0_0_10px_rgba(245,158,11,0.3)]'
+                        : 'bg-amber-400/20 text-amber-300',
+                    )}
+                  >
                     <Trophy className="mr-1 inline h-4 w-4" />
                     {p.score} {t('pts')}
                   </span>
@@ -655,23 +697,30 @@ function StatPill({
   label,
   value,
   dark,
+  theme = 'space',
 }: {
   icon: React.ReactNode;
   label: string;
   value: number;
   dark: boolean;
+  theme?: string;
 }) {
+  const isCyber = theme === 'space';
   return (
     <div
       className={cn(
-        'flex items-center gap-2 rounded-xl border px-3 py-1.5',
-        dark ? 'border-slate-700 bg-slate-800/70' : 'border-slate-200 bg-slate-50',
+        'flex items-center gap-2 rounded-xl border px-3 py-1.5 transition-all',
+        isCyber
+          ? 'border-sky-500/35 bg-slate-900/80 shadow-[0_0_12px_rgba(56,189,248,0.15)] text-white'
+          : dark
+            ? 'border-slate-700 bg-slate-800/70 text-white'
+            : 'border-slate-200 bg-slate-50 text-slate-900',
       )}
     >
       {icon}
       <div>
         <p className="text-[10px] font-bold uppercase opacity-70">{label}</p>
-        <p className="text-base font-extrabold leading-none">{value}</p>
+        <p className={cn('text-base font-extrabold leading-none', isCyber && 'text-sky-300 font-mono drop-shadow-[0_0_8px_rgba(56,189,248,0.5)]')}>{value}</p>
       </div>
     </div>
   );
@@ -683,13 +732,16 @@ function PlanetMapView({
   showSchool,
   showScores,
   dark,
+  theme = 'space',
 }: {
   players: DashboardPlayer[];
   totalLevels: number;
   showSchool: boolean;
   showScores: boolean;
   dark: boolean;
+  theme?: string;
 }) {
+  const isCyber = theme === 'space';
   const zones = [
     { key: 'orbit-0', label: 'Training Orbit', color: '#38bdf8', min: 0, max: 2 },
     { key: 'orbit-1', label: 'Energy Planet', color: '#f59e0b', min: 3, max: 5 },
@@ -706,13 +758,17 @@ function PlanetMapView({
             key={z.key}
             className={cn(
               'rounded-3xl border p-4 space-y-3',
-              dark ? 'border-slate-800 bg-slate-900/80' : 'border-slate-200 bg-white',
+              isCyber
+                ? 'border-sky-500/35 bg-slate-900/85 shadow-[0_0_15px_rgba(56,189,248,0.12)]'
+                : dark
+                  ? 'border-slate-800 bg-slate-900/80'
+                  : 'border-slate-200 bg-white',
             )}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="h-4 w-4 rounded-full" style={{ backgroundColor: z.color }} />
-                <h3 className="font-extrabold text-sm">{z.label}</h3>
+                <h3 className={cn('font-extrabold text-sm', isCyber && 'text-sky-200')}>{z.label}</h3>
               </div>
               <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-xs font-bold text-white">
                 {group.length}
@@ -726,19 +782,23 @@ function PlanetMapView({
                     key={p.id}
                     className={cn(
                       'flex items-center justify-between gap-2 rounded-xl border px-2.5 py-1.5 transition-transform hover:scale-[1.01]',
-                      dark ? 'border-slate-700 bg-slate-800/70' : 'border-slate-200 bg-slate-50',
+                      isCyber
+                        ? 'border-sky-500/25 bg-slate-800/80'
+                        : dark
+                          ? 'border-slate-700 bg-slate-800/70'
+                          : 'border-slate-200 bg-slate-50',
                     )}
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <RobotIllustration styleName={av.style} color={av.color} size={34} state="idle" />
                       <div className="min-w-0">
-                        <p className="truncate text-xs font-bold">{p.name}</p>
+                        <p className={cn('truncate text-xs font-bold', isCyber && 'text-sky-200')}>{p.name}</p>
                         {showSchool && (
                           <p className="truncate text-[10px] opacity-65">{p.school}</p>
                         )}
                       </div>
                     </div>
-                    {showScores && <span className="text-xs font-extrabold text-amber-400 shrink-0">{p.score}</span>}
+                    {showScores && <span className={cn('text-xs font-extrabold text-amber-400 shrink-0', isCyber && 'font-mono')}>{p.score}</span>}
                   </div>
                 );
               })}
@@ -756,21 +816,28 @@ function SpotlightView({
   totalLevels,
   overrideState,
   dark,
+  theme = 'space',
 }: {
   player: DashboardPlayer;
   players: DashboardPlayer[];
   totalLevels: number;
   overrideState?: RobotVisualState;
   dark: boolean;
+  theme?: string;
 }) {
   if (!player) return null;
   const av = avatarForPlayer(player.id);
+  const isCyber = theme === 'space';
   return (
     <div className="grid gap-4 lg:grid-cols-12 items-center">
       <div
         className={cn(
           'flex flex-col items-center rounded-3xl border p-8 text-center lg:col-span-5',
-          dark ? 'border-slate-800 bg-slate-900/90' : 'border-slate-200 bg-white',
+          isCyber
+            ? 'border-sky-500/40 bg-slate-900/90 shadow-[0_0_25px_rgba(56,189,248,0.2)]'
+            : dark
+              ? 'border-slate-800 bg-slate-900/90'
+              : 'border-slate-200 bg-white',
         )}
       >
         <RobotIllustration
@@ -779,10 +846,10 @@ function SpotlightView({
           size={180}
           state={overrideState ?? (player.status === 'FINISHED' ? 'celebrate' : 'wave')}
         />
-        <h2 className="mt-4 text-3xl font-extrabold">{player.name}</h2>
+        <h2 className={cn('mt-4 text-3xl font-extrabold', isCyber && 'text-sky-200 drop-shadow-[0_0_12px_rgba(56,189,248,0.5)] font-black')}>{player.name}</h2>
         <p className="text-base opacity-75">{player.school}</p>
         <div className="mt-4 flex gap-4 text-lg font-extrabold">
-          <span className="text-amber-400">{player.score} pts</span>
+          <span className={cn('text-amber-400', isCyber && 'font-mono')}>{player.score} pts</span>
           <span className="text-sky-400">
             {player.levels_completed} / {totalLevels}
           </span>
@@ -796,11 +863,12 @@ function SpotlightView({
             player={p}
             totalLevels={totalLevels}
             online
-            robotSize={64}
+            robotSize={56}
             showSchool={false}
             showScore
             animationsEnabled
             dark={dark}
+            theme={theme as DashboardTheme}
           />
         ))}
       </div>
