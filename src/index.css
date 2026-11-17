@@ -29,12 +29,13 @@ html.fra-fullscreen #root {
   overflow: hidden !important;
 }
 
-/* Proportional UI scaling in Fullscreen mode for general landing/dashboard pages; keep crisp compact size in coding workspace */
-html.fra-fullscreen:not(:has(.fra-play-workspace)) {
+/* Proportional UI scaling in Fullscreen mode for general landing/dashboard pages; keep crisp compact size in coding/lessons workspace */
+html.fra-fullscreen:not(:has(.fra-play-workspace)):not(:has(.fra-lessons-workspace)) {
   font-size: clamp(15px, 0.95vw, 18px);
 }
 
-html.fra-fullscreen .fra-play-workspace {
+html.fra-fullscreen .fra-play-workspace,
+html.fra-fullscreen .fra-lessons-workspace {
   font-size: 14.5px;
 }
 

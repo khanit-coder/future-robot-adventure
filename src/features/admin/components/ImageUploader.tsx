@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/stores/toastStore';
 import { adminApi } from '@/services/api/adminApi';
+import { cn } from '@/utils/cn';
 
 interface ImageUploaderProps {
   folder: 'logos' | 'robots' | 'scenes' | 'lessons' | 'rewards' | 'dashboard';
@@ -12,9 +13,17 @@ interface ImageUploaderProps {
   onChange: (url: string | null) => void;
   onPersist?: (url: string | null) => Promise<void> | void;
   label?: string;
+  circular?: boolean;
 }
 
-export function ImageUploader({ folder, value, onChange, onPersist, label }: ImageUploaderProps) {
+export function ImageUploader({
+  folder,
+  value,
+  onChange,
+  onPersist,
+  label,
+  circular = false,
+}: ImageUploaderProps) {
   const { t } = useTranslation('admin');
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -58,7 +67,12 @@ export function ImageUploader({ folder, value, onChange, onPersist, label }: Ima
       {label && <p className="text-sm font-semibold text-slate-700">{label}</p>}
       <div className="flex flex-wrap items-center gap-3">
         {value && (
-          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+          <div
+            className={cn(
+              'relative h-16 w-16 shrink-0 overflow-hidden',
+              circular ? 'rounded-full bg-transparent' : 'rounded-xl border border-slate-200 bg-slate-50',
+            )}
+          >
             <img src={value} alt="" className="h-full w-full object-contain" />
             <button
               type="button"

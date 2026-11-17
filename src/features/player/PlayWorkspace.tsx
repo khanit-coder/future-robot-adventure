@@ -406,7 +406,16 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
               <span className="hidden sm:inline">{t('common:app.home')}</span>
             </Button>
 
-            {settings?.game_logo_url ? (
+            {settings?.college_logo_url ? (
+              <img
+                src={settings.college_logo_url}
+                alt="College Logo"
+                className={cn(
+                  'rounded-full object-contain overflow-hidden bg-transparent shrink-0',
+                  isFullscreen ? 'h-7 w-7' : 'h-9 w-9',
+                )}
+              />
+            ) : settings?.game_logo_url ? (
               <img
                 src={settings.game_logo_url}
                 alt=""

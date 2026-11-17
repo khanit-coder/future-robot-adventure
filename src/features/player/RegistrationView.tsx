@@ -104,8 +104,8 @@ export function RegistrationView() {
           {settings?.college_logo_url && (
             <img
               src={settings.college_logo_url}
-              alt=""
-              className="h-10 w-10 rounded-xl bg-white object-contain p-1"
+              alt="College Logo"
+              className="h-10 w-10 rounded-full object-contain overflow-hidden bg-transparent shrink-0"
             />
           )}
           {settings?.game_logo_url && (

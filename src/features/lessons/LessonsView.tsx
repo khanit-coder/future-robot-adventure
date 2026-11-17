@@ -107,22 +107,40 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
     <div
       className={cn(
         'bg-slate-50 flex flex-col',
-        isFullscreen ? 'h-screen overflow-hidden' : 'min-h-screen',
+        isFullscreen ? 'h-screen max-h-screen overflow-hidden fra-lessons-workspace' : 'min-h-screen',
       )}
     >
       <header className="border-b border-slate-200 bg-white shrink-0">
         <div
           className={cn(
-            'flex flex-wrap items-center justify-between gap-3 px-6 py-3',
-            isFullscreen ? 'w-full max-w-[94vw] mx-auto' : 'mx-auto max-w-6xl',
+            'flex flex-wrap items-center justify-between gap-3',
+            isFullscreen ? 'w-full max-w-[96vw] mx-auto px-4 py-1.5' : 'mx-auto max-w-6xl px-6 py-3',
           )}
         >
           <div className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white">
-              <BookOpen className="h-5 w-5" />
-            </div>
+            {settings?.college_logo_url ? (
+              <img
+                src={settings.college_logo_url}
+                alt="College Logo"
+                className={cn(
+                  'rounded-full object-contain overflow-hidden bg-transparent shrink-0',
+                  isFullscreen ? 'h-8 w-8' : 'h-10 w-10',
+                )}
+              />
+            ) : (
+              <div
+                className={cn(
+                  'flex items-center justify-center rounded-xl bg-indigo-600 text-white shrink-0',
+                  isFullscreen ? 'h-8 w-8' : 'h-10 w-10',
+                )}
+              >
+                <BookOpen className={isFullscreen ? 'h-4 w-4' : 'h-5 w-5'} />
+              </div>
+            )}
             <div>
-              <h1 className="text-base font-extrabold text-slate-900">{t('player:lessons.header')}</h1>
+              <h1 className={cn('font-extrabold text-slate-900', isFullscreen ? 'text-sm' : 'text-base')}>
+                {t('player:lessons.header')}
+              </h1>
               <p className="text-xs font-medium text-slate-500">
                 {t('player:lessons.step', { current: index + 1, total: lessons.length })}
               </p>
@@ -131,13 +149,13 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
 
           <div className="flex items-center gap-2">
             {reviewMode ? (
-              <Button variant="outline" size="sm" onClick={() => setShowLessonReview(false)}>
+              <Button variant="outline" size="sm" onClick={() => setShowLessonReview(false)} className={isFullscreen ? 'h-7 text-xs px-2' : ''}>
                 {t('common:app.back')}
               </Button>
             ) : (
-              <Button variant="outline" size="sm" onClick={() => void resetToHome()}>
-                <Home className="h-4 w-4 text-indigo-600" />
-                {t('common:app.home')}
+              <Button variant="outline" size="sm" onClick={() => void resetToHome()} className={isFullscreen ? 'h-7 text-xs px-2' : ''}>
+                <Home className="h-3.5 w-3.5 text-indigo-600" />
+                <span className="hidden sm:inline">{t('common:app.home')}</span>
               </Button>
             )}
             {!reviewMode && canSkip && (
@@ -147,10 +165,10 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                 disabled={busy}
                 onClick={() => void handleStartAdventure(true)}
                 data-testid="skip-lessons-btn"
-                className="font-extrabold shadow-sm"
+                className={cn('font-extrabold shadow-sm', isFullscreen ? 'h-7 text-xs px-2.5' : '')}
               >
-                <Rocket className="h-4 w-4" />
-                {lang === 'th' ? 'ข้ามเนื้อหาไปเล่นเกมเลย' : t('player:lessons.skipAll')}
+                <Rocket className="h-3.5 w-3.5" />
+                <span>{lang === 'th' ? 'ข้ามเนื้อหาไปเล่นเกมเลย' : t('player:lessons.skipAll')}</span>
               </Button>
             )}
             <SoundToggle />
@@ -160,56 +178,64 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
         </div>
         <div
           className={cn(
-            'px-6 pb-3',
-            isFullscreen ? 'w-full max-w-[94vw] mx-auto' : 'mx-auto max-w-6xl',
+            isFullscreen ? 'w-full max-w-[96vw] mx-auto px-4 pb-1.5' : 'mx-auto max-w-6xl px-6 pb-3',
           )}
         >
-          <Progress value={progressPct} className="h-2.5" />
+          <Progress value={progressPct} className={isFullscreen ? 'h-1.5' : 'h-2.5'} />
         </div>
       </header>
 
       <main
         className={cn(
-          'space-y-5 px-6 py-6',
+          'flex flex-col',
           isFullscreen
-            ? 'flex-1 min-h-0 overflow-y-auto w-full max-w-[94vw] mx-auto'
-            : 'mx-auto max-w-6xl',
+            ? 'flex-1 min-h-0 w-full max-w-[96vw] mx-auto px-4 py-1.5 gap-2 overflow-hidden'
+            : 'space-y-5 px-6 py-6 mx-auto max-w-6xl',
         )}
       >
         {/* Returning Student Quick-Skip Banner */}
         {!reviewMode && isReturningPlayer && (
           <div
-            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-emerald-400 bg-gradient-to-r from-emerald-50 via-teal-50 to-sky-50 px-5 py-3.5 shadow-sm"
+            className={cn(
+              'flex items-center justify-between gap-2 rounded-xl border border-emerald-300 bg-gradient-to-r from-emerald-50 via-teal-50 to-sky-50 shadow-2xs shrink-0',
+              isFullscreen ? 'px-3 py-1' : 'px-4 py-2',
+            )}
             data-testid="returning-player-skip-banner"
           >
-            <div className="space-y-0.5">
-              <p className="text-sm font-extrabold text-emerald-950">
+            <div className="flex items-center gap-1.5 text-xs text-emerald-950 truncate">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white text-[10px] shrink-0">
+                👋
+              </span>
+              <span className="font-extrabold truncate">
                 {lang === 'th'
-                  ? '👋 ยินดีต้อนรับกลับมาอีกครั้ง! คุณใช้ชื่อ โรงเรียน และห้องเดิม'
-                  : '👋 Welcome back! Returning student detected'}
-              </p>
-              <p className="text-xs font-medium text-emerald-800">
+                  ? 'ยินดีต้อนรับกลับมา! คุณใช้ชื่อเดิม'
+                  : 'Welcome back! Returning student detected'}
+              </span>
+              <span className="text-emerald-700 hidden sm:inline text-[11px]">
                 {lang === 'th'
-                  ? 'สามารถกดปุ่มด้านขวาเพื่อข้ามเนื้อหาบทเรียน และเข้าสู่การเล่นเกมได้ทันที!'
-                  : 'You can skip the lessons and jump straight into the game right now!'}
-              </p>
+                  ? '— ข้ามบทเรียนและเริ่มเล่นเกมได้ทันที'
+                  : '— skip lessons and jump straight to game'}
+              </span>
             </div>
             <Button
               variant="success"
-              size="lg"
+              size="sm"
               disabled={busy}
               onClick={() => void handleStartAdventure(true)}
               data-testid="returning-skip-btn"
-              className="font-extrabold shadow-md shrink-0"
+              className={cn(
+                'font-extrabold shadow-xs shrink-0 cursor-pointer',
+                isFullscreen ? 'h-6 text-xs px-2.5' : 'h-7 text-xs px-3',
+              )}
             >
-              <Rocket className="h-4 w-4" />
-              {lang === 'th' ? 'ข้ามเนื้อหา ไปเริ่มเล่นเกมเลย!' : 'Skip Lessons & Play Now!'}
+              <Rocket className="h-3.5 w-3.5" />
+              <span>{lang === 'th' ? 'ข้ามเนื้อหา ไปเริ่มเล่นเกมเลย! ➔' : 'Skip Lessons & Play! ➔'}</span>
             </Button>
           </div>
         )}
 
         {/* Step dots */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={cn('flex items-center shrink-0', isFullscreen ? 'gap-1' : 'flex-wrap gap-2')}>
           {lessons.map((l, i) => {
             const done = lessonsDone.includes(l.id);
             const active = i === index;
@@ -220,36 +246,65 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                 onClick={() => {
                   if (done || i <= lessonsDone.length || reviewMode || canSkip) setIndex(i);
                 }}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all cursor-pointer ${
+                className={cn(
+                  'inline-flex items-center gap-1 rounded-full font-bold transition-all cursor-pointer',
+                  isFullscreen ? 'px-2 py-0.5 text-[11px]' : 'px-3 py-1 text-xs',
                   active
                     ? 'bg-indigo-600 text-white shadow-xs'
                     : done
                       ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                      : 'bg-slate-200 text-slate-600'
-                }`}
+                      : 'bg-slate-200 text-slate-600',
+                )}
               >
-                {done && <CheckCircle2 className="h-3.5 w-3.5" />}
+                {done && <CheckCircle2 className={isFullscreen ? 'h-3 w-3' : 'h-3.5 w-3.5'} />}
                 {i + 1}
               </button>
             );
           })}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-12">
+        <div
+          className={cn(
+            'grid w-full',
+            isFullscreen
+              ? 'grid-cols-1 lg:grid-cols-12 gap-3 flex-1 min-h-0 overflow-hidden'
+              : 'grid-cols-1 lg:grid-cols-12 gap-6',
+          )}
+        >
           {/* Lesson content */}
-          <Card className="lg:col-span-7">
-            <CardContent className="space-y-4 p-6">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <Badge variant={isCurrentDone ? 'success' : 'default'}>
+          <Card
+            className={cn(
+              'lg:col-span-6 xl:col-span-6 flex flex-col',
+              isFullscreen ? 'h-full min-h-0 overflow-hidden' : '',
+            )}
+          >
+            <CardContent
+              className={cn(
+                'flex flex-col',
+                isFullscreen ? 'p-3 space-y-1.5 flex-1 min-h-0 overflow-y-auto' : 'space-y-4 p-6',
+              )}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2 shrink-0">
+                <Badge variant={isCurrentDone ? 'success' : 'default'} className={isFullscreen ? 'text-[11px] py-0 px-2' : ''}>
                   {isCurrentDone
                     ? t('player:lessons.completed')
                     : t('player:lessons.step', { current: index + 1, total: lessons.length })}
                 </Badge>
               </div>
-              <h2 className="text-2xl font-extrabold text-slate-900">
+              <h2
+                className={cn(
+                  'font-extrabold text-slate-900 shrink-0',
+                  isFullscreen ? 'text-lg sm:text-xl' : 'text-2xl',
+                )}
+              >
                 {pickLocalized(lesson.title, lang, fallback)}
               </h2>
-              <p className="text-sm font-semibold text-indigo-700">
+              <p
+                className={cn(
+                  'font-semibold text-indigo-700 shrink-0',
+                  isFullscreen ? 'text-xs' : 'text-sm',
+                )}
+              >
                 {pickLocalized(lesson.summary, lang, fallback)}
               </p>
 
@@ -257,7 +312,10 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                 <img
                   src={lesson.image_url}
                   alt={pickLocalized(lesson.title, lang, fallback)}
-                  className="max-h-60 w-full rounded-2xl border border-slate-200 object-cover"
+                  className={cn(
+                    'w-full rounded-xl border border-slate-200 object-cover shrink-0',
+                    isFullscreen ? 'max-h-32' : 'max-h-60',
+                  )}
                 />
               )}
 
@@ -266,28 +324,40 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                   href={lesson.video_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100"
+                  className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 shrink-0"
                 >
-                  <Play className="h-4 w-4" />
+                  <Play className="h-3.5 w-3.5" />
                   {lesson.video_url}
                 </a>
               )}
 
-              <MarkdownText text={pickLocalized(lesson.body, lang, fallback)} />
+              <div className={cn('prose prose-slate max-w-none text-slate-700', isFullscreen ? 'text-xs leading-relaxed' : 'text-sm')}>
+                <MarkdownText text={pickLocalized(lesson.body, lang, fallback)} />
+              </div>
             </CardContent>
           </Card>
 
           {/* Interactive block demonstration */}
-          <Card className="lg:col-span-5 bg-slate-900 text-white border-slate-800">
-            <CardContent className="flex h-full flex-col justify-between space-y-5 p-6">
-              <div>
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-sky-300">
-                  <Sparkles className="h-4 w-4" />
+          <Card
+            className={cn(
+              'lg:col-span-6 xl:col-span-6 bg-slate-900 text-white border-slate-800 flex flex-col',
+              isFullscreen ? 'h-full min-h-0 overflow-hidden' : '',
+            )}
+          >
+            <CardContent
+              className={cn(
+                'flex h-full flex-col justify-between',
+                isFullscreen ? 'p-2.5 space-y-1.5 flex-1 min-h-0 overflow-hidden' : 'space-y-5 p-6',
+              )}
+            >
+              <div className={cn('flex flex-col', isFullscreen ? 'flex-1 min-h-0 overflow-hidden' : '')}>
+                <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-sky-300 shrink-0">
+                  <Sparkles className="h-3.5 w-3.5" />
                   {t('player:lessons.demoTitle')}
                 </div>
 
                 {lesson.demo_program && lesson.demo_program.length > 0 ? (
-                  <div className="mt-3">
+                  <div className={cn('mt-1.5', isFullscreen ? 'flex-1 min-h-0 overflow-hidden flex flex-col' : 'mt-3')}>
                     <InteractiveRobotDemo
                       key={lesson.id}
                       demoProgram={lesson.demo_program}
@@ -295,44 +365,67 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                       fallbackLang={fallback}
                       robotAsset={defaultRobot}
                       blocks={config?.blocks}
+                      compact={isFullscreen}
                     />
                   </div>
                 ) : (
                   <div className="mt-4 flex flex-col items-center justify-center rounded-2xl bg-slate-950/70 p-6 border border-slate-800">
-                    <RobotIllustration robot={defaultRobot} state="wave" size={96} />
-                    <p className="mt-3 text-sm text-slate-400">{t('player:lessons.noDemo')}</p>
+                    <RobotIllustration robot={defaultRobot} state="wave" size={72} />
+                    <p className="mt-2 text-xs text-slate-400">{t('player:lessons.noDemo')}</p>
                   </div>
                 )}
               </div>
 
-              <div className="flex items-center justify-between gap-2 border-t border-slate-800 pt-4">
+              <div
+                className={cn(
+                  'flex items-center justify-between gap-2 border-t border-slate-800 shrink-0',
+                  isFullscreen ? 'pt-1.5' : 'pt-4',
+                )}
+              >
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={() => setIndex((i) => Math.max(0, i - 1))}
                   disabled={index === 0 || busy}
-                  className="border-slate-700 bg-slate-800 text-white hover:bg-slate-700"
+                  className={cn(
+                    'border-slate-700 bg-slate-800 text-white hover:bg-slate-700 cursor-pointer',
+                    isFullscreen ? 'h-7 text-xs px-2.5' : '',
+                  )}
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-3.5 w-3.5" />
                   {t('common:app.previous')}
                 </Button>
 
                 {index < lessons.length - 1 ? (
-                  <Button onClick={() => void handleNextOrDone()} disabled={busy} data-testid="lesson-next">
+                  <Button
+                    size="sm"
+                    onClick={() => void handleNextOrDone()}
+                    disabled={busy}
+                    data-testid="lesson-next"
+                    className={cn('cursor-pointer font-bold', isFullscreen ? 'h-7 text-xs px-3' : '')}
+                  >
                     {t('player:lessons.markDone')}
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-3.5 w-3.5" />
                   </Button>
                 ) : reviewMode ? (
-                  <Button variant="success" onClick={() => setShowLessonReview(false)}>
+                  <Button
+                    variant="success"
+                    size="sm"
+                    onClick={() => setShowLessonReview(false)}
+                    className={cn('cursor-pointer font-bold', isFullscreen ? 'h-7 text-xs px-3' : '')}
+                  >
                     {t('common:app.back')}
                   </Button>
                 ) : (
                   <Button
                     variant="success"
+                    size="sm"
                     disabled={busy}
                     onClick={() => void handleStartAdventure(false)}
                     data-testid="start-adventure"
+                    className={cn('cursor-pointer font-extrabold', isFullscreen ? 'h-7 text-xs px-3' : '')}
                   >
-                    <Rocket className="h-4 w-4" />
+                    <Rocket className="h-3.5 w-3.5" />
                     {busy ? t('player:lessons.starting') : t('player:lessons.startAdventure')}
                   </Button>
                 )}
@@ -343,7 +436,7 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                   variant="success"
                   disabled={busy}
                   onClick={() => void handleStartAdventure(false)}
-                  className="w-full"
+                  className="w-full shrink-0"
                 >
                   <Rocket className="h-4 w-4" />
                   {t('player:lessons.startAdventure')}

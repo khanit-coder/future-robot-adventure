@@ -264,7 +264,8 @@ export function BrandingModule({
         <div className="grid gap-6 sm:grid-cols-2">
           <ImageUploader
             folder="logos"
-            label="College Logo (อัปโหลดแล้วบันทึกอัตโนมัติ)"
+            label="College Logo (วงกลม ไม่มีขอบ - อัปโหลดแล้วบันทึกอัตโนมัติ)"
+            circular
             value={form.college_logo_url}
             onChange={(url) => setForm((f) => ({ ...f, college_logo_url: url }))}
             onPersist={(url) => persistField({ college_logo_url: url })}

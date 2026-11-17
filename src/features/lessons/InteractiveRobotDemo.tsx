@@ -14,6 +14,7 @@ interface InteractiveRobotDemoProps {
   fallbackLang?: Lang;
   robotAsset?: RobotConfig | null;
   blocks?: BlockDefinition[];
+  compact?: boolean;
 }
 
 interface DemoCellKey {
@@ -179,6 +180,7 @@ export function InteractiveRobotDemo({
   fallbackLang = 'en',
   robotAsset,
   blocks = DEFAULT_BLOCKS,
+  compact = false,
 }: InteractiveRobotDemoProps) {
   const stage = useMemo(() => buildDemoStage(demoProgram), [demoProgram]);
 
@@ -394,41 +396,61 @@ export function InteractiveRobotDemo({
   const isTh = lang === 'th';
 
   return (
-    <div className="space-y-3.5" data-testid="interactive-robot-demo">
+    <div className={cn(compact ? 'space-y-2' : 'space-y-3.5')} data-testid="interactive-robot-demo">
       {/* 1. Authentic 2D Game Stage (Matches MissionScene.ts 100%) */}
-      <div className="relative overflow-hidden rounded-2xl border-2 border-sky-500/40 bg-gradient-to-b from-[#0f172a] to-[#1e293b] p-3.5 shadow-xl">
+      <div
+        className={cn(
+          'relative overflow-hidden rounded-xl border border-sky-500/40 bg-gradient-to-b from-[#0f172a] to-[#1e293b] shadow-md',
+          compact ? 'p-2' : 'p-3.5 rounded-2xl border-2 shadow-xl',
+        )}
+      >
         {/* Ambient space stars & planet glow matching MissionScene.ts */}
-        <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-sky-400/15 blur-xl" />
-        <div className="pointer-events-none absolute -bottom-10 -left-8 h-32 w-32 rounded-full bg-indigo-500/15 blur-xl" />
+        <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-sky-400/15 blur-xl" />
+        <div className="pointer-events-none absolute -bottom-10 -left-8 h-28 w-28 rounded-full bg-indigo-500/15 blur-xl" />
 
         {/* Stage Header */}
-        <div className="relative z-10 flex items-center justify-between border-b border-slate-800/90 pb-2">
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-sky-400 shadow-[0_0_8px_#38bdf8]" />
-            <span className="text-xs font-extrabold tracking-wide text-sky-300">
+        <div
+          className={cn(
+            'relative z-10 flex items-center justify-between border-b border-slate-800/90',
+            compact ? 'pb-1' : 'pb-2',
+          )}
+        >
+          <div className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-sky-400 shadow-[0_0_8px_#38bdf8]" />
+            <span
+              className={cn(
+                'font-extrabold tracking-wide text-sky-300',
+                compact ? 'text-[11px]' : 'text-xs',
+              )}
+            >
               {isTh ? 'สนามจำลองภารกิจ (เหมือนสนามจริงในเกม)' : 'Mission Stage Preview'}
             </span>
           </div>
           {reachedGoal ? (
-            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/50 bg-emerald-500/20 px-2.5 py-0.5 text-[11px] font-black text-emerald-300 animate-bounce">
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/50 bg-emerald-500/20 px-2 py-0.5 text-[10px] font-black text-emerald-300 animate-bounce">
               <Sparkles className="h-3 w-3" />
               {isTh ? 'ภารกิจสำเร็จ!' : 'Mission Complete!'}
             </span>
           ) : (
-            <span className="text-[11px] font-semibold text-slate-400">
+            <span
+              className={cn(
+                'font-semibold text-slate-400',
+                compact ? 'text-[10px]' : 'text-[11px]',
+              )}
+            >
               {isTh ? 'เป้าหมาย: วงแหวนสีเขียว' : 'Goal: Green Portal'}
             </span>
           )}
         </div>
 
         {/* 2D Tile Map matching MissionScene.ts */}
-        <div className="relative z-10 my-3 flex items-center justify-center">
+        <div className={cn('relative z-10 flex items-center justify-center', compact ? 'my-1' : 'my-3')}>
           <div
-            className="relative grid gap-1.5"
+            className="relative grid gap-1"
             style={{
               gridTemplateColumns: `repeat(${stage.cols}, minmax(0, 1fr))`,
               width: '100%',
-              maxWidth: `${stage.cols * 58}px`,
+              maxWidth: `${stage.cols * (compact ? 44 : 58)}px`,
             }}
           >
             {Array.from({ length: stage.rows }).map((_, rIdx) =>
@@ -445,30 +467,31 @@ export function InteractiveRobotDemo({
                   <div
                     key={k}
                     className={cn(
-                      'relative aspect-square w-full rounded-xl flex items-center justify-center transition-all',
+                      'relative aspect-square w-full rounded-lg flex items-center justify-center transition-all',
                       isFloor
                         ? 'bg-[#334155] border-[1.5px] border-[#38bdf8]/45 shadow-inner'
                         : 'bg-slate-950/30 border border-slate-800/30 opacity-40',
                     )}
                   >
-                    {/* Hurdle ('H') — Exact orange barrier with yellow border from MissionScene.ts */}
+                    {/* Hurdle ('H') */}
                     {isHurdle && (
-                      <div className="h-3.5 w-4/5 rounded-[5px] bg-[#f97316] border-2 border-[#fef08a] shadow-[0_0_10px_rgba(249,115,22,0.65)]" />
+                      <div className="h-3 w-4/5 rounded-[4px] bg-[#f97316] border-2 border-[#fef08a] shadow-[0_0_10px_rgba(249,115,22,0.65)]" />
                     )}
 
-                    {/* Crystal — Exact yellow diamond with cream inner diamond from MissionScene.ts */}
+                    {/* Crystal */}
                     {hasCrystal && (
-                      <div className="relative flex h-6 w-6 items-center justify-center animate-pulse">
-                        <div className="h-5 w-5 rotate-45 rounded-[2px] bg-[#fde047] border-2 border-[#fef9c3] shadow-[0_0_12px_#fde047]" />
-                        <div className="absolute h-2.5 w-2.5 rotate-45 bg-[#fef9c3]" />
+                      <div className="relative flex h-5 w-5 items-center justify-center animate-pulse">
+                        <div className="h-4 w-4 rotate-45 rounded-[2px] bg-[#fde047] border-2 border-[#fef9c3] shadow-[0_0_12px_#fde047]" />
+                        <div className="absolute h-2 w-2 rotate-45 bg-[#fef9c3]" />
                       </div>
                     )}
 
-                    {/* Generator — Exact purple/green energy node from MissionScene.ts */}
+                    {/* Generator */}
                     {hasGen && (
                       <div
                         className={cn(
-                          'flex h-7 w-7 items-center justify-center rounded-full border-2 transition-all',
+                          'flex items-center justify-center rounded-full border-2 transition-all',
+                          compact ? 'h-5 w-5' : 'h-7 w-7',
                           genActive
                             ? 'bg-[#22c55e] border-[#fef08a] shadow-[0_0_14px_#22c55e]'
                             : 'bg-[#1e293b] border-[#a855f7] shadow-[0_0_8px_#a855f7]',
@@ -476,25 +499,32 @@ export function InteractiveRobotDemo({
                       >
                         <div
                           className={cn(
-                            'h-3 w-3 rounded-full',
+                            'rounded-full',
+                            compact ? 'h-2 w-2' : 'h-3 w-3',
                             genActive ? 'bg-[#fef08a]' : 'bg-[#facc15]',
                           )}
                         />
                       </div>
                     )}
 
-                    {/* Goal ('G') — Exact glowing green target ring + inner circle from MissionScene.ts */}
+                    {/* Goal ('G') */}
                     {isGoal && (
                       <div className="relative flex items-center justify-center">
                         <div
                           className={cn(
-                            'h-8 w-8 rounded-full border-[3px] border-[#4ade80] bg-[#22c55e]/30 transition-transform',
+                            'rounded-full border-[2.5px] border-[#4ade80] bg-[#22c55e]/30 transition-transform',
+                            compact ? 'h-6 w-6' : 'h-8 w-8',
                             reachedGoal
-                              ? 'scale-125 shadow-[0_0_18px_#4ade80]'
+                              ? 'scale-120 shadow-[0_0_16px_#4ade80]'
                               : 'animate-pulse shadow-[0_0_10px_rgba(74,222,128,0.5)]',
                           )}
                         />
-                        <div className="absolute h-3.5 w-3.5 rounded-full bg-[#4ade80]" />
+                        <div
+                          className={cn(
+                            'absolute rounded-full bg-[#4ade80]',
+                            compact ? 'h-2.5 w-2.5' : 'h-3.5 w-3.5',
+                          )}
+                        />
                       </div>
                     )}
                   </div>
@@ -515,17 +545,22 @@ export function InteractiveRobotDemo({
               <div
                 className={cn(
                   'relative flex items-center justify-center transition-transform duration-300',
-                  isJumping && '-translate-y-4 scale-120 drop-shadow-[0_14px_10px_rgba(56,189,248,0.55)]',
+                  isJumping &&
+                    '-translate-y-3 scale-115 drop-shadow-[0_12px_8px_rgba(56,189,248,0.55)]',
                 )}
               >
-                <RobotIllustration robot={robotAsset} state={robotState} size={46} />
-                {/* Exact yellow directional triangle pointer from MissionScene.ts */}
+                <RobotIllustration robot={robotAsset} state={robotState} size={compact ? 36 : 46} />
                 <div
                   className="absolute inset-0 flex items-center justify-center transition-transform duration-300"
                   style={{ transform: `rotate(${robotPos.dir}deg)` }}
                 >
                   <div
-                    className="translate-x-5 h-0 w-0 border-y-[5px] border-y-transparent border-l-[8px] border-l-[#facc15] drop-shadow-[0_0_4px_#0f172a]"
+                    className={cn(
+                      'h-0 w-0 border-y-transparent border-l-[#facc15] drop-shadow-[0_0_4px_#0f172a]',
+                      compact
+                        ? 'translate-x-4 border-y-[4px] border-l-[6px]'
+                        : 'translate-x-5 border-y-[5px] border-l-[8px]',
+                    )}
                   />
                 </div>
               </div>
@@ -535,30 +570,48 @@ export function InteractiveRobotDemo({
       </div>
 
       {/* 2. Authentic Blockly Zelos Workspace & Blocks (Matches BlocklyEditor.tsx 100%) */}
-      <div className="overflow-hidden rounded-2xl border-2 border-slate-200 bg-white text-slate-900 shadow-lg">
+      <div
+        className={cn(
+          'overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-900 shadow-sm flex flex-col min-h-0',
+          compact ? '' : 'rounded-2xl border-2 shadow-lg',
+        )}
+      >
         {/* Top Compile Bar — Identical to PlayWorkspace.tsx */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-3.5 py-2">
-          <div className="flex items-center gap-2">
-            <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-[11px] font-extrabold text-sky-800 border border-sky-200">
+        <div
+          className={cn(
+            'flex items-center justify-between gap-1.5 border-b border-slate-200 bg-slate-50 shrink-0',
+            compact ? 'px-2.5 py-1' : 'flex-wrap px-3.5 py-2 gap-2',
+          )}
+        >
+          <div className="flex items-center gap-1.5">
+            <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-extrabold text-sky-800 border border-sky-200">
               {isTh
                 ? `บล็อกที่ใช้: ${countDemoBlocks(demoProgram)}`
                 : `Blocks: ${countDemoBlocks(demoProgram)}`}
             </span>
-            <span className="text-[11px] font-bold text-slate-500">
+            <span
+              className={cn(
+                'font-bold text-slate-500',
+                compact ? 'text-[10px] hidden sm:inline' : 'text-[11px]',
+              )}
+            >
               {isTh ? 'เรียงต่อกันจากบนลงล่าง' : 'Snap top-to-bottom'}
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <Button
               variant="outline"
               size="sm"
               onClick={resetArena}
               disabled={running && !reachedGoal}
-              className="h-8 px-2.5 text-xs font-bold border-slate-300 text-slate-700 hover:bg-slate-100 cursor-pointer"
+              className={cn(
+                'font-bold border-slate-300 text-slate-700 hover:bg-slate-100 cursor-pointer',
+                compact ? 'h-6 px-2 text-[10px]' : 'h-8 px-2.5 text-xs',
+              )}
             >
-              <RotateCcw className="h-3.5 w-3.5" />
-              {isTh ? 'รีเซ็ตฉาก' : 'Reset'}
+              <RotateCcw className={compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
+              <span>{isTh ? 'รีเซ็ตฉาก' : 'Reset'}</span>
             </Button>
             <Button
               variant="success"
@@ -566,35 +619,69 @@ export function InteractiveRobotDemo({
               onClick={() => void runSimulation()}
               disabled={running}
               data-testid="demo-compile-btn"
-              className="h-8 px-3.5 text-xs font-extrabold tracking-wide shadow-sm cursor-pointer"
+              className={cn(
+                'font-extrabold tracking-wide shadow-xs cursor-pointer',
+                compact ? 'h-6 px-2.5 text-[10px]' : 'h-8 px-3.5 text-xs',
+              )}
             >
-              <Play className="h-3.5 w-3.5 fill-current" />
-              {running ? (isTh ? 'กำลังรัน...' : 'Running...') : 'COMPILE'}
+              <Play className={compact ? 'h-3 w-3 fill-current' : 'h-3.5 w-3.5 fill-current'} />
+              <span>{running ? (isTh ? 'กำลังรัน...' : 'Running...') : 'COMPILE'}</span>
             </Button>
           </div>
         </div>
 
         {/* Workspace Body: Left Mini Category Tray + Right Dotted Blockly Canvas */}
-        <div className="flex min-h-[190px]">
+        <div
+          className={cn(
+            'flex flex-1 min-h-0',
+            compact ? 'min-h-[110px] max-h-[160px]' : 'min-h-[190px]',
+          )}
+        >
           {/* Left Toolbox Category Strip (Matches Blockly Toolbox in index.css) */}
-          <div className="flex w-28 shrink-0 flex-col gap-1.5 border-r border-slate-200 bg-[#f8fafc] p-2 select-none">
-            <div className="flex items-center rounded-lg border-l-[5px] border-[#3b82f6] bg-white px-2 py-1.5 text-[11px] font-bold text-slate-800 shadow-2xs">
+          <div
+            className={cn(
+              'flex shrink-0 flex-col border-r border-slate-200 bg-[#f8fafc] select-none',
+              compact ? 'w-22 gap-1 p-1.5' : 'w-28 gap-1.5 p-2',
+            )}
+          >
+            <div
+              className={cn(
+                'flex items-center rounded-md border-l-[4px] border-[#3b82f6] bg-white text-slate-800 shadow-2xs font-bold',
+                compact
+                  ? 'px-1.5 py-1 text-[10px]'
+                  : 'px-2 py-1.5 text-[11px] rounded-lg border-l-[5px]',
+              )}
+            >
               {isTh ? 'การเคลื่อนที่' : 'Movement'}
             </div>
-            <div className="flex items-center rounded-lg border-l-[5px] border-[#f97316] bg-white px-2 py-1.5 text-[11px] font-bold text-slate-800 shadow-2xs">
+            <div
+              className={cn(
+                'flex items-center rounded-md border-l-[4px] border-[#f97316] bg-white text-slate-800 shadow-2xs font-bold',
+                compact
+                  ? 'px-1.5 py-1 text-[10px]'
+                  : 'px-2 py-1.5 text-[11px] rounded-lg border-l-[5px]',
+              )}
+            >
               {isTh ? 'การกระทำ' : 'Actions'}
             </div>
-            <div className="flex items-center rounded-lg border-l-[5px] border-[#14b8a6] bg-white px-2 py-1.5 text-[11px] font-bold text-slate-800 shadow-2xs">
+            <div
+              className={cn(
+                'flex items-center rounded-md border-l-[4px] border-[#14b8a6] bg-white text-slate-800 shadow-2xs font-bold',
+                compact
+                  ? 'px-1.5 py-1 text-[10px]'
+                  : 'px-2 py-1.5 text-[11px] rounded-lg border-l-[5px]',
+              )}
+            >
               {isTh ? 'ตรรกะ' : 'Logic'}
             </div>
           </div>
 
           {/* Right Dotted Canvas with Authentic Zelos Puzzle Blocks */}
           <div
-            className="flex-1 overflow-x-auto p-4"
+            className={cn('flex-1 overflow-x-auto overflow-y-auto', compact ? 'p-2' : 'p-4')}
             style={{
               backgroundImage: 'radial-gradient(#cbd5e1 1.25px, transparent 1.25px)',
-              backgroundSize: '20px 20px',
+              backgroundSize: '18px 18px',
               backgroundColor: '#ffffff',
             }}
           >
@@ -608,6 +695,7 @@ export function InteractiveRobotDemo({
                   lang={lang}
                   fallbackLang={fallbackLang}
                   blocks={blocks}
+                  compact={compact}
                 />
               ))}
             </div>
@@ -647,6 +735,7 @@ function ZelosPuzzleBlock({
   lang,
   fallbackLang,
   blocks,
+  compact = false,
 }: {
   cmd: Command;
   blockKey: string;
@@ -654,6 +743,7 @@ function ZelosPuzzleBlock({
   lang: Lang;
   fallbackLang: Lang;
   blocks: BlockDefinition[];
+  compact?: boolean;
 }) {
   const def = findBlockDef(cmd.type, blocks);
   const label = pickLocalized(def.label, lang, fallbackLang, cmd.type);
@@ -673,18 +763,24 @@ function ZelosPuzzleBlock({
         {/* Top Header of C-Block */}
         <div
           className={cn(
-            'relative flex items-center gap-2.5 rounded-t-xl rounded-br-xl px-4 py-2.5 text-sm font-extrabold text-white shadow-sm',
+            'relative flex items-center rounded-t-xl rounded-br-xl font-extrabold text-white shadow-sm',
+            compact ? 'gap-1.5 px-2.5 py-1.5 text-xs' : 'gap-2.5 px-4 py-2.5 text-sm',
             isActive && 'ring-3 ring-[#facc15]',
           )}
-          style={{ backgroundColor: color, minWidth: '150px' }}
+          style={{ backgroundColor: color, minWidth: compact ? '120px' : '150px' }}
         >
           {/* Top female puzzle notch indentation */}
           <div
-            className="absolute -top-[1px] left-5 h-1.5 w-5 rounded-b-md bg-white/90"
+            className="absolute -top-[1px] left-4 h-1.5 w-4 rounded-b-md bg-white/90"
             aria-hidden="true"
           />
           <span className="tracking-wide drop-shadow-2xs">{label}</span>
-          <span className="inline-flex h-7 min-w-[34px] items-center justify-center rounded-full bg-white px-2.5 font-sans text-sm font-extrabold text-slate-900 shadow-inner">
+          <span
+            className={cn(
+              'inline-flex items-center justify-center rounded-full bg-white font-sans font-extrabold text-slate-900 shadow-inner',
+              compact ? 'h-5 min-w-[24px] px-1.5 text-xs' : 'h-7 min-w-[34px] px-2.5 text-sm',
+            )}
+          >
             {times}
           </span>
         </div>
@@ -692,7 +788,7 @@ function ZelosPuzzleBlock({
         {/* Middle C-Mouth Spine + Inner Statement Stack */}
         <div className="flex items-stretch">
           <div
-            className={cn('w-5 shrink-0', isActive && 'ring-l-3 ring-[#facc15]')}
+            className={cn(compact ? 'w-4' : 'w-5', 'shrink-0', isActive && 'ring-l-3 ring-[#facc15]')}
             style={{ backgroundColor: color }}
           />
           <div className="flex flex-col items-start py-0.5 pl-0.5">
@@ -705,6 +801,7 @@ function ZelosPuzzleBlock({
                 lang={lang}
                 fallbackLang={fallbackLang}
                 blocks={blocks}
+                compact={compact}
               />
             ))}
           </div>
@@ -713,14 +810,15 @@ function ZelosPuzzleBlock({
         {/* Bottom C-Jaw Foot */}
         <div
           className={cn(
-            'relative h-4 w-28 rounded-b-xl rounded-tr-lg shadow-sm',
+            'relative rounded-b-xl rounded-tr-lg shadow-sm',
+            compact ? 'h-3 w-20' : 'h-4 w-28',
             isActive && 'ring-3 ring-[#facc15]',
           )}
           style={{ backgroundColor: color }}
         >
           {/* Bottom male puzzle tab */}
           <div
-            className="absolute -bottom-1.5 left-5 h-1.5 w-5 rounded-b-md"
+            className="absolute -bottom-1.5 left-4 h-1.5 w-4 rounded-b-md"
             style={{ backgroundColor: color }}
             aria-hidden="true"
           />
@@ -739,30 +837,36 @@ function ZelosPuzzleBlock({
   return (
     <div
       className={cn(
-        'relative flex items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-extrabold text-white shadow-sm select-none transition-all -mt-[3px] first:mt-0',
+        'relative flex items-center rounded-xl font-extrabold text-white shadow-sm select-none transition-all -mt-[3px] first:mt-0',
+        compact ? 'gap-1.5 px-2.5 py-1.5 text-xs' : 'gap-2.5 px-4 py-2.5 text-sm',
         isActive
           ? 'z-20 scale-[1.03] ring-4 ring-[#facc15] shadow-md'
           : ' border border-black/10',
       )}
-      style={{ backgroundColor: color, minWidth: '142px' }}
+      style={{ backgroundColor: color, minWidth: compact ? '110px' : '142px' }}
     >
       {/* Top puzzle female indentation */}
       <div
-        className="absolute -top-[1px] left-5 h-1.5 w-5 rounded-b-md bg-white/85"
+        className="absolute -top-[1px] left-4 h-1.5 w-4 rounded-b-md bg-white/85"
         aria-hidden="true"
       />
 
       <span className="tracking-wide drop-shadow-2xs">{label}</span>
 
       {paramValue !== null && (
-        <span className="inline-flex h-7 min-w-[34px] items-center justify-center rounded-full bg-white px-2.5 font-sans text-sm font-extrabold text-slate-900 shadow-inner">
+        <span
+          className={cn(
+            'inline-flex items-center justify-center rounded-full bg-white font-sans font-extrabold text-slate-900 shadow-inner',
+            compact ? 'h-5 min-w-[22px] px-1.5 text-xs' : 'h-7 min-w-[34px] px-2.5 text-sm',
+          )}
+        >
           {paramValue}
         </span>
       )}
 
       {/* Bottom puzzle male tab */}
       <div
-        className="absolute -bottom-1.5 left-5 z-10 h-1.5 w-5 rounded-b-md"
+        className="absolute -bottom-1.5 left-4 z-10 h-1.5 w-4 rounded-b-md"
         style={{ backgroundColor: color }}
         aria-hidden="true"
       />

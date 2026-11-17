@@ -170,8 +170,8 @@ export function DashboardView({
           {settings?.college_logo_url && (
             <img
               src={settings.college_logo_url}
-              alt=""
-              className="h-12 w-12 rounded-xl bg-white object-contain p-1"
+              alt="College Logo"
+              className="h-12 w-12 rounded-full object-contain overflow-hidden bg-transparent shrink-0"
             />
           )}
           {settings?.game_logo_url && (
