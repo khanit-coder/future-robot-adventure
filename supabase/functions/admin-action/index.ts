@@ -3,6 +3,7 @@ import {
   HttpError,
   adminClient,
   audit,
+  clearConfigCache,
   emitEvents,
   isUuid,
   requireAdmin,
@@ -216,6 +217,35 @@ Deno.serve(
         const { data: pubUrl } = db.storage.from('game-assets').getPublicUrl(path);
         await audit(admin, 'UPLOAD_ASSET', 'storage', path, { folder, contentType, size: bytes.byteLength });
         return { ok: true, url: pubUrl.publicUrl, path };
+      }
+
+      case 'save_settings': {
+        if (!isUuid(body.id)) throw new HttpError(422, 'BAD_ID');
+        const patch = typeof body.patch === 'object' && body.patch !== null ? body.patch : {};
+        const { data, error } = await db
+          .from('game_settings')
+          .update(patch)
+          .eq('id', body.id)
+          .select('*')
+          .single();
+        if (error || !data) throw new HttpError(500, 'SETTINGS_UPDATE_FAILED', error?.message);
+        clearConfigCache();
+        await audit(admin, 'UPDATE_SETTINGS', 'game_settings', body.id, patch as any);
+        return { ok: true, settings: data };
+      }
+
+      case 'save_dashboard_settings': {
+        if (!isUuid(body.id)) throw new HttpError(422, 'BAD_ID');
+        const patch = typeof body.patch === 'object' && body.patch !== null ? body.patch : {};
+        const { data, error } = await db
+          .from('dashboard_settings')
+          .update(patch)
+          .eq('id', body.id)
+          .select('*')
+          .single();
+        if (error || !data) throw new HttpError(500, 'DASHBOARD_SETTINGS_UPDATE_FAILED', error?.message);
+        await audit(admin, 'UPDATE_DASHBOARD_SETTINGS', 'dashboard_settings', body.id, patch as any);
+        return { ok: true, dashboard: data };
       }
 
       case 'system_health': {

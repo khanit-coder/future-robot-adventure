@@ -11,17 +11,38 @@ export const isSupabaseConfigured = Boolean(
   !anonKey.includes('your-public-anon-key'),
 );
 
+// Migrate any existing non-anonymous admin session from default Supabase storage key
+if (typeof window !== 'undefined') {
+  try {
+    if (!localStorage.getItem('fra-admin-auth-v1')) {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('sb-') && k.endsWith('-auth-token')) {
+          const raw = localStorage.getItem(k);
+          if (raw && raw.includes('"is_anonymous":false')) {
+            localStorage.setItem('fra-admin-auth-v1', raw);
+            break;
+          }
+        }
+      }
+    }
+  } catch {
+    // Ignore storage access errors
+  }
+}
+
 /**
- * Only initialized when valid public env vars are provided (or during mocked e2e runs).
- * Service role keys are NEVER placed in the frontend.
+ * Separate Supabase clients for Player (/play) and Admin (/admin) so that anonymous
+ * player sign-ins or sign-outs in another tab never overwrite the Admin session!
  */
-export const supabase: SupabaseClient | null =
+export const playerSupabase: SupabaseClient | null =
   url && anonKey
     ? createClient(url, anonKey, {
         auth: {
+          storageKey: 'fra-player-auth-v1',
           persistSession: true,
           autoRefreshToken: true,
-          detectSessionInUrl: true,
+          detectSessionInUrl: false,
         },
         realtime: {
           params: {
@@ -31,9 +52,26 @@ export const supabase: SupabaseClient | null =
       })
     : null;
 
+export const adminSupabase: SupabaseClient | null =
+  url && anonKey
+    ? createClient(url, anonKey, {
+        auth: {
+          storageKey: 'fra-admin-auth-v1',
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+        },
+      })
+    : null;
+
+export const supabase: SupabaseClient | null = playerSupabase;
+
 export function getSupabase(): SupabaseClient {
-  if (!supabase) {
+  const isAdminRoute =
+    typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
+  const client = isAdminRoute ? adminSupabase : playerSupabase;
+  if (!client) {
     throw new Error('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
   }
-  return supabase;
+  return client;
 }

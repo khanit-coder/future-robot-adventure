@@ -27,12 +27,21 @@ export function AdminAuthGate({
 
   useEffect(() => {
     let active = true;
-    (async () => {
+    const sb = getSupabase();
+
+    const verifyCurrentSession = async () => {
       try {
-        const sb = getSupabase();
         const { data } = await sb.auth.getUser();
         if (!active) return;
-        setIsAnonUser(Boolean(data.user?.is_anonymous));
+        if (data.user?.is_anonymous) {
+          await sb.auth.signOut();
+          if (active) {
+            setIsAnonUser(false);
+            setAdmin(null);
+          }
+          return;
+        }
+        setIsAnonUser(false);
         const row = await adminApi.checkIsAdmin();
         if (active) setAdmin(row);
       } catch {
@@ -40,9 +49,21 @@ export function AdminAuthGate({
       } finally {
         if (active) setChecking(false);
       }
-    })();
+    };
+
+    void verifyCurrentSession();
+
+    const { data: sub } = sb.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        if (active) setAdmin(null);
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        void verifyCurrentSession();
+      }
+    });
+
     return () => {
       active = false;
+      sub.subscription.unsubscribe();
     };
   }, []);
 

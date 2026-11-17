@@ -189,6 +189,26 @@ function truncateText(ctx: CanvasRenderingContext2D, text: string, maxWidth: num
   return `${clipped}...`;
 }
 
+function drawFittedText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  initialSize: number,
+  minSize: number,
+  weight: string | number,
+  fontFamily: string,
+) {
+  let size = initialSize;
+  ctx.font = `${weight} ${size}px ${fontFamily}`;
+  while (size > minSize && ctx.measureText(text).width > maxWidth) {
+    size -= 1;
+    ctx.font = `${weight} ${size}px ${fontFamily}`;
+  }
+  ctx.fillText(truncateText(ctx, text, maxWidth), x, y);
+}
+
 function drawHeart(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -578,35 +598,48 @@ export function renderShareCardToDataUrl(data: ShareCardData): string {
   ctx.lineWidth = 2.5;
   ctx.stroke();
 
-  const collegeTh =
+  const rawCollegeTh =
     data.collegeNameTh ||
     (data.lang === 'th' && data.collegeName ? data.collegeName : COLLEGE_NAME_TH);
-  const collegeEn =
+  const rawCollegeEn =
     data.collegeNameEn ||
     (data.lang === 'en' && data.collegeName ? data.collegeName : COLLEGE_NAME_EN);
-  const facultyTh =
+  const rawFacultyTh =
     data.facultyNameTh ||
     (data.lang === 'th' && data.facultyName ? data.facultyName : FACULTY_NAME_TH);
-  const facultyEn =
+  const rawFacultyEn =
     data.facultyNameEn ||
     (data.lang === 'en' && data.facultyName ? data.facultyName : FACULTY_NAME_EN);
 
+  // If collegeName contains "•" (e.g. "วิทยาลัยเทคโนโลยีขอนแก่น P-TECH • คณะเทคโนโลยีสารสนเทศ"),
+  // split it onto Line 1 (College) and Line 2 (Faculty) so every word is on its own clear line!
+  let line1Text = data.lang === 'th' ? rawCollegeTh : rawCollegeEn;
+  let line2Text = data.lang === 'th' ? rawFacultyTh : rawFacultyEn;
+
+  if (line1Text.includes('•')) {
+    const parts = line1Text.split('•').map((s) => s.trim()).filter(Boolean);
+    line1Text = parts[0] || (data.lang === 'th' ? COLLEGE_NAME_TH : COLLEGE_NAME_EN);
+    if (parts[1]) {
+      line2Text = parts[1];
+    }
+  } else if (
+    data.lang === 'th' &&
+    (!line2Text || line2Text === 'เปิดบ้านวิทยาลัย' || !line2Text.includes('คณะ'))
+  ) {
+    line2Text = FACULTY_NAME_TH;
+  } else if (
+    data.lang === 'en' &&
+    (!line2Text || line2Text.toLowerCase() === 'college open house')
+  ) {
+    line2Text = FACULTY_NAME_EN;
+  }
+
   ctx.textAlign = 'center';
   ctx.fillStyle = p.collegeColor;
-  ctx.font = `800 37px ${f.bodyFont}`;
-  ctx.fillText(
-    truncateText(ctx, data.lang === 'th' ? collegeTh : collegeEn, W - 190),
-    W / 2,
-    132,
-  );
+  drawFittedText(ctx, line1Text, W / 2, 130, W - 180, 38, 24, 800, f.bodyFont);
 
   ctx.fillStyle = p.facultyColor;
-  ctx.font = `700 28px ${f.bodyFont}`;
-  ctx.fillText(
-    truncateText(ctx, data.lang === 'th' ? facultyTh : facultyEn, W - 190),
-    W / 2,
-    182,
-  );
+  drawFittedText(ctx, line2Text, W / 2, 184, W - 180, 30, 22, 700, f.bodyFont);
 
   // 6. Game Title & Achievement Badge
   ctx.save();
@@ -871,7 +904,7 @@ export function renderShareCardToDataUrl(data: ShareCardData): string {
   ctx.fillStyle = p.footerSub;
   ctx.font = `600 21px ${f.bodyFont}`;
   ctx.fillText(
-    `#KKTech #PTECH #คณะเทคโนโลยีสารสนเทศ • ${data.dateStr ?? ''}`,
+    `#PTECH #คณะเทคโนโลยีสารสนเทศ • ${data.dateStr ?? ''}`,
     W / 2,
     footerY + 96,
   );

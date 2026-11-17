@@ -79,40 +79,45 @@ export const adminApi = {
   ): Promise<string> {
     const check = validateImageFile(file);
     if (!check.ok) throw new Error(check.reason);
-    const sb = getSupabase();
     const ext =
       file.name
         .split('.')
         .pop()
         ?.replace(/[^a-z0-9]/gi, '')
         .toLowerCase() || 'png';
+
+    // Primary path: upload via service-role Edge Function (ensures bucket, RLS, and audit log)
+    try {
+      const buf = await file.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let binary = '';
+      const chunkSize = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+      }
+      const base64 = btoa(binary);
+      const res = await invokeEdge<{ ok: boolean; url: string }>('admin-action', {
+        action: 'upload_asset',
+        folder,
+        ext,
+        content_type: file.type,
+        base64,
+      });
+      if (res.url) return res.url;
+    } catch {
+      // Fallback to direct client storage upload below
+    }
+
+    const sb = getSupabase();
     const path = `${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
     const { error } = await sb.storage.from('game-assets').upload(path, file, {
       cacheControl: '3600',
       upsert: true,
       contentType: file.type,
     });
-    if (!error) {
-      const { data } = sb.storage.from('game-assets').getPublicUrl(path);
-      return data.publicUrl;
-    }
-
-    // Fallback to service-role Edge Function upload if client-side storage policy/bucket failed
-    const buf = await file.arrayBuffer();
-    const bytes = new Uint8Array(buf);
-    let binary = '';
-    for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    const base64 = btoa(binary);
-    const res = await invokeEdge<{ ok: boolean; url: string }>('admin-action', {
-      action: 'upload_asset',
-      folder,
-      ext,
-      content_type: file.type,
-      base64,
-    });
-    return res.url;
+    if (error) throw error;
+    const { data } = sb.storage.from('game-assets').getPublicUrl(path);
+    return data.publicUrl;
   },
 
   async publish(dry_run: boolean, note?: string) {
@@ -217,14 +222,28 @@ export const adminApi = {
   },
 
   async updateSettings(id: string, patch: Partial<GameSettingsRow>) {
-    const { error } = await getSupabase().from('game_settings').update(patch).eq('id', id);
-    if (error) throw error;
+    const { data, error } = await getSupabase()
+      .from('game_settings')
+      .update(patch)
+      .eq('id', id)
+      .select('id')
+      .maybeSingle();
+    if (error || !data) {
+      await invokeEdge('admin-action', { action: 'save_settings', id, patch });
+    }
     void this.publish(false, 'Auto-publish settings').catch(() => {});
   },
 
   async updateDashboardSettings(id: string, patch: Partial<DashboardSettingsRow>) {
-    const { error } = await getSupabase().from('dashboard_settings').update(patch).eq('id', id);
-    if (error) throw error;
+    const { data, error } = await getSupabase()
+      .from('dashboard_settings')
+      .update(patch)
+      .eq('id', id)
+      .select('id')
+      .maybeSingle();
+    if (error || !data) {
+      await invokeEdge('admin-action', { action: 'save_dashboard_settings', id, patch });
+    }
   },
 
   async setClaimStatus(claimId: string, status: ClaimStatus) {

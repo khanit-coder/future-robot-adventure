@@ -26,19 +26,19 @@ enabled = true
 file_size_limit = "5MiB"
 
 [functions.register-player]
-verify_jwt = true
+verify_jwt = false
 
 [functions.player-action]
-verify_jwt = true
+verify_jwt = false
 
 [functions.submit-solution]
-verify_jwt = true
+verify_jwt = false
 
 [functions.claim-reward]
-verify_jwt = true
+verify_jwt = false
 
 [functions.publish-config]
-verify_jwt = true
+verify_jwt = false
 
 [functions.admin-action]
-verify_jwt = true
+verify_jwt = false
