@@ -19,7 +19,8 @@ import {
   BUILTIN_ROBOT_STYLES,
   SPECIAL_ROBOT_COLORS,
   SPECIAL_ROBOT_GRADIENTS,
-  generateUniqueRandomRobot,
+  generateUniqueRandomRobots,
+  resolveRobotColor,
 } from '@/game-engine/animations/robotStyles';
 import { BUILTIN_ANIMATIONS } from '@/game-engine/animations/animationConstants';
 import { getSupabase } from '@/services/supabase/client';
@@ -40,6 +41,7 @@ export function RobotManagerModule({
   const [selectedId, setSelectedId] = useState<string>(data.robots[0]?.id ?? '');
   const [previewState, setPreviewState] = useState<RobotVisualState>('idle');
   const [colorTab, setColorTab] = useState<'gradient' | 'solid'>('gradient');
+  const [randomCount, setRandomCount] = useState<number>(3);
 
   const current = data.robots.find((r) => r.id === selectedId) ?? data.robots[0] ?? null;
   const [draft, setDraft] = useState<RobotAssetRow | null>(current);
@@ -49,21 +51,23 @@ export function RobotManagerModule({
     setDraft(structuredClone(r));
   };
 
-  const randomCreateRobot = async () => {
-    const newRobot = generateUniqueRandomRobot(data.robots);
+  const randomCreateRobots = async (count: number) => {
+    const num = Math.max(1, Math.min(20, count));
+    const newRobots = generateUniqueRandomRobots(num, data.robots);
     const sb = getSupabase();
     const { data: created, error } = await sb
       .from('robot_assets')
-      .insert(newRobot)
-      .select('*')
-      .single();
+      .insert(newRobots)
+      .select('*');
     if (error) {
       toast('error', t('admin:common.saveFailed'), error.message);
       return;
     }
     await onReload();
-    pick(created as RobotAssetRow);
-    toast('success', `สุ่มสร้างหุ่นยนต์ "${pickLocalized(created.name, lang, 'en')}" สำเร็จ!`);
+    if (created && created.length > 0) {
+      pick(created[0] as RobotAssetRow);
+    }
+    toast('success', `สุ่มสร้างหุ่นยนต์ใหม่ ${newRobots.length} ตัวสำเร็จ!`);
   };
 
   const deleteAllRobots = async () => {
@@ -149,10 +153,27 @@ export function RobotManagerModule({
     if (draft.is_default) {
       await sb.from('robot_assets').update({ is_default: false }).neq('id', draft.id);
     }
+    // Ensure primary_color strictly satisfies Postgres check (primary_color ~ '^#[0-9a-fA-F]{6}$')
+    let safeHex = draft.primary_color || '#38bdf8';
+    const safeName: Record<string, unknown> =
+      typeof draft.name === 'object' && draft.name !== null
+        ? { ...(draft.name as Record<string, unknown>) }
+        : { th: 'หุ่นยนต์', en: 'Robot' };
+    if (!/^#[0-9a-fA-F]{6}$/i.test(safeHex)) {
+      const resolved = resolveRobotColor(draft);
+      safeHex = resolved.color;
+      if (resolved.isGradient && resolved.gradientId) {
+        safeName.gradient = resolved.gradientId;
+      }
+    }
+    if (!/^#[0-9a-fA-F]{6}$/i.test(safeHex)) {
+      safeHex = '#38bdf8';
+    }
+
     const { error } = await sb
       .from('robot_assets')
       .update({
-        name: draft.name,
+        name: safeName,
         kind: draft.kind,
         builtin_style: draft.builtin_style,
         sprite_url: draft.sprite_url,
@@ -161,7 +182,7 @@ export function RobotManagerModule({
         animations: draft.animations,
         scale: draft.scale,
         move_speed_ms: draft.move_speed_ms,
-        primary_color: draft.primary_color,
+        primary_color: safeHex,
         is_default: draft.is_default,
         is_active: draft.is_active,
       })
@@ -196,15 +217,29 @@ export function RobotManagerModule({
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
-            <Button
-              size="sm"
-              onClick={() => void randomCreateRobot()}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs"
-              title="สุ่มสร้างหุ่นยนต์ที่ไม่ซ้ำกับตัวที่มีอยู่"
-            >
-              <Dices className="h-3.5 w-3.5 mr-1" />
-              สุ่มสร้าง
-            </Button>
+            <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-100 p-0.5 dark:border-slate-800 dark:bg-slate-900">
+              <span className="text-[11px] font-bold text-slate-500 pl-1">จำนวน:</span>
+              <select
+                value={randomCount}
+                onChange={(e) => setRandomCount(Number(e.target.value))}
+                className="rounded bg-white px-1.5 py-0.5 text-xs font-bold text-slate-800 border-none outline-none dark:bg-slate-800 dark:text-slate-200 cursor-pointer"
+              >
+                <option value={1}>1 ตัว</option>
+                <option value={2}>2 ตัว</option>
+                <option value={3}>3 ตัว</option>
+                <option value={5}>5 ตัว</option>
+                <option value={10}>10 ตัว</option>
+              </select>
+              <Button
+                size="sm"
+                onClick={() => void randomCreateRobots(randomCount)}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs h-7 px-2"
+                title={`สุ่มสร้างหุ่นยนต์ใหม่ ${randomCount} ตัวที่ไม่ซ้ำกัน`}
+              >
+                <Dices className="h-3.5 w-3.5 mr-1" />
+                สุ่มสร้าง
+              </Button>
+            </div>
             <Button size="sm" variant="outline" onClick={() => void createRobot()} title="เพิ่มหุ่นยนต์">
               <Plus className="h-3.5 w-3.5" />
             </Button>
@@ -228,11 +263,11 @@ export function RobotManagerModule({
               <p className="text-xs text-slate-500">ยังไม่มีหุ่นยนต์ในระบบ</p>
               <Button
                 size="sm"
-                onClick={() => void randomCreateRobot()}
+                onClick={() => void randomCreateRobots(randomCount)}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs"
               >
                 <Dices className="h-4 w-4 mr-1" />
-                สุ่มสร้างหุ่นยนต์ใหม่ทันที
+                สุ่มสร้างหุ่นยนต์ใหม่ทันที ({randomCount} ตัว)
               </Button>
             </div>
           ) : (
@@ -422,8 +457,19 @@ export function RobotManagerModule({
                     <span className="text-xs text-slate-500">กำหนดสีเดี่ยวเอง:</span>
                     <Input
                       type="color"
-                      value={draft.primary_color?.startsWith('linear-gradient') ? '#38bdf8' : draft.primary_color}
-                      onChange={(e) => setDraft({ ...draft, primary_color: e.target.value })}
+                      value={
+                        draft.primary_color && /^#[0-9a-fA-F]{6}$/i.test(draft.primary_color)
+                          ? draft.primary_color
+                          : '#38bdf8'
+                      }
+                      onChange={(e) => {
+                        const nextName: Record<string, unknown> =
+                          typeof draft.name === 'object' && draft.name !== null
+                            ? { ...(draft.name as Record<string, unknown>) }
+                            : {};
+                        delete nextName.gradient;
+                        setDraft({ ...draft, primary_color: e.target.value, name: nextName });
+                      }}
                       className="h-8 w-14 p-0.5 cursor-pointer border-slate-300"
                     />
                   </div>
@@ -458,12 +504,23 @@ export function RobotManagerModule({
                 {colorTab === 'gradient' ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                     {SPECIAL_ROBOT_GRADIENTS.map((col) => {
-                      const isSelected = draft.primary_color === col.gradient;
+                      const currentGrad =
+                        draft.name && typeof draft.name === 'object' && 'gradient' in draft.name
+                          ? (draft.name as Record<string, unknown>).gradient
+                          : null;
+                      const isSelected = currentGrad === col.id;
                       return (
                         <button
                           key={col.id}
                           type="button"
-                          onClick={() => setDraft({ ...draft, primary_color: col.gradient })}
+                          onClick={() => {
+                            const nextName: Record<string, unknown> =
+                              typeof draft.name === 'object' && draft.name !== null
+                                ? { ...(draft.name as Record<string, unknown>) }
+                                : {};
+                            nextName.gradient = col.id;
+                            setDraft({ ...draft, primary_color: col.hex, name: nextName });
+                          }}
                           className={`flex items-center gap-2.5 rounded-xl border p-2.5 text-left transition-all cursor-pointer ${
                             isSelected
                               ? 'border-indigo-600 bg-white ring-2 ring-indigo-500 shadow-sm dark:bg-slate-800'
@@ -489,12 +546,23 @@ export function RobotManagerModule({
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                     {SPECIAL_ROBOT_COLORS.map((col) => {
-                      const isSelected = draft.primary_color?.toLowerCase() === col.hex.toLowerCase();
+                      const currentGrad =
+                        draft.name && typeof draft.name === 'object' && 'gradient' in draft.name
+                          ? (draft.name as Record<string, unknown>).gradient
+                          : null;
+                      const isSelected = !currentGrad && draft.primary_color?.toLowerCase() === col.hex.toLowerCase();
                       return (
                         <button
                           key={col.id}
                           type="button"
-                          onClick={() => setDraft({ ...draft, primary_color: col.hex })}
+                          onClick={() => {
+                            const nextName: Record<string, unknown> =
+                              typeof draft.name === 'object' && draft.name !== null
+                                ? { ...(draft.name as Record<string, unknown>) }
+                                : {};
+                            delete nextName.gradient;
+                            setDraft({ ...draft, primary_color: col.hex, name: nextName });
+                          }}
                           className={`flex items-center gap-2 rounded-xl border p-2 text-left transition-all cursor-pointer ${
                             isSelected
                               ? 'border-indigo-600 bg-white ring-2 ring-indigo-500 shadow-sm dark:bg-slate-800'

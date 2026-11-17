@@ -24,6 +24,7 @@ export interface SpecialGradientMeta {
   desc: { th: string; en: string };
   gradient: string; // CSS linear-gradient string
   stops: string[];
+  hex: string; // 6-digit hex code compliant with database constraint check (primary_color ~ '^#[0-9a-fA-F]{6}$')
   badge: string;
   accent: string;
 }
@@ -111,6 +112,7 @@ export const SPECIAL_ROBOT_GRADIENTS: SpecialGradientMeta[] = [
     desc: { th: 'การไล่สีสเปกตรัมแสงรุ้งประกายโฮโลแกรมสะท้อนแสง', en: 'Prismatic rainbow hologram gradient' },
     gradient: 'linear-gradient(135deg, #06b6d4, #8b5cf6, #ec4899, #f59e0b)',
     stops: ['#06b6d4', '#8b5cf6', '#ec4899', '#f59e0b'],
+    hex: '#06b6d4',
     badge: '🌈',
     accent: '#00f0ff',
   },
@@ -120,6 +122,7 @@ export const SPECIAL_ROBOT_GRADIENTS: SpecialGradientMeta[] = [
     desc: { th: 'การไล่สีพระอาทิตย์ตกดิน จากชมพูมาเจนต้า ส้ม ไปจนถึงเหลืองทอง', en: 'Vibrant sunset from magenta to orange gold' },
     gradient: 'linear-gradient(135deg, #f43f5e, #f97316, #eab308)',
     stops: ['#f43f5e', '#f97316', '#eab308'],
+    hex: '#f43f5e',
     badge: '🌅',
     accent: '#fef08a',
   },
@@ -129,6 +132,7 @@ export const SPECIAL_ROBOT_GRADIENTS: SpecialGradientMeta[] = [
     desc: { th: 'แสงเหนือออโรร่ากลางอวกาศ จากม่วงไวโอเล็ต น้ำเงิน สู่ฟ้านีออน', en: 'Space aurora from deep violet to electric cyan' },
     gradient: 'linear-gradient(135deg, #8b5cf6, #3b82f6, #06b6d4)',
     stops: ['#8b5cf6', '#3b82f6', '#06b6d4'],
+    hex: '#8b5cf6',
     badge: '🌌',
     accent: '#67e8f9',
   },
@@ -138,6 +142,7 @@ export const SPECIAL_ROBOT_GRADIENTS: SpecialGradientMeta[] = [
     desc: { th: 'การไล่สีเขียวมะนาวนีออนตัดกับเขียวมรกตและฟ้าไซเบอร์', en: 'Electric lime to cyber emerald matrix' },
     gradient: 'linear-gradient(135deg, #10b981, #84cc16, #06b6d4)',
     stops: ['#10b981', '#84cc16', '#06b6d4'],
+    hex: '#10b981',
     badge: '⚡',
     accent: '#22c55e',
   },
@@ -147,6 +152,7 @@ export const SPECIAL_ROBOT_GRADIENTS: SpecialGradientMeta[] = [
     desc: { th: 'ความร้อนแรงของหินลาวาหลอมเหลว จากแดงเลือดนก ส้ม สู่เหลืองสว่าง', en: 'Molten volcanic magma fire' },
     gradient: 'linear-gradient(135deg, #b91c1c, #ea580c, #facc15)',
     stops: ['#b91c1c', '#ea580c', '#facc15'],
+    hex: '#b91c1c',
     badge: '🔥',
     accent: '#fef08a',
   },
@@ -156,6 +162,7 @@ export const SPECIAL_ROBOT_GRADIENTS: SpecialGradientMeta[] = [
     desc: { th: 'เฉดสีพาสเทลหวานละมุน จากชมพูซากุระ ม่วงลาเวนเดอร์ สู่ฟ้าคราม', en: 'Sweet pastel sakura petals and lavender' },
     gradient: 'linear-gradient(135deg, #f472b6, #c084fc, #38bdf8)',
     stops: ['#f472b6', '#c084fc', '#38bdf8'],
+    hex: '#f472b6',
     badge: '🌸',
     accent: '#ffffff',
   },
@@ -165,6 +172,7 @@ export const SPECIAL_ROBOT_GRADIENTS: SpecialGradientMeta[] = [
     desc: { th: 'ทองคำหรูหราพรีเมียมตัดสลับกับคาร์บอนไฟเบอร์ดำด้าน', en: 'Royal gold luxury paired with sleek carbon' },
     gradient: 'linear-gradient(135deg, #eab308, #ca8a04, #334155, #0f172a)',
     stops: ['#eab308', '#ca8a04', '#334155', '#0f172a'],
+    hex: '#eab308',
     badge: '👑',
     accent: '#fef08a',
   },
@@ -174,6 +182,7 @@ export const SPECIAL_ROBOT_GRADIENTS: SpecialGradientMeta[] = [
     desc: { th: 'ประกายเพชรผลึกน้ำแข็ง ไทเทเนียมขาวสะท้อนฟ้าไอซ์บลู', en: 'Sparkling ice diamond crystal reflections' },
     gradient: 'linear-gradient(135deg, #f8fafc, #93c5fd, #38bdf8)',
     stops: ['#f8fafc', '#93c5fd', '#38bdf8'],
+    hex: '#e2e8f0',
     badge: '💎',
     accent: '#00f0ff',
   },
@@ -183,6 +192,7 @@ export const SPECIAL_ROBOT_GRADIENTS: SpecialGradientMeta[] = [
     desc: { th: 'สไตล์ยุค 80s สุดไอคอนิก จากชมพูฟูเชียม่วงนีออน สู่ฟ้านีออนไซเบอร์', en: 'Iconic 80s fuchsia neon to bright cyan' },
     gradient: 'linear-gradient(135deg, #ec4899, #8b5cf6, #06b6d4)',
     stops: ['#ec4899', '#8b5cf6', '#06b6d4'],
+    hex: '#ec4899',
     badge: '🎸',
     accent: '#00f0ff',
   },
@@ -192,6 +202,7 @@ export const SPECIAL_ROBOT_GRADIENTS: SpecialGradientMeta[] = [
     desc: { th: 'ดำด้านสเตลธ์ลึกลับ ไล่ระดับเฉดสู่แดงทับทิมนีออนดุดัน', en: 'Stealth obsidian black with crimson ruby bleed' },
     gradient: 'linear-gradient(135deg, #1e293b, #0f172a, #ef4444)',
     stops: ['#1e293b', '#0f172a', '#ef4444'],
+    hex: '#1e293b',
     badge: '🩸',
     accent: '#ef4444',
   },
@@ -220,6 +231,105 @@ export function getPrimaryColorFallback(color?: string | null): string {
   return stops[0] || '#38bdf8';
 }
 
+/**
+ * Resolves full color/gradient configuration for a robot.
+ * Works seamlessly whether stored as a hex in primary_color,
+ * a gradient ID in name.gradient, or direct linear-gradient string.
+ */
+export function resolveRobotColor(
+  robotOrColor?: { primary_color?: string | null; name?: unknown } | string | null,
+): {
+  color: string;
+  isGradient: boolean;
+  gradientId: string | null;
+  stops: string[];
+  gradientCss: string | null;
+} {
+  if (!robotOrColor) {
+    return {
+      color: '#38bdf8',
+      isGradient: false,
+      gradientId: null,
+      stops: ['#38bdf8'],
+      gradientCss: null,
+    };
+  }
+
+  // If string passed
+  if (typeof robotOrColor === 'string') {
+    if (isGradient(robotOrColor)) {
+      const preset = SPECIAL_ROBOT_GRADIENTS.find((g) => g.gradient === robotOrColor || g.id === robotOrColor);
+      const stops = preset ? preset.stops : parseGradientStops(robotOrColor);
+      return {
+        color: preset ? preset.hex : stops[0] || '#38bdf8',
+        isGradient: true,
+        gradientId: preset?.id ?? null,
+        stops,
+        gradientCss: preset ? preset.gradient : robotOrColor,
+      };
+    }
+    const preset = SPECIAL_ROBOT_GRADIENTS.find((g) => g.id === robotOrColor);
+    if (preset) {
+      return {
+        color: preset.hex,
+        isGradient: true,
+        gradientId: preset.id,
+        stops: preset.stops,
+        gradientCss: preset.gradient,
+      };
+    }
+    return {
+      color: robotOrColor,
+      isGradient: false,
+      gradientId: null,
+      stops: [robotOrColor],
+      gradientCss: null,
+    };
+  }
+
+  // If object passed
+  const r = robotOrColor;
+  const gradId =
+    r.name && typeof r.name === 'object' && 'gradient' in r.name && typeof r.name.gradient === 'string'
+      ? r.name.gradient
+      : null;
+
+  if (gradId) {
+    const preset = SPECIAL_ROBOT_GRADIENTS.find((g) => g.id === gradId);
+    if (preset) {
+      return {
+        color: preset.hex,
+        isGradient: true,
+        gradientId: preset.id,
+        stops: preset.stops,
+        gradientCss: preset.gradient,
+      };
+    }
+  }
+
+  const prim = r.primary_color;
+  if (prim && isGradient(prim)) {
+    const preset = SPECIAL_ROBOT_GRADIENTS.find((g) => g.gradient === prim || g.id === prim);
+    const stops = preset ? preset.stops : parseGradientStops(prim);
+    return {
+      color: preset ? preset.hex : stops[0] || '#38bdf8',
+      isGradient: true,
+      gradientId: preset?.id ?? null,
+      stops,
+      gradientCss: preset ? preset.gradient : prim,
+    };
+  }
+
+  const defaultHex = prim || '#38bdf8';
+  return {
+    color: defaultHex,
+    isGradient: false,
+    gradientId: null,
+    stops: [defaultHex],
+    gradientCss: null,
+  };
+}
+
 export const RANDOM_ROBOT_NAMES = [
   { en: 'Vortex', th: 'วอร์เท็กซ์' },
   { en: 'Cosmo', th: 'คอสโม' },
@@ -245,19 +355,20 @@ export const RANDOM_ROBOT_NAMES = [
   { en: 'Shadow Unit', th: 'ยูนิตชาโดว์' },
 ];
 
+export type RobotColorMetaInput = {
+  builtin_style?: string | null;
+  primary_color?: string | null;
+  name?: { th?: string; en?: string; gradient?: string; [key: string]: unknown } | string | null;
+};
+
 /**
- * Generates a truly unique robot that is dissimilar from all existing robots:
+ * Generates a truly unique robot that is dissimilar from existing robots:
  * - Selects an unused builtin style (or least used).
  * - Selects an unused multi-color gradient or special color.
- * - Selects an unused futuristic robot name.
+ * - Stores gradient in name.gradient while keeping primary_color as a valid 6-hex code
+ *   so it strictly adheres to PostgreSQL check constraint: check (primary_color ~ '^#[0-9a-fA-F]{6}$')
  */
-export function generateUniqueRandomRobot(
-  existingRobots: Array<{
-    builtin_style?: string | null;
-    primary_color?: string | null;
-    name?: { th?: string; en?: string } | string | null;
-  }>,
-) {
+export function generateUniqueRandomRobot(existingRobots: RobotColorMetaInput[]) {
   // 1. Determine used styles
   const styleUsageCount: Record<string, number> = {};
   for (const s of BUILTIN_ROBOT_STYLES) {
@@ -275,26 +386,41 @@ export function generateUniqueRandomRobot(
   const chosenStyle = candidateStyles[Math.floor(Math.random() * candidateStyles.length)] ?? BUILTIN_ROBOT_STYLES[0];
 
   // 2. Determine used colors/gradients
+  const existingGradients = new Set(
+    existingRobots
+      .map((r) =>
+        r.name && typeof r.name === 'object' && 'gradient' in r.name
+          ? (r.name as Record<string, unknown>).gradient
+          : null,
+      )
+      .filter(Boolean),
+  );
   const existingColors = new Set(
     existingRobots.map((r) => r.primary_color?.toLowerCase()).filter(Boolean),
   );
 
-  // Pool of candidate colors (prefer gradients!)
+  // Pool of candidate gradients and colors
   const candidateGradients = SPECIAL_ROBOT_GRADIENTS.filter(
-    (g) => !existingColors.has(g.gradient.toLowerCase()),
+    (g) => !existingGradients.has(g.id) && !existingColors.has(g.hex.toLowerCase()),
   );
   const candidateColors = SPECIAL_ROBOT_COLORS.filter(
     (c) => !existingColors.has(c.hex.toLowerCase()),
   );
 
-  let chosenColor: string;
+  let chosenHex: string;
+  let gradientId: string | null = null;
+
   if (candidateGradients.length > 0) {
-    chosenColor = candidateGradients[Math.floor(Math.random() * candidateGradients.length)].gradient;
+    const g = candidateGradients[Math.floor(Math.random() * candidateGradients.length)];
+    chosenHex = g.hex;
+    gradientId = g.id;
   } else if (candidateColors.length > 0) {
-    chosenColor = candidateColors[Math.floor(Math.random() * candidateColors.length)].hex;
+    chosenHex = candidateColors[Math.floor(Math.random() * candidateColors.length)].hex;
   } else {
     // If all used, pick any gradient
-    chosenColor = SPECIAL_ROBOT_GRADIENTS[Math.floor(Math.random() * SPECIAL_ROBOT_GRADIENTS.length)].gradient;
+    const g = SPECIAL_ROBOT_GRADIENTS[Math.floor(Math.random() * SPECIAL_ROBOT_GRADIENTS.length)];
+    chosenHex = g.hex;
+    gradientId = g.id;
   }
 
   // 3. Determine unique name
@@ -319,22 +445,53 @@ export function generateUniqueRandomRobot(
           th: `${chosenStyle.name.th.split(' ')[0]} ${Math.floor(Math.random() * 90 + 10)}`,
         };
 
-  // 4. Slightly randomized speed & scale
+  // 4. Slightly randomized speed
   const speeds = [400, 420, 450, 480, 500];
   const chosenSpeed = speeds[Math.floor(Math.random() * speeds.length)];
 
+  const nameObj = {
+    ...chosenName,
+    ...(gradientId ? { gradient: gradientId } : {}),
+  };
+
+  if (!/^#[0-9a-fA-F]{6}$/i.test(chosenHex)) {
+    chosenHex = '#38bdf8';
+  }
+
   return {
-    name: chosenName,
+    name: nameObj,
     kind: 'builtin' as const,
     builtin_style: chosenStyle.id,
     sprite_url: null,
     frame_width: null,
     frame_height: null,
     animations: {},
-    primary_color: chosenColor,
+    primary_color: chosenHex, // Guaranteed valid 6-hex code like '#06b6d4'!
     scale: 1,
     move_speed_ms: chosenSpeed,
-    is_default: existingRobots.length === 0, // Make default only if first robot
+    is_default: existingRobots.length === 0,
     is_active: true,
   };
+}
+
+/**
+ * Batch generates N unique robots in one call.
+ */
+export function generateUniqueRandomRobots(
+  count: number,
+  existingRobots: RobotColorMetaInput[],
+) {
+  const robots = [];
+  const currentList: RobotColorMetaInput[] = [...existingRobots];
+  const totalExisting = existingRobots.length;
+
+  for (let i = 0; i < count; i++) {
+    const isFirstOverall = totalExisting === 0 && i === 0;
+    const robot = generateUniqueRandomRobot(currentList);
+    robot.is_default = isFirstOverall;
+    robots.push(robot);
+    currentList.push(robot);
+  }
+
+  return robots;
 }

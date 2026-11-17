@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from 'react';
 import type { RobotAnimationRange, RobotConfig } from '@engine';
 import { BUILTIN_ANIMATIONS } from '@/game-engine/animations/animationConstants';
-import { isGradient, parseGradientStops } from '@/game-engine/animations/robotStyles';
+import { resolveRobotColor } from '@/game-engine/animations/robotStyles';
 import { cn } from '@/utils/cn';
 
 export type RobotVisualState = 'idle' | 'walk' | 'run' | 'jump' | 'turn' | 'wave' | 'celebrate' | 'fail';
@@ -50,10 +50,9 @@ export function RobotIllustration({
   const isCelebrated = state === 'celebrate';
   const isFailed = state === 'fail';
 
-  const isGrad = isGradient(accent);
-  const stops = parseGradientStops(accent);
+  const resolved = resolveRobotColor(robot || accent);
   const gradId = `robot-grad-${reactId.replace(/[^a-zA-Z0-9]/g, '')}`;
-  const fill = isGrad ? `url(#${gradId})` : accent;
+  const fill = resolved.isGradient ? `url(#${gradId})` : resolved.color;
 
   return (
     <svg
@@ -65,12 +64,12 @@ export function RobotIllustration({
       aria-hidden="true"
     >
       <defs>
-        {isGrad && (
+        {resolved.isGradient && (
           <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
-            {stops.map((c, i) => (
+            {resolved.stops.map((c, i) => (
               <stop
                 key={i}
-                offset={`${stops.length > 1 ? Math.round((i / (stops.length - 1)) * 100) : 0}%`}
+                offset={`${resolved.stops.length > 1 ? Math.round((i / (resolved.stops.length - 1)) * 100) : 0}%`}
                 stopColor={c}
               />
             ))}

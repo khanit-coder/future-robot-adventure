@@ -14,6 +14,7 @@ import {
   ensureBuiltinRobotSheet,
   registerRobotAnims,
 } from '@/game-engine/animations/proceduralRobot';
+import { resolveRobotColor } from '@/game-engine/animations/robotStyles';
 import { sfx } from '@/services/audio/soundEffects';
 
 export interface ScenePlayCallbacks {
@@ -338,11 +339,11 @@ export class MissionScene extends Phaser.Scene {
       if (this.textures.exists(customKey)) texKey = customKey;
     }
     if (!texKey) {
-      const color = this.robotCfg?.primary_color || '#38bdf8';
+      const resolved = resolveRobotColor(this.robotCfg);
       const style = this.robotCfg?.builtin_style || 'bolt';
-      const cleanColorKey = color.replace(/[^a-zA-Z0-9]/g, '_');
+      const cleanColorKey = (resolved.gradientId || resolved.color).replace(/[^a-zA-Z0-9]/g, '_');
       texKey = `builtin_robot_${style}_${cleanColorKey}`;
-      ensureBuiltinRobotSheet(this, texKey, color, style);
+      ensureBuiltinRobotSheet(this, texKey, resolved.gradientCss || resolved.color, style);
     }
 
     this.animPrefix = `anim_${texKey}`;
