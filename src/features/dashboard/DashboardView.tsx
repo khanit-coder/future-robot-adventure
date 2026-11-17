@@ -15,8 +15,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import type { DashboardMode, DashboardSettingsRow, GameEvent, GameSettingsRow } from '@engine';
 import { FullscreenButton } from '@/components/common/FullscreenButton';
-import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
-import { SoundToggle } from '@/components/common/SoundToggle';
+import { SettingsMenu } from '@/components/common/SettingsMenu';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { RobotIllustration, type RobotVisualState } from '@/components/common/RobotIllustration';
 import { currentLang } from '@/i18n/config';
@@ -259,9 +258,8 @@ export function DashboardView({
                 : t('dashboard:offline')}
           </div>
 
-          <SoundToggle dark={dark} />
           <FullscreenButton dark={dark} />
-          <LanguageSwitcher dark={dark} />
+          <SettingsMenu dark={dark} />
         </div>
       </header>
 

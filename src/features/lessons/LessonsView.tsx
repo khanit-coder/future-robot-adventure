@@ -6,8 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { FullscreenButton } from '@/components/common/FullscreenButton';
-import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
-import { SoundToggle } from '@/components/common/SoundToggle';
+import { SettingsMenu } from '@/components/common/SettingsMenu';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { cn } from '@/utils/cn';
 import { MarkdownText } from '@/components/common/MarkdownText';
@@ -171,9 +170,8 @@ export function LessonsView({ reviewMode = false }: { reviewMode?: boolean }) {
                 <span>{lang === 'th' ? 'ข้ามเนื้อหาไปเล่นเกมเลย' : t('player:lessons.skipAll')}</span>
               </Button>
             )}
-            <SoundToggle />
             <FullscreenButton />
-            <LanguageSwitcher />
+            <SettingsMenu />
           </div>
         </div>
         <div

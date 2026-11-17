@@ -40,9 +40,8 @@ import { localizedBlockLabel } from '@/blockly/toolbox/buildToolbox';
 import { PhaserViewport } from '@/game-engine/PhaserViewport';
 import type { RobotGameEngine } from '@/game-engine/RobotGameEngine';
 import { FullscreenButton } from '@/components/common/FullscreenButton';
-import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { SoundToggle } from '@/components/common/SoundToggle';
+import { SettingsMenu } from '@/components/common/SettingsMenu';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { sfx } from '@/services/audio/soundEffects';
 import { cn } from '@/utils/cn';
@@ -540,9 +539,8 @@ function PlayLevelSession({ level }: { level: LevelConfig }) {
               <span>{t('player:workspace.finishGame')}</span>
             </Button>
 
-            <SoundToggle />
             <FullscreenButton />
-            <LanguageSwitcher />
+            <SettingsMenu />
           </div>
         </div>
       </header>

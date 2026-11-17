@@ -22,8 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { FullscreenButton } from '@/components/common/FullscreenButton';
-import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
-import { SoundToggle } from '@/components/common/SoundToggle';
+import { SettingsMenu } from '@/components/common/SettingsMenu';
 import { RobotIllustration } from '@/components/common/RobotIllustration';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { sfx } from '@/services/audio/soundEffects';
@@ -279,9 +278,8 @@ export function ResultView() {
               +2m
             </button>
           </div>
-          <SoundToggle dark />
           <FullscreenButton dark />
-          <LanguageSwitcher dark />
+          <SettingsMenu dark />
         </div>
       </header>
 

@@ -6,8 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input, Label } from '@/components/ui/input';
 import { FullscreenButton } from '@/components/common/FullscreenButton';
-import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
-import { SoundToggle } from '@/components/common/SoundToggle';
+import { SettingsMenu } from '@/components/common/SettingsMenu';
 import { RobotIllustration } from '@/components/common/RobotIllustration';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { cn } from '@/utils/cn';
@@ -100,26 +99,33 @@ export function RegistrationView() {
           isFullscreen ? 'max-w-[94vw] px-8 py-5' : 'max-w-7xl px-6 py-4',
         )}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3.5 sm:gap-4">
           {settings?.college_logo_url && (
             <img
               src={settings.college_logo_url}
               alt="College Logo"
-              className="h-10 w-10 rounded-full object-contain overflow-hidden bg-transparent shrink-0"
+              className="h-16 w-16 sm:h-20 sm:w-20 md:h-22 md:w-22 rounded-full object-contain overflow-hidden bg-transparent shrink-0 drop-shadow-[0_4px_16px_rgba(56,189,248,0.35)] transition-transform hover:scale-105"
             />
           )}
           {settings?.game_logo_url && (
-            <img src={settings.game_logo_url} alt="" className="h-10 w-10 rounded-xl object-contain" />
+            <img
+              src={settings.game_logo_url}
+              alt=""
+              className="h-14 w-14 sm:h-16 sm:w-16 md:h-18 md:w-18 rounded-2xl object-contain shrink-0 drop-shadow-md"
+            />
           )}
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-sky-300">{collegeName}</p>
-            <p className="text-sm font-bold text-white">{eventTitle}</p>
+          <div className="flex flex-col justify-center">
+            <p className="text-sm sm:text-base md:text-lg font-black uppercase tracking-wide text-sky-300 drop-shadow-sm leading-tight">
+              {collegeName}
+            </p>
+            <p className="text-base sm:text-lg md:text-xl font-extrabold text-white drop-shadow-sm leading-snug mt-0.5">
+              {eventTitle}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <SoundToggle dark />
           <FullscreenButton dark />
-          <LanguageSwitcher dark />
+          <SettingsMenu dark />
         </div>
       </header>
 
