@@ -51,106 +51,184 @@ html.fra-fullscreen {
   font-size: 16px !important;
 }
 
-/* Gentle robot animations used on the lightweight Dashboard, Lessons, and Preview cards */
-@keyframes fra-bob {
+/* Style A: Cute & Expressive Chibi Bot Animations */
+@keyframes fra-idle {
   0%,
   100% {
-    transform: translateY(0px);
+    transform: translateY(0px) scale(1, 1);
   }
   50% {
-    transform: translateY(-5px);
+    transform: translateY(-4px) scale(0.99, 1.02);
+  }
+}
+
+@keyframes fra-walk {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-4px) rotate(-3.5deg);
+  }
+  50% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-4px) rotate(3.5deg);
+  }
+}
+
+@keyframes fra-run {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(8deg) scale(1, 1);
+  }
+  25% {
+    transform: translateY(-7px) rotate(11deg) scale(0.96, 1.04);
+  }
+  50% {
+    transform: translateY(-1px) rotate(8deg) scale(1.03, 0.97);
+  }
+  75% {
+    transform: translateY(-7px) rotate(5deg) scale(0.96, 1.04);
   }
 }
 
 @keyframes fra-jump {
   0%,
   100% {
-    transform: translateY(0px) scale(1);
+    transform: translateY(0px) scale(1, 1);
   }
-  40% {
-    transform: translateY(-16px) scale(1.06);
+  15% {
+    /* Anticipation crouch / squash down */
+    transform: translateY(3px) scale(1.08, 0.92);
   }
-  70% {
-    transform: translateY(-4px) scale(0.98);
+  45% {
+    /* Rocket launch upwards */
+    transform: translateY(-20px) scale(0.94, 1.08);
+  }
+  65% {
+    /* Apex hover */
+    transform: translateY(-17px) scale(1, 1);
+  }
+  85% {
+    /* Landing bounce */
+    transform: translateY(2px) scale(1.06, 0.94);
+  }
+}
+
+@keyframes fra-turn {
+  0%,
+  100% {
+    transform: rotateY(0deg) scale(1, 1);
+  }
+  25% {
+    transform: rotateY(-35deg) scale(0.95, 1);
+  }
+  75% {
+    transform: rotateY(35deg) scale(0.95, 1);
+  }
+}
+
+@keyframes fra-wave-body {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-2px) rotate(4deg);
+  }
+}
+
+@keyframes fra-wave-arm {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-22deg);
+  }
+  75% {
+    transform: rotate(18deg);
   }
 }
 
 @keyframes fra-celebrate {
   0%,
   100% {
-    transform: translateY(0) rotate(0deg) scale(1);
+    transform: translateY(0) scale(1, 1);
   }
-  25% {
-    transform: translateY(-10px) rotate(-6deg) scale(1.08);
+  20% {
+    transform: translateY(2px) scale(1.06, 0.94);
   }
-  50% {
-    transform: translateY(-2px) rotate(6deg) scale(1.08);
+  45% {
+    transform: translateY(-16px) scale(0.95, 1.08) rotate(-4deg);
   }
-  75% {
-    transform: translateY(-8px) rotate(-4deg) scale(1.05);
+  65% {
+    transform: translateY(-13px) scale(0.98, 1.04) rotate(4deg);
   }
-}
-
-@keyframes fra-wave {
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
-  25% {
-    transform: rotate(-18deg);
-  }
-  75% {
-    transform: rotate(12deg);
+  85% {
+    transform: translateY(1px) scale(1.04, 0.96);
   }
 }
 
 @keyframes fra-fail {
-  0%,
-  100% {
-    transform: translateX(0);
+  0% {
+    transform: translateY(0) rotate(0deg) scale(1, 1);
   }
-  20% {
-    transform: translateX(-6px) rotate(-4deg);
+  15% {
+    transform: translateY(-2px) rotate(-8deg) scale(1, 1);
   }
-  40% {
-    transform: translateX(6px) rotate(4deg);
+  30% {
+    transform: translateY(-1px) rotate(8deg) scale(1, 1);
+  }
+  45% {
+    transform: translateY(-2px) rotate(-6deg) scale(1, 1);
   }
   60% {
-    transform: translateX(-4px);
+    transform: translateY(4px) rotate(2deg) scale(1.08, 0.88);
   }
-  80% {
-    transform: translateX(4px);
+  80%,
+  100% {
+    transform: translateY(5px) rotate(0deg) scale(1.06, 0.9);
   }
 }
 
 .animate-robot-idle {
-  animation: fra-bob 2.8s ease-in-out infinite;
+  animation: fra-idle 2.6s ease-in-out infinite;
 }
 
-.animate-robot-walk,
+.animate-robot-walk {
+  animation: fra-walk 0.75s ease-in-out infinite;
+}
+
 .animate-robot-run {
-  animation: fra-bob 0.7s ease-in-out infinite;
+  animation: fra-run 0.45s ease-in-out infinite;
 }
 
 .animate-robot-jump {
-  animation: fra-jump 0.9s ease-in-out infinite;
+  animation: fra-jump 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
 }
 
-.animate-robot-celebrate {
-  animation: fra-celebrate 0.9s ease-in-out infinite;
+.animate-robot-turn {
+  animation: fra-turn 1.4s ease-in-out infinite;
 }
 
 .animate-robot-wave {
-  animation: fra-bob 2.2s ease-in-out infinite;
+  animation: fra-wave-body 2s ease-in-out infinite;
 }
 
-.animate-robot-wave .robot-arm-right {
-  transform-origin: 48px 38px;
-  animation: fra-wave 0.6s ease-in-out infinite;
+.animate-robot-wave .robot-arm-waving {
+  transform-origin: 65px 42px;
+  animation: fra-wave-arm 0.55s ease-in-out infinite;
+}
+
+.animate-robot-celebrate {
+  animation: fra-celebrate 0.85s ease-in-out infinite;
 }
 
 .animate-robot-fail {
-  animation: fra-fail 0.55s ease-in-out 2;
+  animation: fra-fail 0.75s ease-in-out infinite;
 }
 
 /* Blockly toolbox & workspace styling */

@@ -8,6 +8,7 @@ export { BUILTIN_FRAME_SIZE, BUILTIN_ANIMATIONS };
 /**
  * Generates a crisp 16-frame 96x96 spritesheet texture on an offscreen HTML5 Canvas
  * for any builtin robot style/color, so Phaser animates every state smoothly with zero external assets.
+ * Styled with "Style A: Cute & Expressive Chibi Bot" for lively, adorable animations.
  */
 export function ensureBuiltinRobotSheet(
   scene: Phaser.Scene,
@@ -71,29 +72,68 @@ export function drawRobotFrame(
   frame: number,
 ): void {
   const cx = s / 2;
-  const bob = frame === 1 ? -2 : frame === 3 || frame === 5 ? -3 : frame === 6 || frame === 7 ? -8 : 0;
-  const tilt =
-    frame === 8
-      ? -0.14
-      : frame === 9
-        ? 0.14
-        : frame === 12
-          ? -0.1
-          : frame === 13
-            ? 0.1
-            : frame === 14
-              ? -0.12
-              : frame === 15
-                ? 0.12
-                : 0;
-  const legStride = frame === 2 ? -4 : frame === 4 ? 4 : 0;
-  const waveRight = frame === 10 || frame === 11 || frame === 12 || frame === 13;
-  const waveOffset = frame === 11 || frame === 13 ? -12 : -7;
-  const isFail = frame === 14 || frame === 15;
-  const isCelebrate = frame === 12 || frame === 13;
 
-  ctx.translate(cx, s * 0.56 + bob);
+  // Animation State Flags (16-frame 4x4 Grid Standard)
+  const isIdle = frame === 0 || frame === 1;
+  const isBlink = frame === 1;
+  const isWalk = frame >= 2 && frame <= 5;
+  const isCrouch = frame === 6;
+  const isJumpApex = frame === 7;
+  const isTurnLeft = frame === 8;
+  const isTurnRight = frame === 9;
+  const isWave = frame === 10 || frame === 11;
+  const isCelebrate = frame === 12 || frame === 13;
+  const isShock = frame === 14;
+  const isSlump = frame === 15;
+  const isFail = isShock || isSlump;
+
+  // Kinematic parameters (Bob, Tilt, Squash/Stretch)
+  let bob = 0;
+  let tilt = 0;
+  let scaleX = 1;
+  let scaleY = 1;
+
+  if (isIdle) {
+    bob = isBlink ? 1.5 : 0;
+    scaleX = isBlink ? 1.02 : 1;
+    scaleY = isBlink ? 0.98 : 1;
+  } else if (isWalk) {
+    bob = frame === 3 || frame === 5 ? -3 : -0.5;
+    tilt = 0.05; // dynamic forward lean
+  } else if (isCrouch) {
+    bob = 4; // anticipation squash down
+    scaleX = 1.08;
+    scaleY = 0.9;
+  } else if (isJumpApex) {
+    bob = -11; // high in air stretch
+    scaleX = 0.95;
+    scaleY = 1.05;
+  } else if (isTurnLeft) {
+    tilt = -0.15;
+  } else if (isTurnRight) {
+    tilt = 0.15;
+  } else if (isWave) {
+    bob = frame === 11 ? -2 : -1;
+    tilt = frame === 11 ? 0.12 : 0.08; // cute chibi head tilt
+  } else if (isCelebrate) {
+    bob = frame === 13 ? -8 : -5;
+    tilt = frame === 13 ? 0.05 : -0.05;
+    scaleX = 0.96;
+    scaleY = 1.04;
+  } else if (isShock) {
+    bob = 1;
+    tilt = -0.15;
+  } else if (isSlump) {
+    bob = 6; // collapsed sitting on ground
+    scaleX = 1.08;
+    scaleY = 0.88;
+    tilt = 0.04;
+  }
+
+  // Base canvas transformation
+  ctx.translate(cx, s * 0.54 + bob);
   ctx.rotate(tilt);
+  ctx.scale(scaleX, scaleY);
 
   // Gradient support
   let fillStyle: string | CanvasGradient = color;
@@ -106,7 +146,34 @@ export function drawRobotFrame(
     fillStyle = grad;
   }
 
-  // 1. Movement Base / Legs
+  // 0. Background Micro-Effects (Particles, Jet Flames, Sparkles)
+  if (isJumpApex) {
+    drawBoosterFlame(ctx, 0, 21);
+  }
+  if (isCelebrate && frame === 13) {
+    drawStar(ctx, -26, -26, 4, 6, 2.5, '#fbbf24');
+    drawStar(ctx, 26, -26, 4, 6, 2.5, '#fde047');
+  }
+  if (isWave && frame === 11) {
+    drawStar(ctx, 28, -22, 4, 5, 2, '#38bdf8');
+  }
+  if (isShock) {
+    drawSpark(ctx, 16, -34);
+  }
+  if (isSlump) {
+    drawSmoke(ctx, -14, -20);
+  }
+  if (isWalk && (frame === 3 || frame === 5)) {
+    drawDustPuff(ctx, frame === 3 ? -14 : 14, 21);
+  }
+  if (isTurnLeft) {
+    drawScanRings(ctx, -20, -15, true);
+  }
+  if (isTurnRight) {
+    drawScanRings(ctx, 20, -15, false);
+  }
+
+  // 1. Movement Base / Legs / Thrusters
   ctx.fillStyle = '#475569';
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 2.5;
@@ -141,61 +208,126 @@ export function drawRobotFrame(
     ctx.ellipse(0, 18, 14, 4, 0, 0, Math.PI * 2);
     ctx.stroke();
     // Inner pulse
-    ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
+    ctx.fillStyle = isCelebrate ? 'rgba(74, 222, 128, 0.4)' : 'rgba(56, 189, 248, 0.4)';
     ctx.fill();
   } else if (style === 'retro') {
     // Boxy accordion boots
     ctx.fillStyle = '#475569';
-    ctx.fillRect(-17 + legStride, 14, 12, 10);
-    ctx.strokeRect(-17 + legStride, 14, 12, 10);
-    ctx.fillRect(5 - legStride, 14, 12, 10);
-    ctx.strokeRect(5 - legStride, 14, 12, 10);
+    if (isSlump) {
+      ctx.fillRect(-20, 16, 13, 8);
+      ctx.strokeRect(-20, 16, 13, 8);
+      ctx.fillRect(7, 16, 13, 8);
+      ctx.strokeRect(7, 16, 13, 8);
+    } else {
+      const legStride = frame === 2 ? -4 : frame === 4 ? 4 : 0;
+      ctx.fillRect(-17 + legStride, 14, 12, 10);
+      ctx.strokeRect(-17 + legStride, 14, 12, 10);
+      ctx.fillRect(5 - legStride, 14, 12, 10);
+      ctx.strokeRect(5 - legStride, 14, 12, 10);
+    }
   } else {
-    // Standard dual legs (bolt, nova, cyber, spark, shadow, astro)
-    roundRect(ctx, -15 + legStride, 15, 11, 9, 3, true, true);
-    roundRect(ctx, 4 - legStride, 15, 11, 9, 3, true, true);
+    // Standard dual bipedal legs (bolt, nova, cyber, spark, shadow, astro)
+    if (isSlump) {
+      // Sitting down splayed chibi feet
+      roundRect(ctx, -19, 16, 13, 8, 3, true, true);
+      roundRect(ctx, 6, 16, 13, 8, 3, true, true);
+    } else if (isJumpApex) {
+      // Tucked feet in air
+      roundRect(ctx, -12, 12, 9, 8, 3, true, true);
+      roundRect(ctx, 3, 12, 9, 8, 3, true, true);
+    } else if (isCrouch) {
+      // Squatting bent knees
+      roundRect(ctx, -17, 15, 12, 7, 3, true, true);
+      roundRect(ctx, 5, 15, 12, 7, 3, true, true);
+    } else if (isWalk) {
+      // Natural walking stride
+      const legStride = frame === 2 ? -5 : frame === 4 ? 5 : 0;
+      roundRect(ctx, -15 + legStride, 15, 10, 9, 3, true, true);
+      roundRect(ctx, 5 - legStride, 15, 10, 9, 3, true, true);
+    } else {
+      // Normal standing
+      roundRect(ctx, -14, 15, 10, 9, 3, true, true);
+      roundRect(ctx, 4, 15, 10, 9, 3, true, true);
+    }
   }
 
   // 2. Left Arm
   ctx.fillStyle = fillStyle;
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 2.5;
+
+  let leftArmAngle = 0;
+  let leftArmX = -24;
+  let leftArmY = 0;
+  if (isCelebrate) {
+    leftArmAngle = -1.9; // raised high in victory \
+    leftArmX = -20;
+    leftArmY = 4;
+  } else if (isJumpApex) {
+    leftArmAngle = -0.7; // outstretched for balance
+    leftArmX = -22;
+    leftArmY = 3;
+  } else if (isCrouch) {
+    leftArmAngle = 0.5; // pulled back before jump
+  } else if (isWalk) {
+    leftArmAngle = frame === 2 ? 0.35 : frame === 4 ? -0.35 : 0; // swings opposite to left leg
+  } else if (isSlump) {
+    leftArmAngle = 0.6; // limp on ground
+    leftArmY = 6;
+  }
+
+  ctx.save();
+  ctx.translate(leftArmX, leftArmY);
+  ctx.rotate(leftArmAngle);
   if (style === 'titan') {
-    // Bulky shoulder plate + arm
-    roundRect(ctx, -32, -4, 12, 10, 3, true, true);
-    roundRect(ctx, -30, 4, 9, 14, 3, true, true);
+    roundRect(ctx, -7, -4, 12, 10, 3, true, true);
+    roundRect(ctx, -5, 4, 9, 14, 3, true, true);
   } else if (style === 'echo') {
-    // Cute small flipper arm
-    roundRect(ctx, -24, 2, 7, 12, 3.5, true, true);
+    roundRect(ctx, -4, 0, 7, 12, 3.5, true, true);
   } else {
-    roundRect(ctx, -28, -2, 8, 17, 4, true, true);
+    roundRect(ctx, -4, 0, 8, 17, 4, true, true);
+  }
+  ctx.restore();
+
+  // 3. Right Arm (Waves / Celebrates / Swings)
+  let rightArmAngle = 0;
+  let rightArmX = 24;
+  let rightArmY = 0;
+  if (isCelebrate) {
+    rightArmAngle = 1.9; // raised high in victory /
+    rightArmX = 20;
+    rightArmY = 4;
+  } else if (isWave) {
+    rightArmAngle = frame === 10 ? 2.2 : 2.55; // high energetic wave
+    rightArmX = 21;
+    rightArmY = 4;
+  } else if (isJumpApex) {
+    rightArmAngle = 0.7; // outstretched for balance
+    rightArmX = 22;
+    rightArmY = 3;
+  } else if (isCrouch) {
+    rightArmAngle = -0.5; // pulled back
+  } else if (isWalk) {
+    rightArmAngle = frame === 2 ? -0.35 : frame === 4 ? 0.35 : 0; // swings opposite to right leg
+  } else if (isSlump) {
+    rightArmAngle = -0.6; // limp on ground
+    rightArmY = 6;
   }
 
-  // 3. Right Arm (Waves / Celebrates)
-  if (waveRight) {
-    ctx.save();
-    ctx.translate(24, 2);
-    ctx.rotate((waveOffset * Math.PI) / 45);
-    if (style === 'titan') {
-      roundRect(ctx, 2, -18, 10, 16, 3, true, true);
-    } else if (style === 'echo') {
-      roundRect(ctx, 0, -14, 7, 12, 3.5, true, true);
-    } else {
-      roundRect(ctx, -4, -18, 8, 17, 4, true, true);
-    }
-    ctx.restore();
+  ctx.save();
+  ctx.translate(rightArmX, rightArmY);
+  ctx.rotate(rightArmAngle);
+  if (style === 'titan') {
+    roundRect(ctx, -5, -4, 12, 10, 3, true, true);
+    roundRect(ctx, -4, 4, 9, 14, 3, true, true);
+  } else if (style === 'echo') {
+    roundRect(ctx, -3, 0, 7, 12, 3.5, true, true);
   } else {
-    if (style === 'titan') {
-      roundRect(ctx, 20, -4, 12, 10, 3, true, true);
-      roundRect(ctx, 21, 4, 9, 14, 3, true, true);
-    } else if (style === 'echo') {
-      roundRect(ctx, 17, 2, 7, 12, 3.5, true, true);
-    } else {
-      roundRect(ctx, 20, -2, 8, 17, 4, true, true);
-    }
+    roundRect(ctx, -4, 0, 8, 17, 4, true, true);
   }
+  ctx.restore();
 
-  // 4. Body
+  // 4. Body & Chest Core
   ctx.fillStyle = fillStyle;
   ctx.strokeStyle = '#0f172a';
   ctx.lineWidth = 2.5;
@@ -206,7 +338,7 @@ export function drawRobotFrame(
     // Glowing core
     ctx.fillStyle = isCelebrate ? '#4ade80' : isFail ? '#fb7185' : '#38bdf8';
     ctx.beginPath();
-    ctx.arc(0, 9, 5, 0, Math.PI * 2);
+    ctx.arc(0, 9, isBlink ? 6 : 5, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 1.5;
@@ -217,7 +349,7 @@ export function drawRobotFrame(
     ctx.fillStyle = '#0f172a';
     roundRect(ctx, -14, 2, 28, 12, 3, true, false);
     // Hazard power bars
-    ctx.fillStyle = '#f59e0b';
+    ctx.fillStyle = isCelebrate ? '#4ade80' : '#f59e0b';
     ctx.fillRect(-10, 5, 5, 6);
     ctx.fillRect(-2, 5, 5, 6);
     ctx.fillRect(6, 5, 5, 6);
@@ -240,7 +372,7 @@ export function drawRobotFrame(
     roundRect(ctx, -20, -2, 40, 20, 7, true, true);
     ctx.fillStyle = '#0f172a';
     roundRect(ctx, -15, 3, 30, 10, 3, true, false);
-    ctx.fillStyle = '#06b6d4';
+    ctx.fillStyle = isCelebrate ? '#4ade80' : '#06b6d4';
     ctx.fillRect(-12, 7, 24, 3);
   } else if (style === 'retro') {
     // Vintage tin chest with analog dial
@@ -255,7 +387,7 @@ export function drawRobotFrame(
     // Meter needle
     ctx.beginPath();
     ctx.moveTo(0, 7);
-    ctx.lineTo(3, 3);
+    ctx.lineTo(isCelebrate ? -3 : 3, 3);
     ctx.stroke();
   } else if (style === 'shadow') {
     // Stealth diagonal chestplate
@@ -267,7 +399,7 @@ export function drawRobotFrame(
     ctx.lineTo(0, 12);
     ctx.closePath();
     ctx.fill();
-    ctx.fillStyle = '#ef4444';
+    ctx.fillStyle = isCelebrate ? '#4ade80' : '#ef4444';
     ctx.beginPath();
     ctx.arc(0, 6, 2.5, 0, Math.PI * 2);
     ctx.fill();
@@ -276,7 +408,7 @@ export function drawRobotFrame(
     roundRect(ctx, -20, -2, 40, 20, 7, true, true);
     ctx.fillStyle = '#0f172a';
     roundRect(ctx, -11, 3, 22, 10, 4, true, false);
-    ctx.fillStyle = isCelebrate ? '#4ade80' : '#38bdf8';
+    ctx.fillStyle = isCelebrate ? '#4ade80' : isFail ? '#fb7185' : '#38bdf8';
     ctx.beginPath();
     ctx.arc(-5, 8, 2.2, 0, Math.PI * 2);
     ctx.arc(0, 8, 2.2, 0, Math.PI * 2);
@@ -290,43 +422,45 @@ export function drawRobotFrame(
   ctx.lineCap = 'round';
   ctx.beginPath();
 
+  const antennaBend = isShock ? -6 : isSlump ? 8 : 0;
+
   if (style === 'nova') {
     ctx.moveTo(-10, -28);
-    ctx.lineTo(-14, -38);
+    ctx.lineTo(-14 + antennaBend, -38);
     ctx.moveTo(10, -28);
-    ctx.lineTo(14, -38);
+    ctx.lineTo(14 + antennaBend, -38);
     ctx.stroke();
     ctx.fillStyle = isCelebrate ? '#4ade80' : isFail ? '#fb7185' : '#fbbf24';
     ctx.beginPath();
-    ctx.arc(-14, -39, 3.5, 0, Math.PI * 2);
-    ctx.arc(14, -39, 3.5, 0, Math.PI * 2);
+    ctx.arc(-14 + antennaBend, -39, 3.5, 0, Math.PI * 2);
+    ctx.arc(14 + antennaBend, -39, 3.5, 0, Math.PI * 2);
     ctx.fill();
   } else if (style === 'spark') {
     // Sharp lightning horns
-    ctx.fillStyle = '#fbbf24';
+    ctx.fillStyle = isCelebrate ? '#4ade80' : '#fbbf24';
     ctx.beginPath();
     ctx.moveTo(-14, -28);
-    ctx.lineTo(-20, -42);
+    ctx.lineTo(-20 + antennaBend, -42);
     ctx.lineTo(-11, -33);
     ctx.closePath();
     ctx.fill();
     ctx.beginPath();
     ctx.moveTo(14, -28);
-    ctx.lineTo(20, -42);
+    ctx.lineTo(20 + antennaBend, -42);
     ctx.lineTo(11, -33);
     ctx.closePath();
     ctx.fill();
   } else if (style === 'retro') {
     // Spring antenna
     ctx.moveTo(0, -28);
-    ctx.lineTo(0, -32);
-    ctx.lineTo(3, -34);
-    ctx.lineTo(-3, -37);
-    ctx.lineTo(0, -40);
+    ctx.lineTo(0 + antennaBend * 0.3, -32);
+    ctx.lineTo(3 + antennaBend * 0.6, -34);
+    ctx.lineTo(-3 + antennaBend * 0.8, -37);
+    ctx.lineTo(0 + antennaBend, -40);
     ctx.stroke();
-    ctx.fillStyle = '#ef4444';
+    ctx.fillStyle = isCelebrate ? '#4ade80' : '#ef4444';
     ctx.beginPath();
-    ctx.arc(0, -42, 3.5, 0, Math.PI * 2);
+    ctx.arc(0 + antennaBend, -42, 3.5, 0, Math.PI * 2);
     ctx.fill();
   } else if (style === 'echo') {
     // Cute droplet ears
@@ -362,11 +496,11 @@ export function drawRobotFrame(
   } else {
     // Single antenna (bolt, gizmo, shadow)
     ctx.moveTo(0, -28);
-    ctx.lineTo(0, -39);
+    ctx.lineTo(antennaBend, -39);
     ctx.stroke();
     ctx.fillStyle = isCelebrate ? '#4ade80' : isFail ? '#fb7185' : '#fbbf24';
     ctx.beginPath();
-    ctx.arc(0, -40, 4, 0, Math.PI * 2);
+    ctx.arc(antennaBend, -40, 4, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -376,13 +510,10 @@ export function drawRobotFrame(
   ctx.lineWidth = 2.5;
 
   if (style === 'echo') {
-    // Perfectly round cute head
     roundRect(ctx, -22, -29, 44, 28, 14, true, true);
   } else if (style === 'titan') {
-    // Angular mecha head
     roundRect(ctx, -24, -30, 48, 28, 5, true, true);
   } else if (style === 'retro') {
-    // Square tin box head
     roundRect(ctx, -21, -30, 42, 28, 3, true, true);
   } else if (style === 'nova') {
     roundRect(ctx, -23, -30, 46, 30, 13, true, true);
@@ -393,46 +524,135 @@ export function drawRobotFrame(
   // 7. Visor / Face Plate
   ctx.fillStyle = '#0f172a';
   if (style === 'cyber') {
-    // Wide glowing cyber visor
     roundRect(ctx, -20, -24, 40, 16, 4, true, false);
   } else if (style === 'shadow') {
-    // Sharp stealth slit visor
     roundRect(ctx, -19, -23, 38, 10, 3, true, false);
-    // Lower ninja mask plate
     ctx.fillStyle = '#334155';
     ctx.fillRect(-17, -13, 34, 10);
   } else if (style === 'titan') {
-    // Heavy battle slit visor
     roundRect(ctx, -18, -22, 36, 11, 2, true, false);
   } else {
     roundRect(ctx, -17, -24, 34, 18, 6, true, false);
   }
 
-  // 8. Eyes & Expression
-  const eyeColor = isFail ? '#fb7185' : isCelebrate ? '#4ade80' : style === 'cyber' ? '#00f0ff' : style === 'shadow' ? '#ef4444' : '#38bdf8';
+  // 8. Eyes & Expression (Chibi Style A: Cute, Alive & Expressive)
+  const eyeColor = isFail
+    ? '#fb7185'
+    : isCelebrate
+      ? '#4ade80'
+      : style === 'cyber'
+        ? '#00f0ff'
+        : style === 'shadow'
+          ? '#ef4444'
+          : '#38bdf8';
+
   ctx.strokeStyle = eyeColor;
   ctx.fillStyle = eyeColor;
-  ctx.lineWidth = 2.4;
+  ctx.lineWidth = 2.5;
   ctx.lineCap = 'round';
 
-  if (isFail) {
+  if (isShock) {
+    // Startled electric dizzy X-X eyes
     ctx.beginPath();
-    ctx.moveTo(-11, -19);
-    ctx.lineTo(-5, -13);
-    ctx.moveTo(-5, -19);
-    ctx.lineTo(-11, -13);
-    ctx.moveTo(5, -19);
-    ctx.lineTo(11, -13);
-    ctx.moveTo(11, -19);
-    ctx.lineTo(5, -13);
+    ctx.moveTo(-12, -19);
+    ctx.lineTo(-4, -13);
+    ctx.moveTo(-4, -19);
+    ctx.lineTo(-12, -13);
+    ctx.moveTo(4, -19);
+    ctx.lineTo(12, -13);
+    ctx.moveTo(12, -19);
+    ctx.lineTo(4, -13);
+    ctx.stroke();
+    // Wobbly mouth
+    ctx.beginPath();
+    ctx.moveTo(-5, -8);
+    ctx.lineTo(-2, -10);
+    ctx.lineTo(1, -8);
+    ctx.lineTo(4, -10);
+    ctx.stroke();
+  } else if (isSlump) {
+    // Defeat closed X-X eyes with sad frown
+    ctx.beginPath();
+    ctx.moveTo(-11, -18);
+    ctx.lineTo(-5, -14);
+    ctx.moveTo(-5, -18);
+    ctx.lineTo(-11, -14);
+    ctx.moveTo(5, -18);
+    ctx.lineTo(11, -14);
+    ctx.moveTo(11, -18);
+    ctx.lineTo(5, -14);
+    ctx.stroke();
+    // Sad inverted curved mouth
+    ctx.beginPath();
+    ctx.arc(0, -6, 4, Math.PI * 1.2, Math.PI * 1.8);
     ctx.stroke();
   } else if (isCelebrate) {
+    // Victory happy anime curves (^ ^) + joyful open mouth
     ctx.beginPath();
-    ctx.arc(-8, -14, 4, Math.PI, 0);
+    ctx.arc(-8, -15, 4.2, Math.PI, 0);
     ctx.stroke();
     ctx.beginPath();
-    ctx.arc(8, -14, 4, Math.PI, 0);
+    ctx.arc(8, -15, 4.2, Math.PI, 0);
     ctx.stroke();
+    // Happy open mouth (^o^)
+    ctx.fillStyle = '#fbbf24';
+    ctx.beginPath();
+    ctx.arc(0, -10, 2.5, 0, Math.PI);
+    ctx.fill();
+  } else if (isWave) {
+    // Friendly sweet smiling eyes (^ ^)
+    ctx.beginPath();
+    ctx.arc(-8, -15, 3.8, Math.PI, 0);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(8, -15, 3.8, Math.PI, 0);
+    ctx.stroke();
+    // Cute pink blush cheek dots
+    ctx.fillStyle = '#f472b6';
+    ctx.beginPath();
+    ctx.ellipse(-12, -11, 2.5, 1.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(12, -11, 2.5, 1.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Cute smile mouth
+    ctx.strokeStyle = '#4ade80';
+    ctx.beginPath();
+    ctx.arc(0, -11, 3, 0.2, Math.PI - 0.2);
+    ctx.stroke();
+  } else if (isBlink) {
+    // Gentle blinking smile (- -)
+    ctx.beginPath();
+    ctx.moveTo(-11, -16);
+    ctx.lineTo(-5, -16);
+    ctx.moveTo(5, -16);
+    ctx.lineTo(11, -16);
+    ctx.stroke();
+    // Friendly mouth
+    ctx.strokeStyle = '#4ade80';
+    ctx.beginPath();
+    ctx.arc(0, -11, 3, 0.2, Math.PI - 0.2);
+    ctx.stroke();
+  } else if (isTurnLeft) {
+    // Eyes looking to the left
+    ctx.beginPath();
+    ctx.arc(-10, -16, 3.2, 0, Math.PI * 2);
+    ctx.arc(6, -16, 3.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(-11, -17, 1.2, 0, Math.PI * 2);
+    ctx.arc(5, -17, 1.2, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (isTurnRight) {
+    // Eyes looking to the right
+    ctx.beginPath();
+    ctx.arc(-6, -16, 3.2, 0, Math.PI * 2);
+    ctx.arc(10, -16, 3.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(-5, -17, 1.2, 0, Math.PI * 2);
+    ctx.arc(11, -17, 1.2, 0, Math.PI * 2);
+    ctx.fill();
   } else if (style === 'cyber') {
     // Glowing horizontal cyber visor bar
     ctx.fillStyle = '#00f0ff';
@@ -442,31 +662,26 @@ export function drawRobotFrame(
     ctx.fillStyle = '#ef4444';
     ctx.fillRect(-13, -19, 9, 3);
     ctx.fillRect(4, -19, 9, 3);
-  } else if (style === 'echo') {
-    // Big sparkle anime eyes
-    ctx.beginPath();
-    ctx.arc(-8, -16, 4.2, 0, Math.PI * 2);
-    ctx.arc(8, -16, 4.2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(-7, -18, 1.8, 0, Math.PI * 2);
-    ctx.arc(9, -18, 1.8, 0, Math.PI * 2);
-    ctx.fill();
   } else {
-    // Standard friendly glowing circle eyes
+    // Standard friendly glowing circle eyes with anime shine reflection + smile
     ctx.beginPath();
-    ctx.arc(-8, -16, 3.3, 0, Math.PI * 2);
-    ctx.arc(8, -16, 3.3, 0, Math.PI * 2);
+    ctx.arc(-8, -16, 3.5, 0, Math.PI * 2);
+    ctx.arc(8, -16, 3.5, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.arc(-7, -17, 1.1, 0, Math.PI * 2);
-    ctx.arc(9, -17, 1.1, 0, Math.PI * 2);
+    ctx.arc(-7, -17.2, 1.3, 0, Math.PI * 2);
+    ctx.arc(9, -17.2, 1.3, 0, Math.PI * 2);
     ctx.fill();
+    // Cute smile mouth
+    ctx.strokeStyle = '#4ade80';
+    ctx.beginPath();
+    ctx.arc(0, -11, 3, 0.2, Math.PI - 0.2);
+    ctx.stroke();
   }
 }
 
+// Helper Drawing Functions
 function roundRect(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -481,4 +696,101 @@ function roundRect(
   ctx.roundRect(x, y, w, h, r);
   if (fill) ctx.fill();
   if (stroke) ctx.stroke();
+}
+
+function drawBoosterFlame(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  // Outer jet flame
+  ctx.fillStyle = '#06b6d4';
+  ctx.beginPath();
+  ctx.moveTo(x - 8, y);
+  ctx.quadraticCurveTo(x - 5, y + 9, x, y + 13);
+  ctx.quadraticCurveTo(x + 5, y + 9, x + 8, y);
+  ctx.closePath();
+  ctx.fill();
+
+  // Inner core flame
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.moveTo(x - 4, y);
+  ctx.quadraticCurveTo(x - 2, y + 6, x, y + 8);
+  ctx.quadraticCurveTo(x + 2, y + 6, x + 4, y);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawStar(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  spikes: number,
+  outerRadius: number,
+  innerRadius: number,
+  color: string,
+) {
+  let rot = (Math.PI / 2) * 3;
+  let x: number;
+  let y: number;
+  const step = Math.PI / spikes;
+
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - outerRadius);
+  for (let i = 0; i < spikes; i++) {
+    x = cx + Math.cos(rot) * outerRadius;
+    y = cy + Math.sin(rot) * outerRadius;
+    ctx.lineTo(x, y);
+    rot += step;
+
+    x = cx + Math.cos(rot) * innerRadius;
+    y = cy + Math.sin(rot) * innerRadius;
+    ctx.lineTo(x, y);
+    rot += step;
+  }
+  ctx.lineTo(cx, cy - outerRadius);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+function drawSpark(ctx: CanvasRenderingContext2D, x: number, y: number, color = '#facc15') {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + 4, y - 5);
+  ctx.lineTo(x + 1, y - 5);
+  ctx.lineTo(x + 6, y - 11);
+  ctx.stroke();
+}
+
+function drawSmoke(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  ctx.fillStyle = 'rgba(148, 163, 184, 0.6)';
+  ctx.beginPath();
+  ctx.arc(x, y, 3, 0, Math.PI * 2);
+  ctx.arc(x + 3, y - 3, 4, 0, Math.PI * 2);
+  ctx.arc(x + 1, y - 7, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawDustPuff(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  ctx.fillStyle = 'rgba(203, 213, 225, 0.5)';
+  ctx.beginPath();
+  ctx.arc(x, y, 3, 0, Math.PI * 2);
+  ctx.arc(x - 4, y + 1, 2, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawScanRings(ctx: CanvasRenderingContext2D, x: number, y: number, isLeft: boolean) {
+  ctx.strokeStyle = '#06b6d4';
+  ctx.lineWidth = 1.5;
+  const startAngle = isLeft ? Math.PI * 0.75 : -Math.PI * 0.25;
+  const endAngle = isLeft ? Math.PI * 1.25 : Math.PI * 0.25;
+
+  ctx.beginPath();
+  ctx.arc(x, y, 9, startAngle, endAngle);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(x, y, 15, startAngle, endAngle);
+  ctx.stroke();
 }

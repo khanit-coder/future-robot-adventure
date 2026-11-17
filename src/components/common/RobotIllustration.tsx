@@ -49,6 +49,10 @@ export function RobotIllustration({
 
   const isCelebrated = state === 'celebrate';
   const isFailed = state === 'fail';
+  const isWaving = state === 'wave';
+  const isJumping = state === 'jump';
+  const isRunning = state === 'run';
+  const isTurning = state === 'turn';
 
   const resolved = resolveRobotColor(robot || accent);
   const gradId = `robot-grad-${reactId.replace(/[^a-zA-Z0-9]/g, '')}`;
@@ -80,6 +84,40 @@ export function RobotIllustration({
       {/* Ground Shadow */}
       <ellipse cx="40" cy="74" rx="18" ry="3.5" fill="rgba(15, 23, 42, 0.2)" />
 
+      {/* Micro-Effects Behind Robot */}
+      {isJumping && (
+        <g className="animate-pulse">
+          <polygon points="34,70 40,78 46,70" fill="#06b6d4" />
+          <polygon points="37,70 40,75 43,70" fill="#ffffff" />
+        </g>
+      )}
+
+      {isCelebrated && (
+        <g>
+          <path d="M12,18 L14,23 L19,23 L15,26 L17,31 L12,28 L7,31 L9,26 L5,23 L10,23 Z" fill="#fbbf24" opacity="0.9" />
+          <path d="M68,18 L70,23 L75,23 L71,26 L73,31 L68,28 L63,31 L65,26 L61,23 L66,23 Z" fill="#fde047" opacity="0.9" />
+        </g>
+      )}
+
+      {isRunning && (
+        <g stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" opacity="0.7">
+          <line x1="5" y1="50" x2="16" y2="50" />
+          <line x1="3" y1="56" x2="18" y2="56" />
+          <line x1="7" y1="62" x2="15" y2="62" />
+        </g>
+      )}
+
+      {isTurning && (
+        <g stroke="#06b6d4" strokeWidth="1.5" fill="none" opacity="0.8" className="animate-pulse">
+          <path d="M15,24 A 10 10 0 0 0 15,36" />
+          <path d="M11,20 A 15 15 0 0 0 11,40" />
+        </g>
+      )}
+
+      {isFailed && (
+        <path d="M63,12 L67,7 L64,7 L68,2" stroke="#facc15" strokeWidth="2" strokeLinecap="round" fill="none" className="animate-bounce" />
+      )}
+
       {/* Movement Base / Legs / Thrusters / Treads */}
       {variant === 'gizmo' ? (
         <g>
@@ -110,18 +148,75 @@ export function RobotIllustration({
       {/* Arms */}
       {variant === 'titan' ? (
         <>
-          <rect x="8" y="40" width="11" height="18" rx="3" fill={fill} stroke="#1e293b" strokeWidth="2" />
-          <rect x="61" y={isCelebrated ? 26 : 40} width="11" height="18" rx="3" fill={fill} stroke="#1e293b" strokeWidth="2" />
+          <rect
+            x="8"
+            y={isCelebrated ? 26 : 40}
+            width="11"
+            height="18"
+            rx="3"
+            fill={fill}
+            stroke="#1e293b"
+            strokeWidth="2"
+          />
+          <rect
+            x="61"
+            y={isCelebrated || isWaving ? 26 : 40}
+            width="11"
+            height="18"
+            rx="3"
+            fill={fill}
+            stroke="#1e293b"
+            strokeWidth="2"
+            className={isWaving ? 'robot-arm-waving' : undefined}
+          />
         </>
       ) : variant === 'echo' ? (
         <>
-          <rect x="14" y="44" width="6" height="12" rx="3" fill={fill} stroke="#1e293b" strokeWidth="2" />
-          <rect x="60" y={isCelebrated ? 30 : 44} width="6" height="12" rx="3" fill={fill} stroke="#1e293b" strokeWidth="2" />
+          <rect
+            x="14"
+            y={isCelebrated ? 30 : 44}
+            width="6"
+            height="12"
+            rx="3"
+            fill={fill}
+            stroke="#1e293b"
+            strokeWidth="2"
+          />
+          <rect
+            x="60"
+            y={isCelebrated || isWaving ? 30 : 44}
+            width="6"
+            height="12"
+            rx="3"
+            fill={fill}
+            stroke="#1e293b"
+            strokeWidth="2"
+            className={isWaving ? 'robot-arm-waving' : undefined}
+          />
         </>
       ) : (
         <>
-          <rect x="11" y="42" width="7" height="16" rx="3.5" fill={fill} stroke="#1e293b" strokeWidth="2" />
-          <rect x="62" y={isCelebrated ? 28 : 42} width="7" height="16" rx="3.5" fill={fill} stroke="#1e293b" strokeWidth="2" />
+          <rect
+            x="11"
+            y={isCelebrated ? 26 : 42}
+            width="7"
+            height="16"
+            rx="3.5"
+            fill={fill}
+            stroke="#1e293b"
+            strokeWidth="2"
+          />
+          <rect
+            x="62"
+            y={isCelebrated || isWaving ? 26 : 42}
+            width="7"
+            height="16"
+            rx="3.5"
+            fill={fill}
+            stroke="#1e293b"
+            strokeWidth="2"
+            className={isWaving ? 'robot-arm-waving' : undefined}
+          />
         </>
       )}
 
@@ -241,18 +336,43 @@ export function RobotIllustration({
         <rect x="24" y="21" width="32" height="18" rx="7" fill="#0f172a" />
       )}
 
-      {/* Eyes + Expression */}
+      {/* Eyes + Expression (Style A: Cute & Expressive Chibi Bot) */}
       {isFailed ? (
         <>
           <path d="M29 27 L34 32 M34 27 L29 32" stroke="#fb7185" strokeWidth="2.4" strokeLinecap="round" />
           <path d="M46 27 L51 32 M51 27 L46 32" stroke="#fb7185" strokeWidth="2.4" strokeLinecap="round" />
-          <path d="M35 36 Q40 33 45 36" stroke="#fb7185" strokeWidth="2" strokeLinecap="round" />
+          <path d="M36 37 Q40 34 44 37" stroke="#fb7185" strokeWidth="2" strokeLinecap="round" />
         </>
       ) : isCelebrated ? (
         <>
-          <path d="M28 30 Q32 25 36 30" stroke="#4ade80" strokeWidth="2.6" strokeLinecap="round" />
-          <path d="M44 30 Q48 25 52 30" stroke="#4ade80" strokeWidth="2.6" strokeLinecap="round" />
-          <path d="M34 34 Q40 39 46 34" stroke="#fbbf24" strokeWidth="2.2" strokeLinecap="round" />
+          <path d="M28 30 Q32 24 36 30" stroke="#4ade80" strokeWidth="2.6" strokeLinecap="round" />
+          <path d="M44 30 Q48 24 52 30" stroke="#4ade80" strokeWidth="2.6" strokeLinecap="round" />
+          <ellipse cx="40" cy="35" rx="3.5" ry="2.2" fill="#fbbf24" />
+        </>
+      ) : isWaving ? (
+        <>
+          <path d="M28 29 Q32 25 36 29" stroke="#38bdf8" strokeWidth="2.6" strokeLinecap="round" />
+          <path d="M44 29 Q48 25 52 29" stroke="#38bdf8" strokeWidth="2.6" strokeLinecap="round" />
+          {/* Cute pink cheek blush */}
+          <ellipse cx="27" cy="33" rx="2.5" ry="1.5" fill="#f472b6" opacity="0.85" />
+          <ellipse cx="53" cy="33" rx="2.5" ry="1.5" fill="#f472b6" opacity="0.85" />
+          <path d="M36 34.5 Q40 37.5 44 34.5" stroke="#4ade80" strokeWidth="2" strokeLinecap="round" />
+        </>
+      ) : isTurning ? (
+        <>
+          <circle cx="28" cy="29" r="3.4" fill="#38bdf8" />
+          <circle cx="44" cy="29" r="3.4" fill="#38bdf8" />
+          <circle cx="27" cy="28" r="1.2" fill="#ffffff" />
+          <circle cx="43" cy="28" r="1.2" fill="#ffffff" />
+          <path d="M35 34.5 Q40 37.5 45 34.5" stroke="#4ade80" strokeWidth="2" strokeLinecap="round" />
+        </>
+      ) : isJumping ? (
+        <>
+          <circle cx="32" cy="29" r="4.2" fill="#38bdf8" />
+          <circle cx="48" cy="29" r="4.2" fill="#38bdf8" />
+          <circle cx="33" cy="27.5" r="1.8" fill="#ffffff" />
+          <circle cx="49" cy="27.5" r="1.8" fill="#ffffff" />
+          <ellipse cx="40" cy="35" rx="2.5" ry="1.8" fill="#4ade80" />
         </>
       ) : variant === 'cyber' ? (
         <rect x="25" y="26" width="30" height="5" rx="2" fill="#00f0ff" />
