@@ -5,6 +5,7 @@ import {
   Copy,
   ExternalLink,
   Flame,
+  Info,
   Pause,
   Play,
   Sparkles,
@@ -281,6 +282,12 @@ export function StudentSimulatorModal({
             setErrorCount(localError);
             const msg = err instanceof Error ? err.message : String(err);
             appendLog('error', `❌ [คนทึ่ ${st.index}] ${st.name} เกิดข้อผิดพลาด: ${msg}`);
+            if (msg.toLowerCase().includes('rate limit')) {
+              appendLog(
+                'warn',
+                `💡 แจ้งเตือน: ติดขีดจำกัด Supabase Auth (30 คน/ชม./IP) กรุณาเข้าไปปรับ Rate Limit ใน Supabase Dashboard > Authentication > Rate Limits เป็น 500-1000 คน`,
+              );
+            }
           } finally {
             completedTotal++;
             const pct = Math.round((completedTotal / total) * 100);
@@ -385,6 +392,19 @@ export function StudentSimulatorModal({
             และการแสดงผลบนแดชบอร์ดจอใหญ่ 100 คนแบบ Realtime
           </p>
         </DialogHeader>
+
+        {/* Supabase Rate Limit Notice Banner */}
+        <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-3 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200 flex items-start gap-2.5">
+          <Info className="h-4 w-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+          <div className="space-y-1">
+            <p className="font-bold">
+              💡 ข้อควรรู้สำหรับงาน Open House (Wi-Fi ร่วมกัน):
+            </p>
+            <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
+              Supabase Auth มีระบบ Rate Limit ค่าเริ่มต้นที่ <strong>30 คน/ชั่วโมง/IP</strong> หากนักเรียนในงานเชื่อมต่อ Wi-Fi เดียวกัน หรือจำลองเกิน 30 คนจะติดข้อจำกัดนี้ แนะนำให้เข้าไปที่ <strong>Supabase Dashboard &gt; Authentication &gt; Rate Limits &gt; Anonymous Sign-ins</strong> แล้วปรับเป็น <strong>500–1000 คน/ชั่วโมง</strong> เพื่อรองรับนักเรียนทุกคนในวันงานจริง
+            </p>
+          </div>
+        </div>
 
         {/* Configuration Panel */}
         <div className="space-y-5 py-2">
